@@ -1,6 +1,13 @@
 # Changelog
 
 ## 2026-09-28
+- **Legible labels.**
+  - Each label is now white text on a dark sign plate (`MI_LFF_SignPlate`, a component of the label actor), created by `build_lff_stadium_level.py`.
+  - The gate sign is 150 → 200 cm, and the restroom and food signs are 40 → 50 cm.
+  - The section sign is moved 3 m ahead into the lower third and resized to 12 cm.
+  - Removed the seat "Illustration" marker (its proxies are gone).
+  - Headless runs now use `-ModelContextProtocolPort=18000` (F39).
+  - Logged the concourse tile intrusion and a proposed fix as an open item.
 - **Tiles render and the site is calibrated.**
   - Added `r.DefaultFeature.AutoExposure.ExtendDefaultLuminanceRange=True` to `DefaultEngine.ini`. Without it CesiumSunSky rendered everything white.
   - Applied placement revision 2026-09-28a (origin 39.9008036, -75.1674790, -31.04 m; SiteRoot -6.5°), measured from the tiles with overhead captures and line traces.

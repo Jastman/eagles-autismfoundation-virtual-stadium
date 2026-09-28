@@ -58,7 +58,7 @@ PROJ="$PWD/VirtualStadium.uproject"
 
 # Headless tests (LFF.*)
 "$UE_ROOT/Engine/Binaries/Mac/UnrealEditor.app/Contents/MacOS/UnrealEditor" "$PROJ" \
-  -ExecCmds="Automation RunTests LFF.;Quit" -unattended -nullrhi -nopause -nosplash -stdout -log
+  -ExecCmds="Automation RunTests LFF.;Quit" -ModelContextProtocolPort=18000 -unattended -nullrhi -nopause -nosplash -stdout -log
 
 # Package a Mac Development build
 "$UE_ROOT/Engine/Build/BatchFiles/RunUAT.sh" BuildCookRun -project="$PROJ" -platform=Mac \
@@ -104,7 +104,7 @@ These scripts do ManualSetup §2–§5 reproducibly. Each one refuses to overwri
 Command for `build_lff_stadium_level.py`:
 
 ```bash
-"$UE_ROOT/Engine/Binaries/Mac/UnrealEditor.app/Contents/MacOS/UnrealEditor" "$PROJ" -ExecutePythonScript="$PWD/Tools/Editor/build_lff_stadium_level.py" -unattended -nullrhi -nopause -nosplash -stdout -log
+"$UE_ROOT/Engine/Binaries/Mac/UnrealEditor.app/Contents/MacOS/UnrealEditor" "$PROJ" -ExecutePythonScript="$PWD/Tools/Editor/build_lff_stadium_level.py" -ModelContextProtocolPort=18000 -unattended -nullrhi -nopause -nosplash -stdout -log
 ```
 
 Things to know:
@@ -115,6 +115,7 @@ Things to know:
   - `UMGToolSet.GetWidgets` lists the parent's unbound `BindWidget` names as placeholders with `widget: "None"`. Ignore those when you check what exists.
   - The UMG toolset can't create a level or run console commands, which is why the level build is a headless Python script.
 - **The MCP server auto-starts** because `bAutoStartServer=True` is set in `Saved/Config/MacEditor/EditorPerProjectUserSettings.ini`. That file is per-user and not committed.
+- **Headless runs must use `-ModelContextProtocolPort=18000`** (as in the commands above). `bAutoStartServer` is per-project, so every headless editor also starts an MCP server. When it crashes on exit, its `CrashReportClient` **inherits the listening socket** and holds the port without answering. On 8000 that blocks the interactive editor's server: `HttpListener unable to bind` in the log, or MCP calls that hang. The plugin has no switch to turn the server off, so move it to a spare port. To clear a stuck port, `lsof -nP -iTCP:8000` and stop the orphaned `CrashReportClient`.
 - **Wait about 30 s between closing and reopening the editor.** Otherwise the new editor can't bind `127.0.0.1:8000` (`LogHttpListener: Error: HttpListener unable to bind`), because the old socket is still being released. The server doesn't retry. If that happens, run `ModelContextProtocol.StartServer` in the editor console.
 - **`CaptureViewport` shows black where Cesium hasn't streamed tiles.** Cesium picks tiles for the *real* editor viewport's frustum, and a capture with a different aspect ratio can include regions that were never loaded. Judge coverage in the viewport or PIE, not from a capture's edges. The capture also needs explicit `captureTransform` and `annotations` arguments, and a camera sitting on an `LFFCameraTarget` sees its editor-only arrow, so offset about 1.5 m forward.
 - **Line traces work on the tiles** (`SceneTools.trace_world`), because Cesium builds collision. Batch them in `ProgrammaticToolset.execute_tool_script` for profiles (hundreds of traces take seconds). Traces return `None` where no tile with collision is loaded.

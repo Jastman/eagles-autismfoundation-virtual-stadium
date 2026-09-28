@@ -1,7 +1,8 @@
 """Builds /Game/LFF/Levels/L_LFF_Stadium and imports DT_LFF_GoldenPath (Docs/ManualSetup.md §2-§4).
 
 Run headless with the editor closed (see Docs/LOCAL_AGENT_SETUP.md §3):
-  UnrealEditor VirtualStadium.uproject -ExecutePythonScript="<abs path to this file>" -unattended -nullrhi -nosplash -stdout
+  UnrealEditor VirtualStadium.uproject -ExecutePythonScript="<abs path to this file>" -ModelContextProtocolPort=18000 -unattended -nullrhi -nosplash -stdout
+(The port override keeps this run's MCP server, and the crash reporter that inherits its socket, off 8000.)
 
 Refuses to overwrite an existing level, so it can't clobber hand-framed shots. Delete the map first to rebuild.
 
@@ -27,6 +28,10 @@ GOOGLE_PHOTOREALISTIC_ION_ASSET = 2275207
 PHILADELPHIA_UTC_OFFSET_OCT = -4.0  # EDT
 
 CUBE = "/Engine/BasicShapes/Cube.Cube"  # 100 cm cube, pivot at centre
+SIGN_PLATE_MATERIAL = "/Game/LFF/Materials/MI_LFF_SignPlate"
+# Dark midnight green (#003338-ish, linear). Text and plate are both lit, so their contrast comes from the
+# albedos (white about 0.9 against about 0.04, roughly 10:1) and holds in sun and shade (ACCESSIBILITY.md: 7:1).
+SIGN_PLATE_COLOR = (0.0, 0.035, 0.045)
 
 eas = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
 les = unreal.get_editor_subsystem(unreal.LevelEditorSubsystem)
@@ -54,6 +59,20 @@ def add_component(actor, cls):
     handle, fail = sds.add_new_subobject(params)
     if not fail.is_empty():
         raise RuntimeError(f"add {cls} to {actor.get_actor_label()}: {fail}")
+    return actor.get_components_by_class(cls)[-1]
+
+
+def sign_plate_material():
+    if unreal.EditorAssetLibrary.does_asset_exist(SIGN_PLATE_MATERIAL):
+        return unreal.load_asset(SIGN_PLATE_MATERIAL)
+    folder, name = SIGN_PLATE_MATERIAL.rsplit("/", 1)
+    mi = unreal.AssetToolsHelpers.get_asset_tools().create_asset(
+        name, folder, unreal.MaterialInstanceConstant, unreal.MaterialInstanceConstantFactoryNew())
+    mi.set_editor_property("parent", unreal.load_asset("/Engine/BasicShapes/BasicShapeMaterial"))
+    unreal.MaterialEditingLibrary.set_material_instance_vector_parameter_value(mi, "Color", unreal.LinearColor(*SIGN_PLATE_COLOR, 1.0))
+    unreal.MaterialEditingLibrary.set_material_instance_scalar_parameter_value(mi, "Roughness", 0.9)  # no glare
+    unreal.EditorAssetLibrary.save_loaded_asset(mi)
+    return mi
 
 
 def look_at(frm, to):
@@ -74,15 +93,31 @@ def box(label, center, size_cm, parent, folder):
 
 
 def text(label, value, loc, face_toward, world_size, parent, folder, tags=()):
+    """A sign: white text on a dark plate. The plate is a component of the label actor, so the C++
+    SetActorHiddenInGame on LFF_Label actors shows and hides both together."""
     # A TextRender reads correctly from its +X side, so point +X back at the viewer.
     p, y, _ = look_at(loc, face_toward)
     a = spawn(unreal.TextRenderActor, label, loc, (0.0, y, 0.0), parent=parent, folder=folder)
     trc = a.text_render
     trc.set_editor_property("text", value)
     trc.set_editor_property("world_size", world_size)
+    trc.set_editor_property("text_render_color", unreal.Color(r=255, g=255, b=255, a=255))
     trc.set_editor_property("horizontal_alignment", unreal.HorizTextAligment.EHTA_CENTER)
     trc.set_editor_property("vertical_alignment", unreal.VerticalTextAligment.EVRTA_TEXT_CENTER)
+    trc.set_editor_property("cast_shadow", False)  # keep the text's own shadow off the plate
     a.tags = [unreal.Name(t) for t in tags]
+
+    size = trc.get_text_local_size()
+    width = max(size.x, size.y) if max(size.x, size.y) > 1.0 else 0.55 * world_size * len(value)
+    height = size.z if size.z > 1.0 else world_size
+    margin = 0.35 * world_size
+    plate = add_component(a, unreal.StaticMeshComponent)
+    plate.set_static_mesh(unreal.load_asset(CUBE))
+    plate.set_material(0, sign_plate_material())
+    plate.set_collision_enabled(unreal.CollisionEnabled.NO_COLLISION)
+    # Just behind the text (text faces +X); 2 cm thick.
+    plate.set_relative_location(unreal.Vector(-2.0, 0.0, 0.0), False, False)
+    plate.set_relative_scale3d(unreal.Vector(0.02, (width + 2 * margin) / 100.0, (height + 2 * margin) / 100.0))
     return a
 
 
@@ -136,7 +171,7 @@ def build_level():
     # about +0.7 m), standing eye height (Illustrative; not a real gate name).
     gate_cam, gate_look = (-1500, -17000, 260), (0, -13500, 600)
     target("CT_GateEntry", gate_cam, gate_look, root)
-    text("LBL_Gate", "Gate (illustration)", (0, -14200, 600), gate_cam, 150, root, "LFF_SiteRoot/LFF_Labels",
+    text("LBL_Gate", "Gate (illustration)", (0, -14200, 600), gate_cam, 200, root, "LFF_SiteRoot/LFF_Labels",
          ("LFF_Label", "LBL_Gate"))
 
     # Step 3: enclosed proxy concourse west of the lower bowl, running north-south.
@@ -154,19 +189,19 @@ def build_level():
     lbl = "LFF_SiteRoot/LFF_Labels"
     text("LBL_Concourse", "Concourse (illustration)", (cx, -600, floor_z + 330), conc_cam, 60, root, lbl,
          ("LFF_Label", "LBL_Concourse"))
-    text("LBL_Restroom", "Restrooms (example)", (cx + width / 2 - 5, -200, floor_z + 230), (cx, -200, floor_z + 230),
-         40, root, lbl, ("LFF_Label", "LBL_Restroom"))
-    text("LBL_Food", "Food (example)", (cx - width / 2 + 5, 200, floor_z + 230), (cx, 200, floor_z + 230),
-         40, root, lbl, ("LFF_Label", "LBL_Food"))
+    text("LBL_Restroom", "Restrooms (example)", (cx + width / 2 - 8, -200, floor_z + 230), (cx, -200, floor_z + 230),
+         50, root, lbl, ("LFF_Label", "LBL_Restroom"))
+    text("LBL_Food", "Food (example)", (cx - width / 2 + 8, 200, floor_z + 230), (cx, 200, floor_z + 230),
+         50, root, lbl, ("LFF_Label", "LBL_Food"))
 
     # Step 4: example seat, about row 10 of the west lower bowl on the halfway line, looking at midfield.
     # Traced: pitch wall at 41.5 m, seats rise 0.25 m per metre, so the seat is about 3.9 m up; eye +1.3 m.
     # The tiles provide the seating bowl itself, so there are no proxy seat rows (they would z-fight).
-    ps = "LFF_SiteRoot/LFF_Proxy/Seats"
     seat_cam, seat_look = (-5050, 0, 520), (0, 0, 0)
     target("CT_SeatFieldView", seat_cam, seat_look, root)
-    text("PX_Seats_Illustration", "Illustration", (-4900, -420, 560), seat_cam, 20, root, ps)
-    text("LBL_Section", "Section 111, Row 10 (example ticket)", (-4900, 0, 470), seat_cam, 25, root, lbl,
+    # 3 m ahead and about 0.9 m below eye level, so the sign sits in the lower third and doesn't cover the pitch
+    # (seat ramp there is about 3.1 m, so the sign clears it). "Example ticket" covers the illustration notice.
+    text("LBL_Section", "Section 111, Row 10 (example ticket)", (-4750, 0, 430), seat_cam, 12, root, lbl,
          ("LFF_Label", "LBL_Section"))
 
     # Align the whole site frame with the real field. Children follow; the anchor updates to the new pose.

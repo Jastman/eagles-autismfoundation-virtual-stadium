@@ -45,6 +45,7 @@ Last updated: 2026-09-28 (cycle 5: first workstation compile, tests, MCP, and sc
 | F36 | In PIE, the game mode loads, the HUD shows the intro and the controls are in the right states. Google tiles return **401** because no project ion token is selected; the user is signed in to ion in the Cesium panel. | PIE capture, Output Log, 2026-09-28 |
 | F37 | **Google tiles stream and render** once a project token is chosen and `ExtendDefaultLuminanceRange=True` is set. The hand-written `DefaultEngine.ini` lacked that UE5 default, so CesiumSunSky blew every frame out to white even though the tiles had loaded (100% progress, about 52 MB cached). | CVar check, captures |
 | F38 | **Placement revision 2026-09-28a** is applied and saved: origin 39.9008036, -75.1674790, -31.04 m ellipsoidal; SiteRoot heading -6.5°. The build script matches it. The gate and seat targets were re-posed from tile traces (gate 35 m outside the north headhouse; seat about row 10 of the west lower bowl). The proxy seat rows were removed because the tiles provide the bowl. | CESIUM_PLACEMENT V1 table |
+| F39 | A headless editor run's orphaned `CrashReportClient` can hold MCP port 8000 (it inherits the socket). Fixed by giving headless runs `-ModelContextProtocolPort=18000`. | `lsof`, editor log |
 | F33 | The first compile needed two build-rule fixes: the target files moved to `Source/`, and `BuildSettingsVersion.V5` became `Latest`. **The ~1,100 lines of C++ then compiled with 0 errors and 0 warnings**, and the 4 `LFF.*` tests pass. This retires R14 for the Mac. | `Saved/Logs/T1.1-build-mac.log`, `T1.2-tests-mac.log` |
 
 ## 2. Assumptions (temporary, dated 2026-09-28)
@@ -65,7 +66,13 @@ Last updated: 2026-09-28 (cycle 5: first workstation compile, tests, MCP, and sc
 
 ## 3b. Open items found while building (2026-09-28)
 - **Resolved: the toggles only appeared in one panel.** C++ now binds an optional `TogglesPanel`, shown when `LFFJourneyRules::ShouldShowToggles(bStarted, bSettingsOpen)` is true (`!bStarted || bSettingsOpen`; covered by `LFF.Journey.Rules`). `WBP_LFF_HUD` puts one set of toggles in it, with the intro and Settings headers above. Sound stays in the top bar, so T2 row 11 can pass.
-- **Labels are hard to read against the tiles.** `LBL_Gate` is small and low-contrast from 25 m, because TextRender uses plain lit white text. Consider a larger world size and an unlit or backed label material. Check this in PIE.
+- **Resolved: labels were hard to read against the tiles.** Every label is now a sign: white text on a dark midnight-green plate (`MI_LFF_SignPlate`). The plate is a component of the label actor, so it shows and hides with it. Text and plate are both lit, so their contrast (about 10:1 by albedo) holds in sun and shade. The gate and concourse signs are larger. The section sign is smaller and sits 3 m ahead in the lower third.
+- **Open: tile geometry intrudes into the concourse proxy.** Traces find tile surfaces inside the corridor, including one at 6 m height about 2.5 m in front of `CT_InteriorConcourse`. The corridor sits inside the west-stand photogrammetry shell under a flat deck at 8.2 m. **Proposed fix:**
+  - Move the corridor underground, where the tiles have no geometry.
+  - Add a C++ rule so a move is a fade if **either** end is authored `ReducedMotion`.
+  - Author `interior-concourse` as `ReducedMotion`.
+
+  Moves into and out of the interior would then cut rather than fly through the ground or facade. They already fly through the facade today. This needs the user's OK, because it changes how the journey feels.
 - **HUD wording is placeholder** (headings, pause, restart and settings text) until the user and the Eagles Autism Foundation approve it (F24).
 
 ## 4. Decisions
