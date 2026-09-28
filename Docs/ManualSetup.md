@@ -1,80 +1,46 @@
-# Manual Unreal Editor setup
+# Workstation setup (UE 5.8.3 + Cesium for Unreal v2.29.1)
 
-The repository contains a code-first starter scaffold, but a few steps must still be completed in the Unreal Editor because `.uasset` files are binary and are intentionally not included in this prototype.
+These are the one-time editor steps the code can't do. They can be done by hand or by Claude Code through Unreal MCP (`Docs/LOCAL_AGENT_SETUP.md`). Asset names and paths must match exactly, because the code loads them by path.
 
-## 1. Install Cesium for Unreal
+## 0. Prerequisites
+- UE 5.8.3, plus Cesium for Unreal v2.29.1 from Fab, installed to the engine.
+- Mac: Xcode. Windows: Visual Studio 2022 with the C++ game workload. Check the exact toolchain versions in the UE 5.8 release notes (**VERIFY**).
+- A Cesium ion account with access to **Google Photorealistic 3D Tiles**.
 
-1. Install Unreal Engine 5.8.
-2. Add the **Cesium for Unreal** plugin (v2.28.0+, reported as the first release supporting UE 5.8) to your engine or project.
-3. Open `VirtualStadium.uproject`.
-4. If prompted, rebuild the `VirtualStadium` module.
+## 1. Build the C++ module
+Open `VirtualStadium.uproject` and accept the rebuild. Or use the CLI commands in `Docs/LOCAL_AGENT_SETUP.md` §3. Then run the tests in §3 there. They must pass before you go on.
 
-## 2. Create the prototype level
+## 2. Create the map `/Game/LFF/Levels/L_LFF_Stadium`
+1. **File → New Level → Empty Level**. Don't use Open World, because World Partition isn't wanted here. Save it as `/Game/LFF/Levels/L_LFF_Stadium`.
+2. **World Settings.** GameMode Override stays empty; `GlobalDefaultGameMode` is `LFFGameMode`.
+3. **Cesium panel.** Connect to ion and add **Google Photorealistic 3D Tiles**. That adds a `CesiumGeoreference` and a `Cesium3DTileset`. Add a `CesiumSunSky`.
+4. Set the georeference origin by following `Docs/CESIUM_PLACEMENT.md`: midfield, turf height, **ellipsoidal** height. Record the final values in the table there.
+5. **Don't** add a `DynamicPawn`, and don't add `CesiumOriginShift` anywhere.
+6. Add an empty actor named **`LFF_SiteRoot`** with actor tag `LFF_SiteRoot`, and give it a `CesiumGlobeAnchor` (ADR-0001).
+7. **Stand-in stadium (D21).** Until the CGTrader model is in, the Google tiles' own stadium is the exterior. Don't clip the tiles yet. For interior steps, add simple neutral proxy meshes under `LFF_SiteRoot`, such as a concourse corridor made of engine cubes and a seat-row block, each with a floating `TextRender` "Illustration".
 
-1. Create `/Game/Maps/LFF_Prototype`.
-2. Add:
-   - `CesiumSunSky`
-   - `CesiumGeoreference`
-   - `Cesium3DTileset` for terrain or context imagery
-3. Optional: add an empty actor that marks the approximate real-world anchor for Lincoln Financial Field.
+## 3. Place camera targets and labels (children of `LFF_SiteRoot`)
+- Add four **`LFFCameraTarget`** actors. Set their **Target Id** to `CT_ExteriorArrival`, `CT_GateEntry`, `CT_InteriorConcourse` and `CT_SeatFieldView`.
+- Pilot each one (right-click → Pilot) and frame the shot. Keep the four views close enough that the Google tiles don't reload on every move.
+- Labels are any actors (a `TextRender` is enough) with actor tags **`LFF_Label`** plus one of `LBL_Plaza`, `LBL_Gate`, `LBL_Concourse`, `LBL_Restroom`, `LBL_Food`, `LBL_Section`. They're hidden except on the steps that list them.
+- Every label and proxy says **"Illustration"** or "Example". None of them names a real gate, restroom or sensory room.
 
-## 3. Create schedule data
+## 4. Import the journey table
+Right-click in `/Game/LFF/Data` → **Import** → `SourceData/Journey/LFF_GoldenPath.json` → Row type **`LFFJourneyStep`** → save as **`DT_LFF_GoldenPath`**. To update it later, edit the JSON and then choose Reimport.
 
-1. In the Content Browser, create a **Primary Data Asset** using `StadiumScheduleDataAsset`.
-2. Name it `DA_LFF_ScheduleStops`.
-3. Copy the placeholder stop order from `Content/Data/ScheduleStops.template.json`.
-4. Populate each stop's title, description, camera transform, fly duration, preview image, and placeholder settings.
-5. Reorder the `Stops` array whenever the game-day sequence changes.
+## 5. Create `/Game/LFF/UI/WBP_LFF_HUD`
+**User Interface → Widget Blueprint → parent `LFFHUDWidget`.** Use the names in `Docs/JOURNEY_SCHEMA.md` → "WBP_LFF_HUD widget names". Suggested layout at 1920×1080:
+- **Top bar:** `PrototypeBadgeText` on the left. `PauseButton` (`PauseLabel`), `SoundButton` (`SoundLabel`) and `SettingsButton` on the right.
+- **Top centre:** `DisclaimerPanel` holding `DisclaimerText`. Use a neutral colour, at least 28 pt, with no animation.
+- **Left card:** `ProgressText`, `TitleText` (48 pt) and `BodyText` (32 pt), plus `TargetMissingText`.
+- **Bottom:** `BackButton` on the left and `NextButton` (`NextLabel`) on the right. Keep them at least 400 px apart and put the key hints in the button text. Put `RestartButton` ("Start again? (R)") next to Back. Keep the bottom 60 px clear for the Cesium/Google credits.
+- **Overlays** (collapsed by default; C++ shows them):
+  - `IntroPanel`, containing `ReducedMotionButton`/`ReducedMotionLabel` and `CalmModeButton`/`CalmModeLabel`.
+  - `PausePanel`, containing `ResumeButton`.
+  - `SettingsPanel`, containing the four toggles (`LargeTextButton`/`LargeTextLabel` included) and `SettingsCloseButton`.
+  - `RestartConfirmPanel`, containing `RestartYesButton` and `RestartNoButton`.
+- **Every button:** turn off **Is Focusable** (C++ also hands focus back to the viewport after each click).
+- **Event Graph (optional):** handle **On Snapshot Changed** for the Calm Mode muted palette and for large text (render scale about 1.25 on the card). Don't hide the disclaimer or the badge; C++ shows them again anyway.
 
-## 4. Add the guided tour camera
-
-1. Place a `StadiumTourCamera` actor in the level.
-2. Assign:
-   - `Schedule Data` → `DA_LFF_ScheduleStops`
-   - `Marker Class` → a Blueprint subclass of `StadiumStopMarker` (recommended name: `BP_StadiumStopMarker`)
-   - `Tour Widget Class` → `WBP_StadiumTourWidget`
-3. Leave `Auto Spawn Markers` enabled to generate placeholder wayfinding markers for every stop.
-
-## 4.5. Confirm input setup
-
-This starter binds legacy `ActionMappings` from `Config/DefaultInput.ini`.
-
-- If your UE5 project still uses legacy input, the controls will work as-is.
-- If your team standardizes on Enhanced Input, recreate `TourPrevious`, `TourNext`, and `TourRestart` in an input mapping context before testing.
-
-## 5. Create the accessible UI widget
-
-1. Create a Widget Blueprint based on `StadiumTourWidget`.
-2. Add the following controls:
-   - Title text
-   - Description text
-   - Preview image
-   - Progress text and/or progress bar
-   - Previous, Next, and Restart buttons
-3. Name the buttons `PreviousButton`, `NextButton`, and `RestartButton` so the C++ widget binds automatically.
-4. Bind text and image display to:
-   - `GetCurrentTitle()`
-   - `GetCurrentDescription()`
-   - `GetProgressText()`
-   - `GetCurrentPreviewImage()`
-5. Accessibility recommendations:
-   - Minimum 18px-equivalent body text
-   - High contrast colors
-   - Persistent progress indicator
-   - Large touch-friendly button targets
-   - Plain-language descriptions with one main instruction per paragraph
-
-## 6. Create placeholder markers
-
-1. Create `BP_StadiumStopMarker` from `StadiumStopMarker`.
-2. Assign an optional sprite texture to the billboard component for generic wayfinding signs.
-3. Use engine starter meshes (cone, cube, plane) or neutral custom meshes for interior areas without detailed geometry.
-4. Keep placeholder art generic and avoid copyrighted team branding.
-
-## 7. Verify interaction
-
-In Play-In-Editor:
-
-- `Left Arrow` / `Gamepad D-Pad Left` → previous stop
-- `Right Arrow`, `Space`, or `Gamepad D-Pad Right` → next stop
-- `R` or `Gamepad Bottom Face Button` → restart the tour
+## 6. Verify in PIE
+Run the PIE checklist in `Docs/TEST_PLAN.md`.

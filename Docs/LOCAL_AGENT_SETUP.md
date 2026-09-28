@@ -37,20 +37,45 @@ Security:
 
 ## 3. Unreal CLI (repeatable build evidence)
 
-These are standard UE batch entry points. Paths assume a Windows Launcher install; adjust `UE_ROOT` for a source build. Check the flags against the 5.8 docs (VERIFY).
+These are the standard UE entry points. The install paths are the Launcher defaults; adjust them if yours differ. Flags are **VERIFY** on 5.8.3.
+- **Unreal can't cross-compile Mac from Windows or Windows from Mac**, so each platform's package has to be built on that OS.
+- Save each log under `Saved/Logs/` (git-ignored). Paste the pass/fail result and the first error into `Docs/LEDGER.md` §9.
 
+### macOS (current workstation)
+```bash
+UE_ROOT="/Users/Shared/Epic Games/UE_5.8"
+PROJ="$PWD/VirtualStadium.uproject"
+
+# Compile the editor target
+"$UE_ROOT/Engine/Build/BatchFiles/Mac/Build.sh" VirtualStadiumEditor Mac Development -Project="$PROJ" -WaitMutex
+
+# Headless tests (LFF.*)
+"$UE_ROOT/Engine/Binaries/Mac/UnrealEditor.app/Contents/MacOS/UnrealEditor" "$PROJ" \
+  -ExecCmds="Automation RunTests LFF.;Quit" -unattended -nullrhi -nopause -nosplash -stdout -log
+
+# Package a Mac Development build
+"$UE_ROOT/Engine/Build/BatchFiles/RunUAT.sh" BuildCookRun -project="$PROJ" -platform=Mac \
+  -clientconfig=Development -build -cook -stage -pak -archive -archivedirectory="$PWD/Saved/Packaged" -utf8output
+```
+
+### Windows (needs a Windows PC)
 ```bat
 set UE_ROOT=C:\Program Files\Epic Games\UE_5.8
 set PROJ=%CD%\VirtualStadium.uproject
 
-:: Compile the editor target (Gate 1 evidence: C++ builds on 5.8)
 "%UE_ROOT%\Engine\Build\BatchFiles\Build.bat" VirtualStadiumEditor Win64 Development -Project="%PROJ%" -WaitMutex
-
-:: Package a Win64 Development build (Gate 6 evidence)
+"%UE_ROOT%\Engine\Binaries\Win64\UnrealEditor-Cmd.exe" "%PROJ%" -ExecCmds="Automation RunTests LFF.;Quit" -unattended -nullrhi -nopause -log
 "%UE_ROOT%\Engine\Build\BatchFiles\RunUAT.bat" BuildCookRun -project="%PROJ%" -platform=Win64 -clientconfig=Development -build -cook -stage -pak -archive -archivedirectory="%CD%\Saved\Packaged" -utf8output
 ```
 
-Save each build log under `Saved/Logs/` and paste the result (pass/fail plus the first error) into `Docs/LEDGER.md`. `Saved/` is git-ignored.
+### Releasing (GitHub Releases, private repo)
+- Zip each platform's archive folder: `LFF-VirtualGameDay-<version>-Mac.zip` and `-Win64.zip`. Each file must be under 2 GiB.
+- Upload both through the GitHub web UI, or with `gh release create` on the workstation.
+- **Mac.** An unsigned app is blocked by Gatekeeper. There are two options:
+  - (a) Sign and notarize it with an Apple Developer ID. This is best.
+  - (b) For collaborators only, the release notes tell them to run `xattr -dr com.apple.quarantine "<App>.app"`, or to right-click → Open.
+- **Windows.** An unsigned exe shows SmartScreen. The release notes say "More info → Run anyway".
+- Collaborators need internet access while running it, because the Google Photorealistic 3D Tiles stream live and can't be cached.
 
 ## 4. Known 5.4 → 5.8 migration watch items (from the existing scaffold)
 

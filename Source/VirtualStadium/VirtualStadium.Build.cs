@@ -13,6 +13,7 @@ public class VirtualStadium : ModuleRules
                 "CoreUObject",
                 "Engine",
                 "InputCore",
+                "EnhancedInput",
                 "Slate",
                 "SlateCore",
                 "UMG"
@@ -20,4 +21,3 @@ public class VirtualStadium : ModuleRules
         );
     }
 }
-

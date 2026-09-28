@@ -1,0 +1,46 @@
+[
+  {
+    "Name": "exterior-arrival",
+    "Title": "Arriving at the stadium",
+    "Body": "This is the outside of Lincoln Financial Field. On game day, many people arrive at the same time. It can be busy and loud. You can take your time.",
+    "DisclaimerLevel": "Illustrative",
+    "VerificationSource": "",
+    "CameraTargetId": "CT_ExteriorArrival",
+    "TransitionProfile": "Ease",
+    "TransitionSeconds": 0,
+    "LabelsToShow": ["LBL_Plaza"]
+  },
+  {
+    "Name": "gate-entry",
+    "Title": "Going through the gate",
+    "Body": "Example ticket: this gate is the closest one to Section 111. Staff check bags and tickets here. There may be a line. Waiting is normal.",
+    "DisclaimerLevel": "Illustrative",
+    "VerificationSource": "",
+    "CameraTargetId": "CT_GateEntry",
+    "TransitionProfile": "Ease",
+    "TransitionSeconds": 0,
+    "LabelsToShow": ["LBL_Gate"]
+  },
+  {
+    "Name": "interior-concourse",
+    "Title": "Walking the concourse",
+    "Body": "Inside, a wide walkway goes around the stadium. It has food stands and restrooms near Section 111. It can be crowded and noisy. You can stop and rest.",
+    "DisclaimerLevel": "Illustrative",
+    "VerificationSource": "",
+    "CameraTargetId": "CT_InteriorConcourse",
+    "TransitionProfile": "Ease",
+    "TransitionSeconds": 0,
+    "LabelsToShow": ["LBL_Concourse", "LBL_Restroom", "LBL_Food"]
+  },
+  {
+    "Name": "seat-field-view",
+    "Title": "Finding your seat",
+    "Body": "Example ticket: Section 111, Row 10, Seat 8. This is about what the field looks like from there. When the game starts, it can get loud. You can take breaks.",
+    "DisclaimerLevel": "Illustrative",
+    "VerificationSource": "",
+    "CameraTargetId": "CT_SeatFieldView",
+    "TransitionProfile": "Ease",
+    "TransitionSeconds": 0,
+    "LabelsToShow": ["LBL_Section"]
+  }
+]

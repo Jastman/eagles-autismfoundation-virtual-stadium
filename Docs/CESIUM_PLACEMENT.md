@@ -10,7 +10,7 @@ This implements ADR-0001. Targets UE 5.8 and Cesium for Unreal v2.28.0+.
 CesiumGeoreference          Origin Placement = Cartographic Origin; Lat/Lon/Height from DA (§2)
 CesiumSunSky
 CesiumCreditSystem          auto-spawned; its on-screen credits must stay visible (Google logo/attribution)
-Tileset_Context             Cesium3DTileset (Google Photorealistic 3D Tiles OR Cesium World Terrain+imagery)
+Tileset_Context             Cesium3DTileset: Google Photorealistic 3D Tiles via Cesium ion (user decision, LEDGER F29)
   └ ClipOverlay             CesiumPolygonRasterOverlay: Polygons=[CartoPoly_LFF_Footprint], Exclude Selected Tiles=on, Invert Selection=off
 Tileset_OSMBuildings        optional; only with terrain stack; own CesiumPolygonRasterOverlay, same polygon
 CartoPoly_LFF_Footprint     CesiumCartographicPolygon (spline + own GlobeAnchor), points from DA.ClipPolygon
@@ -179,3 +179,17 @@ That rules out `FStadiumScheduleStop::WorldLocation` and `CameraRotation`. Both 
 
 ## 9. CesiumSubLevel
 Not used in v1: there's one site and one fixed origin. Reconsider it only if we add multiple venues or a city-scale fly-in beyond MaxGuidedRadiusM. If that happens, re-evaluate the origin-shift policy and issue #1706 (sub-level actors at the world origin after `OpenLevel`).
+
+## V1 amendments (2026-09-28, ADR-0003 and LEDGER D21)
+- **Context tiles: Google Photorealistic 3D Tiles**, streamed from Cesium ion. The build is online-only; there is no offline fallback for these tiles. The packaged video is the fallback.
+- **Until the CGTrader model is ingested, the Google tiles' own stadium is the exterior stand-in.** Leave the clip overlay **disabled**. Turn it on only once the licensed model is placed (calibration step 8).
+- **The attribution must stay visible.** Nothing in the HUD may cover the Cesium/Google credits (bottom strip).
+- **Placement storage for V1:** the values live in the map (`CesiumGeoreference` origin, `LFF_SiteRoot` anchor) and are copied into the table below. `DA_LFF_GeoPlacement` is deferred.
+
+| Value | Setting | Recorded by / date |
+|---|---|---|
+| Origin latitude (deg) | | |
+| Origin longitude (deg) | | |
+| Origin height (m, ellipsoidal) | | |
+| LFF_SiteRoot heading (deg) | | |
+| Cesium for Unreal version | v2.29.1 | user, 2026-09-28 |

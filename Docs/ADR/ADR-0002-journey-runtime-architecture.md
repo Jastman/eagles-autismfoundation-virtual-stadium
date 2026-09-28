@@ -1,6 +1,6 @@
 # ADR-0002: Journey runtime architecture (state, data, camera, input, UI)
 
-- **Status:** Proposed
+- **Status:** Accepted, amended by ADR-0003 (V1 scope)
 - **Date:** 2026-09-28
 - **Scope:** The guided "game-day schedule" journey: step state, step data, camera transitions, input, settings, kiosk reset, UI, tests. Geo placement (Cesium georeference, stadium anchor, tiles) is **out of scope**. The Cesium agent owns it (LEDGER D1).
 - **Companion:** `Docs/JOURNEY_SCHEMA.md` (class list, field lists, assets, input table, implementation order).
