@@ -1,6 +1,12 @@
 # Changelog
 
 ## 2026-09-28
+- **Scripted level and HUD (Mac).**
+  - Added `Tools/Editor/build_lff_stadium_level.py`: a headless editor script that imports `DT_LFF_GoldenPath` from the JSON and builds `L_LFF_Stadium`. The level has the georeference (tagged `DEFAULT_GEOREFERENCE`), the Google tileset, the sun, and `LFF_SiteRoot` with its anchor. Under the root sit the 4 `CT_` targets, the labels, and the concourse and seat proxies. The script validates the structure before saving.
+  - Added `Tools/Editor/build_wbp_lff_hud.py` and `Tools/Editor/unreal_mcp.py`, which build `WBP_LFF_HUD` through Unreal MCP.
+  - PIE reaches the intro.
+  - Stopped tracking `Content/CesiumSettings/CesiumIonServers/` and ignored it, so the ion token can't be committed (D23).
+  - Docs: LOCAL_AGENT_SETUP §5, the ManualSetup automation note, the CESIUM_PLACEMENT seed values and token location, and LEDGER F35–F36, D23–D24 and open items.
 - **First workstation build (Mac).**
   - Moved `VirtualStadium.Target.cs` and `VirtualStadiumEditor.Target.cs` from `Source/VirtualStadium/` to `Source/`, and switched both to `BuildSettingsVersion.Latest`.
   - The editor target now compiles with 0 warnings, and the 4 `LFF.*` tests pass headless (T1.1 and T1.2).

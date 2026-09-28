@@ -2,7 +2,7 @@
 
 Living document. Update every cycle. Tags: **VERIFIED** (inspected this repo/session), **ASSUMED** (temporary, dated), **BLOCKED** (needs an input), **UNKNOWN**.
 
-Last updated: 2026-09-28 (cycle 5: first workstation compile and tests on the Mac)
+Last updated: 2026-09-28 (cycle 5: first workstation compile, tests, MCP, and scripted level and HUD on the Mac)
 
 ## 1. Facts (verified by inspection, 2026-09-28)
 
@@ -41,6 +41,8 @@ Last updated: 2026-09-28 (cycle 5: first workstation compile and tests on the Ma
 | F31 | **Cesium for Unreal 2.29.1** is installed to the engine (`Plugins/Marketplace/`, descriptor version 95, built for 5.8.0). This verifies F26. | `CesiumForUnreal.uplugin` |
 | F32 | The Launcher build ships **Unreal MCP** (`ModelContextProtocol`), `Terminal`, `ToolsetRegistry` and the `*Toolset` plugins. No source build is needed. The MCP server defaults to `http://127.0.0.1:8000/mcp`, binds to `localhost` and doesn't auto-start. The config generator is `ModelContextProtocol.GenerateClientConfig ClaudeCode`. This supersedes F16 and F17 for the workstation. | Plugin descriptors and source (workstation) |
 | F34 | Unreal MCP is **connected on the Mac**. The enabled plugins are `ModelContextProtocol`, `Terminal`, `EditorToolset`, `UMGToolSet` and `AutomationTestToolset`; the editor wrote them to `.uproject`. The server listens on `127.0.0.1:8000` only. `.mcp.json` is committed and has no secrets. The server exposes 3 top-level tools and 22 toolsets. | `lsof`, MCP `initialize` / `list_toolsets` |
+| F35 | `L_LFF_Stadium`, `DT_LFF_GoldenPath` and `WBP_LFF_HUD` now exist. They're built by the scripts in `Tools/Editor/` (LOCAL_AGENT_SETUP §5). The level uses **seed** placement values and **seed** camera poses, placed without tiles; neither has been calibrated or framed. | Build logs, MCP `GetWidgets` |
+| F36 | In PIE, the game mode loads, the HUD shows the intro and the controls are in the right states. Google tiles return **401** because no project ion token is selected; the user is signed in to ion in the Cesium panel. | PIE capture, Output Log, 2026-09-28 |
 | F33 | The first compile needed two build-rule fixes: the target files moved to `Source/`, and `BuildSettingsVersion.V5` became `Latest`. **The ~1,100 lines of C++ then compiled with 0 errors and 0 warnings**, and the 4 `LFF.*` tests pass. This retires R14 for the Mac. | `Saved/Logs/T1.1-build-mac.log`, `T1.2-tests-mac.log` |
 
 ## 2. Assumptions (temporary, dated 2026-09-28)
@@ -58,6 +60,10 @@ Last updated: 2026-09-28 (cycle 5: first workstation compile and tests on the Ma
 - Q-A: **Which Windows PC will build Win64?** Also, is an Apple Developer ID available to notarize the Mac build? Without one, collaborators get the Gatekeeper workaround.
 - Q-C: Resolved: Google Photorealistic 3D Tiles (F29).
 - Q-D: Does the CGTrader license allow distributing the model inside a packaged executable on GitHub Releases? Check the license text when you buy it.
+
+## 3b. Open items found while building (2026-09-28)
+- **The toggles appear in only one panel.** ManualSetup §5 asks for Less movement and Calm Mode in `IntroPanel` *and* "the four toggles" in `SettingsPanel`. Widget names are unique and C++ binds one of each, so `WBP_LFF_HUD` puts Less movement and Calm Mode in `IntroPanel` and Large text in `SettingsPanel`. Sound is in the top bar. During the journey, keys 1–4 still work, and Settings lists them. Fixing this needs a small C++ change, for example a bindable `TogglesPanel` shown when `!bStarted || bSettingsOpen`. T2 row 11 ("click each toggle") can't pass until then.
+- **HUD wording is placeholder** (headings, pause, restart and settings text) until the user and the Eagles Autism Foundation approve it (F24).
 
 ## 4. Decisions
 | ID | Decision | Status |
@@ -84,6 +90,8 @@ Last updated: 2026-09-28 (cycle 5: first workstation compile and tests on the Ma
 | D20 | Keyboard shortcuts are the main keyboard path. Buttons hand focus back to the game after each click. Tab navigation is a known limitation. | Accepted |
 | D21 | **Google Photorealistic 3D Tiles** are the context. Their stadium mesh is the exterior stand-in until the CGTrader model arrives, so clipping stays off until then. Attribution stays visible. The build is online-only. | Accepted |
 | D22 | Each platform is packaged on its own OS: Mac on the current Mac, Win64 on a Windows PC. | Accepted |
+| D23 | `Content/CesiumSettings/CesiumIonServers/` (which holds `DefaultIonAccessToken`) is **git-ignored and untracked**. The token is chosen per machine. This supersedes committing `CesiumIonSaaS.uasset` in `c567429`, which never held a token. | Accepted (lead, per CESIUM_PLACEMENT §7) |
+| D24 | Level and HUD setup is **scripted** (`Tools/Editor/`) rather than hand-built, so it can be reproduced on the Windows PC and after a model swap. Hand framing of the `CT_` targets happens after the scripts run, and the scripts never overwrite. | Accepted |
 | D17 | Gate waivers to start implementation: **G2 waived for V1** (proxy stadium; the real model imports through ASSET_INGESTION when it arrives). **G3 partly waived.** The journey code doesn't depend on alignment. Calibration happens on the workstation before the Oct 9 build. | Accepted, risk R2/R4 owned by lead |
 
 ## 5. Risks (top, pre-architecture)
@@ -123,13 +131,16 @@ The golden path (see the brief) plus quality gates 1–7.
 | G1 Versions/license/asset/hardware/deploy known | MOSTLY MET: UE 5.8.3 (CL 58210709), Cesium 2.29.1, CGTrader model, desktop target, Releases + video. Open: model license (Q-D), GPU. |
 | G2 Model imports and has a perf baseline | WAIVED for implementation start (D17). Proxy stadium. |
 | G3 Stadium aligns reproducibly with Cesium | PARTLY WAIVED (D17). Strategy accepted (ADR-0001); calibration happens on the workstation. |
-| G4 Four-stop golden path works | **T1.1 PASS, T1.2 PASS on the Mac** (2026-09-28, UE 5.8.3 CL 58210709; commit: the one after 7f088a3). T1.3 (Windows) is open. Next: create the `L_LFF_Stadium` map and assets (ManualSetup), then run T2 PIE. |
+| G4 Four-stop golden path works | **T1.1 PASS, T1.2 PASS on the Mac** (2026-09-28, UE 5.8.3 CL 58210709, commit c567429). The map, table and HUD are built (F35), and PIE reaches the intro (F36). T1.3 (Windows) is open. Next: select the ion token, calibrate the origin, frame the 4 targets, then run the T2 PIE checklist. |
 
 ### Evidence log
 | Date | Machine | Check | Result | Log |
 |---|---|---|---|---|
 | 2026-09-28 | Mac, UE 5.8.3 | T1.1 editor compile | First run failed (RulesError): the target files were in the module folder. Second run failed: V5 build settings aren't allowed with the shared editor environment. **Third run passed**: exit 0, 14 actions, 0 warnings, 24 s. | `Saved/Logs/T1.1-build-mac.log` |
 | 2026-09-28 | Mac, UE 5.8.3 | T1.2 `Automation RunTests LFF.` | **PASS**: found 4 tests (StateMachine.EdgeCases, .Navigation, .PauseRestart, Journey.Rules), 4 Success, exit 0. Unrelated: Cesium logs an uninitialized-enum error for `FCesiumMetadataPropertyStatisticValue::Semantic` in its own headers. | `Saved/Logs/T1.2-tests-mac.log` |
+| 2026-09-28 | Mac, UE 5.8.3 | `build_lff_stadium_level.py` (headless) | **PASS**: 4 table rows imported; `validate OK: 1 georeference, 1 anchor (LFF_SiteRoot), 0 origin shift, 4 targets`; saved. Exit 1 comes from the known editor-shutdown crash after the save (LOCAL_AGENT_SETUP §5). | `Saved/Logs/build-level-full.log` |
+| 2026-09-28 | Mac, UE 5.8.3 | `build_wbp_lff_hud.py` (MCP) | **PASS**: 94 widgets, all 30 contract names, compiled, saved. | Script output |
+| 2026-09-28 | Mac, UE 5.8.3 | PIE smoke test (not T2) | **PASS (intro only)**. `Game class is 'LFFGameMode'`. The HUD intro shows the card copy, badge, disclaimer and the two toggles; Back, Start again and Pause are disabled; Start is enabled. No LFF errors. Tiles: 401 (no token). Input wasn't driven, because MCP has no input tool. | Editor capture |
 | 2026-09-28 | Mac, UE 5.8.3 | Unreal MCP smoke test (LOCAL_AGENT_SETUP §2 step 6) | **PASS**. `get_current_level` returned `/Temp/Untitled_0`, and `find_actors` returned 7 default actors (WorldSettings, Brush_0, DefaultPhysicsVolume_0, BuoyancyManager_0, GameplayDebuggerPlayerManager_0, ChaosDebugDrawActor, CesiumGaussianSplatSystemActor). Run over raw JSON-RPC, because this Claude Code session started before `.mcp.json` existed. | This row |
 | G5 Accessibility controls and reduced motion | OPEN |
 | G6 Packaged build on target hardware | OPEN. Mac on this workstation; Win64 blocked on R11. |

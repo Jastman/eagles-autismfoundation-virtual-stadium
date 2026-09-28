@@ -132,7 +132,7 @@ Datum note: WGS84 and NAD83(2011) differ by about 1–2 m here. Record which dat
   - Use a dedicated ion token for this demo only. Scope it to the used asset IDs, with `assets:read` only.
   - Revoke it after the demo.
   - It ends up in the packaged build, so treat it as extractable.
-  - UNKNOWN where the default token lives in v2.x. It's reportedly the `DefaultIonAccessToken` field on the default `CesiumIonServer` asset under `Content/CesiumSettings/`. Check `unreal-quickstart/` and `classUCesiumIonServer.html`.
+  - **Verified (v2.29.1):** the default token is `DefaultIonAccessToken` on `Content/CesiumSettings/CesiumIonServers/CesiumIonSaaS.uasset`. That folder is git-ignored (2026-09-28). Choose the token per machine in the Cesium panel → Token.
   - The token must not be committed to git. Before any commit that touches Cesium assets, check the diff and git-ignore any asset that holds the token. UNKNOWN whether a per-tileset token override can be read from a local kiosk ini at runtime. Check `classACesium3DTileset.html`.
 - **Preflight at launch.**
   - The kiosk shows a neutral loading screen. It waits for `Tileset_Context` to finish loading at the first 2 target poses, with a timeout of 20 s.
@@ -188,8 +188,8 @@ Not used in v1: there's one site and one fixed origin. Reconsider it only if we 
 
 | Value | Setting | Recorded by / date |
 |---|---|---|
-| Origin latitude (deg) | | |
-| Origin longitude (deg) | | |
-| Origin height (m, ellipsoidal) | | |
-| LFF_SiteRoot heading (deg) | | |
+| Origin latitude (deg) | 39.9008 (**seed, not calibrated**) | `build_lff_stadium_level.py`, 2026-09-28 |
+| Origin longitude (deg) | -75.1675 (**seed, not calibrated**) | `build_lff_stadium_level.py`, 2026-09-28 |
+| Origin height (m, ellipsoidal) | -30.0 (**seed**; replace with the §4 step 3 tile sample) | `build_lff_stadium_level.py`, 2026-09-28 |
+| LFF_SiteRoot heading (deg) | 0 (**seed**; field axis assumed north–south) | `build_lff_stadium_level.py`, 2026-09-28 |
 | Cesium for Unreal version | v2.29.1 | user, 2026-09-28 |

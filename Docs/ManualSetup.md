@@ -10,6 +10,12 @@ These are the one-time editor steps the code can't do. They can be done by hand 
 ## 1. Build the C++ module
 Open `VirtualStadium.uproject` and accept the rebuild. Or use the CLI commands in `Docs/LOCAL_AGENT_SETUP.md` §3. Then run the tests in §3 there. They must pass before you go on.
 
+> **Automated (2026-09-28).** §2–§5 are done by the scripts in `Tools/Editor/` (see `Docs/LOCAL_AGENT_SETUP.md` §5). The steps below remain the reference for what they build. **Still manual:**
+> - Choose the project ion token in the Cesium panel (per machine, never committed).
+> - Calibrate the origin (`CESIUM_PLACEMENT.md` §4). The script uses the seed values.
+> - Pilot and reframe the four `CT_` targets once the tiles stream. The script's poses are seeds placed without tiles.
+> - Optionally, the `OnSnapshotChanged` graph for the Calm Mode palette and large text.
+
 ## 2. Create the map `/Game/LFF/Levels/L_LFF_Stadium`
 1. **File → New Level → Empty Level**. Don't use Open World, because World Partition isn't wanted here. Save it as `/Game/LFF/Levels/L_LFF_Stadium`.
 2. **World Settings.** GameMode Override stays empty; `GlobalDefaultGameMode` is `LFFGameMode`.

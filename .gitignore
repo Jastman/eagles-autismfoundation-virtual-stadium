@@ -12,3 +12,10 @@ cesium-request-cache.sqlite*
 
 # macOS
 .DS_Store
+
+# Cesium ion server asset: holds DefaultIonAccessToken once a project token is selected.
+# Never commit it (CESIUM_PLACEMENT §7). Cesium recreates it on first load; pick the token per machine.
+Content/CesiumSettings/CesiumIonServers/
+
+# Python bytecode (Tools/Editor)
+__pycache__/

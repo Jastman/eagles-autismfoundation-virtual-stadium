@@ -91,3 +91,29 @@ The first local compile will show which of these matter.
 - **Resolved 2026-09-28.** `BuildSettingsVersion.V5` failed on 5.8.3, because the editor target shares build products with the Launcher `UnrealEditor` and V5 changes four warning levels. Both targets now use `BuildSettingsVersion.Latest`, and the build compiles with no warnings.
 - `Config/DefaultInput.ini` uses legacy `ActionMappings`. The architecture phase will decide whether to move to Enhanced Input.
 - `VirtualStadium.Build.cs` has no `CesiumRuntime` dependency. Add it only when C++ actually calls Cesium APIs.
+
+## 5. Editor build scripts (`Tools/Editor/`, verified 2026-09-28 on the Mac)
+
+These scripts do ManualSetup §2–§5 reproducibly. Each one refuses to overwrite its asset, so hand-framed shots and hand-edited widgets are safe. To rebuild, delete the asset first.
+
+| Script | Builds | How to run |
+|---|---|---|
+| `build_lff_stadium_level.py` | `DT_LFF_GoldenPath` (imported from the JSON) and `L_LFF_Stadium`: the georeference, Google tileset (ion asset 2275207), sun, `LFF_SiteRoot` with its globe anchor, the 4 `CT_` targets, the labels and the proxies. It validates the structure before saving. | **Close the editor first**, then run the command below this table. |
+| `build_wbp_lff_hud.py` | `WBP_LFF_HUD`, through Unreal MCP. It checks that all 30 contract widget names exist, compiles and saves. | Editor open with the MCP server running: `python3 Tools/Editor/build_wbp_lff_hud.py` |
+
+Command for `build_lff_stadium_level.py`:
+
+```bash
+"$UE_ROOT/Engine/Binaries/Mac/UnrealEditor.app/Contents/MacOS/UnrealEditor" "$PROJ" -ExecutePythonScript="$PWD/Tools/Editor/build_lff_stadium_level.py" -unattended -nullrhi -nopause -nosplash -stdout -log
+```
+
+Things to know:
+- **Exit code 1 is expected from the headless level build.** On 5.8.3 the editor crashes *after* the script has saved, during Slate text teardown in `quit_editor` (`UserActivityHint=EditorExit`). Check for the `[LFF build] DONE` and `validate OK` log lines instead. They're in the crash folder's `VirtualStadium.log` under `~/Library/Application Support/Epic/UnrealEngine/5.8/Saved/Crashes/` when `Saved/Logs` doesn't get them.
+- **Cesium needs the `DEFAULT_GEOREFERENCE` tag** on the level's georeference. Without it, Cesium spawns a second georeference at its Denver demo origin, and the tileset and anchors resolve to that one. The script tags it and fails if there isn't exactly one.
+- **MCP gotchas:**
+  - `ObjectTools.set_properties` takes `values` as a **JSON-encoded string**. An object silently returns `false`.
+  - `UMGToolSet.GetWidgets` lists the parent's unbound `BindWidget` names as placeholders with `widget: "None"`. Ignore those when you check what exists.
+  - The UMG toolset can't create a level or run console commands, which is why the level build is a headless Python script.
+- **The MCP server auto-starts** because `bAutoStartServer=True` is set in `Saved/Config/MacEditor/EditorPerProjectUserSettings.ini`. That file is per-user and not committed.
+- **The Cesium ion token** lives in `DefaultIonAccessToken` on `Content/CesiumSettings/CesiumIonServers/CesiumIonSaaS.uasset`. That folder is **git-ignored** so the token can't be committed. On each machine, choose the token in the Cesium panel → **Token** (use the restricted demo token, D15). Cesium recreates the asset if it's missing.
+
