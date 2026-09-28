@@ -5,3 +5,4 @@
 - Retargeted the project to UE 5.8 (`VirtualStadium.uproject`, README and ManualSetup prerequisites) at the user's direction.
 - Added `Docs/LOCAL_AGENT_SETUP.md`, which covers the Unreal MCP connection, CLI build and package commands, and 5.8 migration watch items.
 - Ledger: added F15–F17, D3–D5 and R9.
+- Added `Docs/AGENT_TOOLING.md`: inventory of the requested Unreal and UI skills and MCPs, local install steps, and trust rules. None could be installed from the cloud session (egress/scope blocked).
