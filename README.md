@@ -14,7 +14,7 @@ This first version is intentionally modular and uses placeholder assets only. An
 - Previous / Next / Restart controls with default input mappings
 - `UStadiumTourWidget` base class for an accessible UI
 - `AStadiumStopMarker` placeholder marker actor for billboards or simple meshes
-- Placeholder stop data covering:
+- Placeholder stop data template covering:
   - arrival
   - security
   - entrance
@@ -23,6 +23,7 @@ This first version is intentionally modular and uses placeholder assets only. An
   - restrooms
   - seating
   - departure
+- Manual step to copy the included template data into an Unreal `StadiumScheduleDataAsset`
 - Manual setup documentation for binary Unreal assets and purchased model import
 
 ## Repository structure

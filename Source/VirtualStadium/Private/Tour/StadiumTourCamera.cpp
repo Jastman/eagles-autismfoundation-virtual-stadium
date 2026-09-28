@@ -131,7 +131,18 @@ void AStadiumTourCamera::ApplyStop(const int32 NewIndex, const bool bAnimate)
     const FStadiumScheduleStop& Stop = ScheduleData->Stops[NewIndex];
     CurrentStopIndex = NewIndex;
 
-    const FTransform CurrentTransform = GetActorTransform();
+    FTransform CurrentTransform = GetActorTransform();
+    if (bIsTransitioning)
+    {
+        const float Alpha = TransitionDuration <= KINDA_SMALL_NUMBER ? 1.0f : FMath::Clamp(TransitionElapsed / TransitionDuration, 0.0f, 1.0f);
+        const float EasedAlpha = FMath::InterpEaseInOut(0.0f, 1.0f, Alpha, 2.0f);
+        const FVector CurrentLocation = FMath::Lerp(TransitionStartLocation, TransitionTargetLocation, EasedAlpha);
+        const FQuat CurrentRotation = FQuat::Slerp(TransitionStartRotation, TransitionTargetRotation, EasedAlpha);
+
+        SetActorLocationAndRotation(CurrentLocation, CurrentRotation);
+        CurrentTransform = FTransform(CurrentRotation, CurrentLocation);
+    }
+
     const FTransform TargetTransform(Stop.CameraRotation, Stop.WorldLocation);
 
     if (!bAnimate)
@@ -192,4 +203,3 @@ void AStadiumTourCamera::BroadcastCurrentStop()
         OnStopChanged.Broadcast(CurrentStopIndex, ScheduleData->Stops[CurrentStopIndex]);
     }
 }
-

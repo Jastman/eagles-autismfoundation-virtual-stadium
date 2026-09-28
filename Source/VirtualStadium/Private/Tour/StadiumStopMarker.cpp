@@ -32,8 +32,10 @@ void AStadiumStopMarker::ConfigureFromStop(const FStadiumScheduleStop& Stop)
     SetActorLocation(Stop.WorldLocation);
     LabelComponent->SetText(FText::FromString(Stop.PlaceholderLabel.IsEmpty() ? Stop.Title.ToString() : Stop.PlaceholderLabel));
 
-    BillboardComponent->SetHiddenInGame(!Stop.bShowBillboard);
-    if (UTexture2D* Sprite = Stop.BillboardSprite.LoadSynchronous())
+    UTexture2D* Sprite = Stop.BillboardSprite.LoadSynchronous();
+    BillboardComponent->SetHiddenInGame(!Stop.bShowBillboard || Sprite == nullptr);
+    BillboardComponent->SetVisibility(Stop.bShowBillboard && Sprite != nullptr);
+    if (Sprite != nullptr)
     {
         BillboardComponent->SetSprite(Sprite);
     }
@@ -49,4 +51,3 @@ void AStadiumStopMarker::ConfigureFromStop(const FStadiumScheduleStop& Stop)
         MeshComponent->SetVisibility(false);
     }
 }
-
