@@ -1,0 +1,86 @@
+{
+  "stops": [
+    {
+      "stopId": "arrival",
+      "title": "Arrival",
+      "description": "Start in the parking or drop-off zone and explain what guests should expect before walking toward the stadium.",
+      "worldLocation": [0.0, 0.0, 300.0],
+      "cameraRotation": [-10.0, 25.0, 0.0],
+      "flyToDuration": 3.0,
+      "showBillboard": true,
+      "placeholderLabel": "Arrival",
+      "previewImage": "/Game/UI/Placeholders/T_Arrival"
+    },
+    {
+      "stopId": "security",
+      "title": "Security Screening",
+      "description": "Show the bag check and screening area, including a reminder that guests can pause and ask for support.",
+      "worldLocation": [1200.0, 250.0, 320.0],
+      "cameraRotation": [-8.0, 35.0, 0.0],
+      "flyToDuration": 4.0,
+      "showBillboard": true,
+      "placeholderLabel": "Security"
+    },
+    {
+      "stopId": "entrance",
+      "title": "Main Entrance",
+      "description": "Introduce ticket scanning and the first interior transition from the plaza into the concourse.",
+      "worldLocation": [2100.0, 650.0, 340.0],
+      "cameraRotation": [-6.0, 65.0, 0.0],
+      "flyToDuration": 3.0,
+      "showBillboard": true,
+      "placeholderLabel": "Entrance"
+    },
+    {
+      "stopId": "concessions",
+      "title": "Concessions",
+      "description": "Highlight a calm explanation of how ordering works and where to stand while waiting.",
+      "worldLocation": [3100.0, 1100.0, 360.0],
+      "cameraRotation": [-12.0, 100.0, 0.0],
+      "flyToDuration": 3.5,
+      "showBillboard": true,
+      "placeholderLabel": "Concessions"
+    },
+    {
+      "stopId": "sensory-room",
+      "title": "Sensory Room",
+      "description": "Mark the quiet retreat space and explain when guests may want to use it during the event.",
+      "worldLocation": [3800.0, 1450.0, 360.0],
+      "cameraRotation": [-14.0, 115.0, 0.0],
+      "flyToDuration": 3.0,
+      "showBillboard": true,
+      "placeholderLabel": "Sensory Room"
+    },
+    {
+      "stopId": "restrooms",
+      "title": "Restrooms",
+      "description": "Point out a nearby restroom location and set expectations for lines, noise, and waiting.",
+      "worldLocation": [4500.0, 1650.0, 350.0],
+      "cameraRotation": [-10.0, 130.0, 0.0],
+      "flyToDuration": 3.0,
+      "showBillboard": true,
+      "placeholderLabel": "Restrooms"
+    },
+    {
+      "stopId": "seating",
+      "title": "Seating Bowl",
+      "description": "End the main tour at a placeholder seat view that explains how sections, rows, and seat numbers are organized.",
+      "worldLocation": [5400.0, 1950.0, 540.0],
+      "cameraRotation": [-18.0, 170.0, 0.0],
+      "flyToDuration": 4.5,
+      "showBillboard": true,
+      "placeholderLabel": "Seating"
+    },
+    {
+      "stopId": "departure",
+      "title": "Departure",
+      "description": "Close by explaining how guests can leave their section, find exits, and reconnect with their group.",
+      "worldLocation": [6200.0, 2400.0, 320.0],
+      "cameraRotation": [-8.0, 205.0, 0.0],
+      "flyToDuration": 3.5,
+      "showBillboard": true,
+      "placeholderLabel": "Departure"
+    }
+  ]
+}
+
