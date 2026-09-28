@@ -16,7 +16,7 @@ Tileset_OSMBuildings        optional; only with terrain stack; own CesiumPolygon
 CartoPoly_LFF_Footprint     CesiumCartographicPolygon (spline + own GlobeAnchor), points from DA.ClipPolygon
 LFF_SiteRoot                Actor + CesiumGlobeAnchorComponent at DA origin LLH, ESU rotation = identity
   ├ LFF_Model               stadium mesh(es); RELATIVE transform = DA model correction; proxy = SM_LFF_Proxy
-  ├ LFF_Targets/JT_*        AStadiumJourneyTarget (new), one per TargetId, attached, no GlobeAnchor
+  ├ LFF_Targets/JT_*        ALFFCameraTarget (new), one per TargetId, attached, no GlobeAnchor
   ├ LFF_ControlPoints/CP_*  editor-only markers at model features used in §4/§6
   └ LFF_FallbackGround      plane/apron mesh, hidden unless Offline mode (§7)
 StadiumTourCamera           plain ACameraActor subclass; NOT DynamicPawn; no CesiumOriginShiftComponent
@@ -163,7 +163,7 @@ Datum note: WGS84 and NAD83(2011) differ by about 1–2 m here. Record which dat
 That rules out `FStadiumScheduleStop::WorldLocation` and `CameraRotation`. Both are removed in the refactor.
 
 **Target actors:**
-- `AStadiumJourneyTarget` holds `TargetId`, a camera-pose child component, and an optional look-at point.
+- `ALFFCameraTarget` holds `TargetId`, a camera-pose child component, and an optional look-at point.
 - It's authored in the level **attached under `LFF_SiteRoot`**, so its pose lives in the local stadium frame.
 - The camera reads the target's current world transform at transition time, never a cached one.
 

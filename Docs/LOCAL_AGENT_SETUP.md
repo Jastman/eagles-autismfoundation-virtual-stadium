@@ -14,8 +14,8 @@ Don't expose the editor's MCP port to the internet with a tunnel just so the clo
 
 | Item | Value | Status |
 |---|---|---|
-| Unreal Engine | 5.8 (reported released 2026-06-17) | User-specified; VERIFY exact hotfix (`5.8.x`) |
-| Cesium for Unreal | v2.28.0 or newer (reported as the first release supporting UE 5.5–5.8) | VERIFY in Fab/Epic Launcher and `Plugins/` |
+| Unreal Engine | 5.8.3 (installed on the workstation per user) | User-stated |
+| Cesium for Unreal | Latest public release from Fab (https://www.fab.com/listings/76c295fe-0dc6-4fd6-8319-e9833be427cd); v2.28.0 was reported as the first with 5.8 support | Install via Fab → Epic Launcher → "Install to Engine" 5.8. **Record the exact version in LEDGER.** |
 | Unreal MCP plugin | Ships with UE 5.8, **Experimental** | VERIFY plugin name in Edit → Plugins |
 | Companion plugins | "Terminal" and "Editor Tool Set" (reported as required alongside Unreal MCP) | VERIFY |
 | Source build needed? | Sources disagree: some say it's included in the Launcher build, one says it needs a source build | **VERIFY first**; this decides the workstation setup |

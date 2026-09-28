@@ -85,8 +85,8 @@ Early prototype in development for the Eagles Autism Foundation partnership.
 
 ## Prerequisites
 
-- Unreal Engine 5.8 (project target; see `Docs/LOCAL_AGENT_SETUP.md`)
-- Cesium for Unreal v2.28.0 or newer (first release reported to support UE 5.8)
+- Unreal Engine 5.8.3 (see `Docs/LOCAL_AGENT_SETUP.md`)
+- Latest public Cesium for Unreal from [Fab](https://www.fab.com/listings/76c295fe-0dc6-4fd6-8319-e9833be427cd)
 - A workstation capable of opening Unreal C++ projects
 - Optional: licensed stadium model or neutral placeholder geometry
 

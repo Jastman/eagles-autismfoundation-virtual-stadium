@@ -31,7 +31,7 @@
 
 ## Consequences
 - The `FStadiumScheduleStop` refactor is required: drop `WorldLocation`/`CameraRotation` and add `TargetId`. `ScheduleStops.template.json` changes to match. `AStadiumTourCamera` resolves poses from target actors.
-- A new C++ type is needed for the Data Asset, plus a new `AStadiumJourneyTarget` actor and an editor Apply/Validate utility. `Build.cs` gains a `CesiumRuntime` dependency, but only in the placement module or utility, never in journey code.
+- A new C++ type is needed for the Data Asset, plus a new `ALFFCameraTarget` actor and an editor Apply/Validate utility. `Build.cs` gains a `CesiumRuntime` dependency, but only in the placement module or utility, never in journey code.
 - Replacing the model means re-running only the model-correction calibration. Targets are re-validated, not re-authored, unless the geometry changed.
 - The ion token ships inside the packaged build, so treat it as semi-public: scoped, dedicated and revocable.
 

@@ -99,9 +99,9 @@
 ## 6. Inactivity and Reset
 
 ### Timeout values
-- 5 minutes of no input (Next, Back, Pause, Settings, or touch) before gentle prompt.
-- Prompt: "Are you still here? I'll return to the start in 30 seconds." (visible on screen, no sound).
-- 30-second countdown, then auto-reset to intro disclaimer + first stop (not an abrupt jump).
+- 120 seconds of no input (300 s while paused) before a gentle prompt. Lead decision D12, values in `ULFFKioskSettings` (ini).
+- Prompt: "Are you still here? I'll return to the start in 30 seconds." It's shown on screen with no sound.
+- A 30-second countdown, then a calm reset to the intro screen: fade out, then fade in, never an abrupt jump.
 
 ### Gentle reset
 - Fade to black, hold for 1 second, fade in to intro screen.
@@ -146,20 +146,19 @@ Each stop displays a small, persistent badge with icon + text (not color-only):
 
 ### Data and ranges
 ```
-struct FTourSettings {
+struct FLFFVisitorSettings {
     bool bReducedMotion;           // default: false
     bool bSoundEnabled;            // default: false
     bool bCalmModeEnabled;         // default: false (stakeholder review)
-    float InactivityTimeoutSecs;   // default: 300.0 (5 min), range: 120–600
+    // Inactivity timing lives in ULFFKioskSettings (ini), not per-visitor settings.
     float TextSizeBias;            // default: 1.0, range: 0.8–1.5 (for scaling at different resolutions)
     float ContrastBias;            // default: 1.0, range: 1.0–1.3 (for increasing background/text contrast)
 };
 ```
 
-### Settings persistence
-- Save to `Saved/Config/VirtualStadium_Settings.json` or engine's user settings.
-- Load on startup if available; use defaults otherwise.
-- Settings UI updates the live struct and persists on change (no "Apply" button needed).
+### Settings persistence (lead decision D11)
+- **Settings are never saved between visitors.** Defaults come from `ULFFKioskSettings` (ini). Restart and inactivity reset both restore them. There's no personal data and no save file.
+- The Settings UI updates the live `FLFFVisitorSettings` immediately. There's no "Apply" button.
 
 ### Settings menu items
 | Label | Type | Default | Range | Note |
@@ -177,7 +176,7 @@ struct FTourSettings {
 
 - [ ] Add `DisclaimerLevel` enum and field to `FStadiumScheduleStop`.
 - [ ] Add disclaimer badge rendering to `UStadiumTourWidget`.
-- [ ] Implement `FTourSettings` struct and save/load logic.
+- [ ] Implement `FLFFVisitorSettings` struct and save/load logic.
 - [ ] Add Settings menu UI with sliders and toggles.
 - [ ] Implement reduced-motion camera transitions (instant vs eased).
 - [ ] Add Pause/Resume button and input handling.

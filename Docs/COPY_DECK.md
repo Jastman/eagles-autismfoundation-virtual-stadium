@@ -83,7 +83,7 @@ Here's a view of the seating bowl and field. Your actual seat location depends o
 
 ## Inactivity Prompt
 
-After 5 minutes with no input:
+After 120 seconds with no input (300 s while paused):
 
 **Text:** "Are you still here? I'll return to the start in 30 seconds."
 
