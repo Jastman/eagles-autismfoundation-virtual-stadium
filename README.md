@@ -1,4 +1,5 @@
 # Eagles Autism Virtual Stadium
+<img width="1376" height="768" alt="image_1790610769396212" src="https://github.com/user-attachments/assets/c301bbdd-c066-45df-b0b3-bd9e1284f987" />
 
 An interactive Cesium for Unreal experience designed to help neurodiverse fans and their families prepare for game day at Lincoln Financial Field.
 
