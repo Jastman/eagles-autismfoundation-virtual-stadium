@@ -1,10 +1,10 @@
 # Local agent setup: UE 5.8, Unreal MCP and the Unreal CLI
 
-Status: Draft, 2026-09-28. The engine-side details come from web search summaries. Epic's and Cesium's official doc sites were blocked from the cloud agent, so **verify every item marked (VERIFY) on the engine workstation.**
+Status: Draft, 2026-09-28. The engine-side details in §1 and §2 were **verified on the Mac workstation on 2026-09-28** by reading the installed plugin descriptors and the Unreal MCP plugin source (UE 5.8.3 Launcher build, CL 58210709). Items still marked (VERIFY) haven't been checked yet.
 
 ## Why this is needed
 
-The cloud Claude Code session that wrote this repo has no Unreal Engine, no GPU and no Windows. Unreal MCP runs **inside the Unreal Editor process** and listens on `localhost` (reported as `http://127.0.0.1:8000/mcp`, VERIFY). A cloud container can't reach a `localhost` server on your workstation.
+The cloud Claude Code session that wrote this repo has no Unreal Engine, no GPU and no Windows. Unreal MCP runs **inside the Unreal Editor process** and listens on `localhost` (reported as `http://127.0.0.1:8000/mcp`, VERIFY). A cloud container can't reach a `localhost` server on your workstation. Verified: the default URL is `http://127.0.0.1:8000/mcp`, and the engine's HTTP server binds to `localhost` by default (`HttpServerConfig.h`).
 
 **The work that needs the editor must run in Claude Code on the engine workstation.** That covers compiling, running in the editor, creating assets, importing, aligning and packaging. Use the Claude Code CLI or the desktop app there, pointed at a local clone of this repo. The cloud session can keep producing code, config and docs on the same branch.
 
@@ -14,26 +14,33 @@ Don't expose the editor's MCP port to the internet with a tunnel just so the clo
 
 | Item | Value | Status |
 |---|---|---|
-| Unreal Engine | 5.8.3 (installed on the workstation per user) | User-stated |
-| Cesium for Unreal | Latest public release from Fab (https://www.fab.com/listings/76c295fe-0dc6-4fd6-8319-e9833be427cd); v2.28.0 was reported as the first with 5.8 support | Install via Fab → Epic Launcher → "Install to Engine" 5.8. **Record the exact version in LEDGER.** |
-| Unreal MCP plugin | Ships with UE 5.8, **Experimental** | VERIFY plugin name in Edit → Plugins |
-| Companion plugins | "Terminal" and "Editor Tool Set" (reported as required alongside Unreal MCP) | VERIFY |
-| Source build needed? | Sources disagree: some say it's included in the Launcher build, one says it needs a source build | **VERIFY first**; this decides the workstation setup |
+| Unreal Engine | 5.8.3, Launcher build, CL 58210709, at `/Users/Shared/Epic Games/UE_5.8` | Verified (`Engine/Build/Build.version`) |
+| Cesium for Unreal | **2.29.1** (descriptor version 95, `EngineVersion` 5.8.0), installed to the engine under `Engine/Plugins/Marketplace/` | Verified (`CesiumForUnreal.uplugin`) |
+| Unreal MCP | Plugin **"Unreal MCP"** (internal name `ModelContextProtocol`), Experimental, ships with the Launcher build under `Engine/Plugins/Experimental/`. Depends on `ToolsetRegistry`, which pulls in `PythonScriptPlugin`, `EditorScriptingUtilities` and `FileSandbox`. | Verified |
+| Companion plugins | **"Terminal"** (`Terminal`, Slate terminal emulator). The "Editor Tool Set" is **"EditorToolset"** (`EditorToolset`: actors, Blueprints and properties). The Unreal MCP plugin exposes only the tools that the enabled `*Toolset` plugins register. | Verified |
+| Recommended toolsets | `EditorToolset`, `UMGToolSet` (for `WBP_LFF_HUD`) and `AutomationTestToolset` (runs `LFF.*` tests). Don't enable `AllToolsets`: it pulls in 21 toolsets (GAS, MetaHuman, Niagara and more) and widens what the agent can touch. | Recommendation |
+| Source build needed? | **No.** Everything above ships in the Launcher build. | Verified |
 
 Enable the plugins **through Edit → Plugins in the editor**. Don't hand-edit plugin names into `VirtualStadium.uproject`. The editor writes the correct internal names, and those `.uproject` changes should then be committed.
 
 ## 2. Connect Claude Code to Unreal MCP
 
-1. Open `VirtualStadium.uproject` in UE 5.8 with the plugins above enabled, then restart the editor.
-2. In the editor console, run the client-config generator. It was reported as `ModelContextProtocol.GenerateClientConfig ClaudeCode` (VERIFY; if the console lists a different name, use that).
-3. Inspect the generated config before using it. If it contains no secrets or machine-specific absolute paths, commit it as the project `.mcp.json`. Otherwise add it to `.gitignore` and record the shape of it here.
-4. Start Claude Code in the repo root on the engine workstation and run `/mcp`. The Unreal server should show as connected.
-5. Smoke test: ask the agent to list the actors in the current level. Record the result in `Docs/LEDGER.md` as evidence.
+1. Open `VirtualStadium.uproject` in UE 5.8 and enable **Unreal MCP**, **Terminal**, **EditorToolset**, **UMG ToolSet** and **AutomationTestToolset** in Edit → Plugins. Restart the editor.
+2. The server **doesn't auto-start** (`bAutoStartServer` defaults to false). Either run `ModelContextProtocol.StartServer` in the editor console each session, or tick **Auto Start Server** in Editor Preferences → Model Context Protocol. That setting is per-user (`EditorPerProjectUserSettings`, under `Saved/`), so it isn't committed.
+3. In the editor console, run `ModelContextProtocol.GenerateClientConfig ClaudeCode` (verified; the other clients are `Cursor|VSCode|Gemini|Codex|All`). On a Launcher build it writes `.mcp.json` to the project root, using the `mcpServers` key and a `url` of `http://127.0.0.1:<port><path>`.
+4. Inspect the generated config before using it. If it contains no secrets or machine-specific absolute paths, commit it as the project `.mcp.json`. Otherwise add it to `.gitignore` and record the shape of it here. **Verified 2026-09-28:** it contains one entry, `"unreal-mcp": {"type": "http", "url": "http://127.0.0.1:8000/mcp"}`, with no secrets or paths, so it's committed.
+5. Start Claude Code in the repo root on the engine workstation and run `/mcp`. The Unreal server should show as connected. By default (`bEnableToolSearch`), the server lists only `list_toolsets`, `describe_toolset` and `call_tool`, and the agent discovers the toolset tools on demand.
+6. Smoke test: ask the agent to list the actors in the current level. Record the result in `Docs/LEDGER.md` as evidence.
+
+**Calling convention (verified).** Toolset tools go through `call_tool` with `{"tool_name": "<short name>", "toolset_name": "<toolset>", "arguments": {...}}`. Use the short tool name (`find_actors`), not the fully qualified one. For example, `call_tool` with `tool_name` `find_actors` and `toolset_name` `editor_toolset.toolsets.scene.SceneTools` lists the actors in the level. `find_actors` rejects `{}`, so pass empty `name`, `tag` and `collision_channels`.
+
+Other console commands: `ModelContextProtocol.StopServer` and `ModelContextProtocol.RefreshTools`. The port and path are set in the same settings page (defaults `8000` and `/mcp`).
 
 Security:
 - Keep the MCP server bound to `127.0.0.1` only.
 - Review the tools the server exposes (Python execution, file access and similar) before approving them in Claude Code.
 - Don't auto-approve destructive tools such as delete asset, overwrite or save-all without review.
+- **With tool search on (the default), every toolset tool runs through the single `call_tool` MCP tool.** "Always allow" on `call_tool` therefore approves *all* of them, including `remove_from_scene`, `save_actor`, asset/file tools and the sandboxed Python `ProgrammaticToolset`. Approve `call_tool` per call. It's safe to always-allow `list_toolsets` and `describe_toolset`, which are read-only.
 
 ## 3. Unreal CLI (repeatable build evidence)
 
@@ -80,6 +87,7 @@ set PROJ=%CD%\VirtualStadium.uproject
 ## 4. Known 5.4 → 5.8 migration watch items (from the existing scaffold)
 
 The first local compile will show which of these matter.
-- `Source/VirtualStadium/*.Target.cs` uses `BuildSettingsVersion.V5`. UBT may warn on 5.8. Change it only if the build asks.
+- **Resolved 2026-09-28.** The `*.Target.cs` files were in `Source/VirtualStadium/`. UBT looks for them at the `Source/` root, so it treated the project as having no code, generated its own temporary targets, and failed with duplicate type errors. They're now at `Source/VirtualStadium.Target.cs` and `Source/VirtualStadiumEditor.Target.cs`.
+- **Resolved 2026-09-28.** `BuildSettingsVersion.V5` failed on 5.8.3, because the editor target shares build products with the Launcher `UnrealEditor` and V5 changes four warning levels. Both targets now use `BuildSettingsVersion.Latest`, and the build compiles with no warnings.
 - `Config/DefaultInput.ini` uses legacy `ActionMappings`. The architecture phase will decide whether to move to Enhanced Input.
 - `VirtualStadium.Build.cs` has no `CesiumRuntime` dependency. Add it only when C++ actually calls Cesium APIs.

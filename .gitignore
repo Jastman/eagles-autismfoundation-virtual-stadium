@@ -6,3 +6,9 @@
 /*.VC.db
 /VirtualStadium.sln
 
+
+# Cesium runtime tile/request cache
+cesium-request-cache.sqlite*
+
+# macOS
+.DS_Store

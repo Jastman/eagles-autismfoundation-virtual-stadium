@@ -12,7 +12,7 @@ All install steps below are for **Claude Code on the UE 5.8 workstation**. See `
 | Tool | Kind | Use for | Recommendation | Status |
 |---|---|---|---|---|
 | [EpicGames/unreal-engine-skills-for-claude-code-plugin](https://github.com/EpicGames/unreal-engine-skills-for-claude-code-plugin) | Claude Code plugin (Epic, first-party) | UE 5.8 conventions, editor/MCP workflows | **Primary.** Install first. | Not inspected (outside session repo scope) |
-| Unreal MCP (ships with UE 5.8, experimental) | Editor-embedded MCP server, localhost | Driving the editor: actors, assets, tests | **Primary editor MCP.** CLI logs remain the gate evidence (LEDGER D5). | Not connected |
+| Unreal MCP (ships with UE 5.8, experimental) | Editor-embedded MCP server, localhost | Driving the editor: actors, assets, tests | **Primary editor MCP.** CLI logs remain the gate evidence (LEDGER D5). | **Connected on the Mac 2026-09-28** (LEDGER F34) |
 | [VibeUE](https://mcpservers.org/servers/kevinpbuckley/vibeue) | Third-party UE editor plugin plus MCP | Editor automation (Blueprint/UMG editing, if it offers that) | **Optional, only if Unreal MCP lacks a needed capability** (for example UMG/Blueprint graph authoring). Don't run two editor-control MCPs at once until you've checked they don't conflict. Check 5.8 support. | Not inspected |
 | [unreal-engine-expert](https://mcpmarket.com/tools/skills/unreal-engine-expert) | Third-party skill | General UE guidance | Optional. Probably overlaps with Epic's plugin, so prefer Epic's if they conflict. | Not inspected |
 | [unreal-development](https://mcpmarket.com/tools/skills/unreal-development) | Third-party skill | General UE guidance | Optional. Same overlap caveat. | Not inspected |

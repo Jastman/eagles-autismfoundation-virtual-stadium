@@ -2,7 +2,7 @@
 
 Living document. Update every cycle. Tags: **VERIFIED** (inspected this repo/session), **ASSUMED** (temporary, dated), **BLOCKED** (needs an input), **UNKNOWN**.
 
-Last updated: 2026-09-28 (Phase 3 golden-path code, cycle 4)
+Last updated: 2026-09-28 (cycle 5: first workstation compile and tests on the Mac)
 
 ## 1. Facts (verified by inspection, 2026-09-28)
 
@@ -37,13 +37,18 @@ Last updated: 2026-09-28 (Phase 3 golden-path code, cycle 4)
 | F27 | User statement: **both Windows and Mac builds are wanted. The current workstation is a Mac.** | User |
 | F28 | User statement: **the repo is private.** Releases are shared with the collaborators who need them. | User |
 | F29 | User statement: **use Google Photorealistic 3D Tiles.** | User |
+| F30 | The Mac workstation has **UE 5.8.3 Launcher build, CL 58210709** at `/Users/Shared/Epic Games/UE_5.8`, Xcode 26.4.1, and 14 cores. This verifies F18 and A2. | `Build.version`, `xcodebuild -version` (workstation) |
+| F31 | **Cesium for Unreal 2.29.1** is installed to the engine (`Plugins/Marketplace/`, descriptor version 95, built for 5.8.0). This verifies F26. | `CesiumForUnreal.uplugin` |
+| F32 | The Launcher build ships **Unreal MCP** (`ModelContextProtocol`), `Terminal`, `ToolsetRegistry` and the `*Toolset` plugins. No source build is needed. The MCP server defaults to `http://127.0.0.1:8000/mcp`, binds to `localhost` and doesn't auto-start. The config generator is `ModelContextProtocol.GenerateClientConfig ClaudeCode`. This supersedes F16 and F17 for the workstation. | Plugin descriptors and source (workstation) |
+| F34 | Unreal MCP is **connected on the Mac**. The enabled plugins are `ModelContextProtocol`, `Terminal`, `EditorToolset`, `UMGToolSet` and `AutomationTestToolset`; the editor wrote them to `.uproject`. The server listens on `127.0.0.1:8000` only. `.mcp.json` is committed and has no secrets. The server exposes 3 top-level tools and 22 toolsets. | `lsof`, MCP `initialize` / `list_toolsets` |
+| F33 | The first compile needed two build-rule fixes: the target files moved to `Source/`, and `BuildSettingsVersion.V5` became `Latest`. **The ~1,100 lines of C++ then compiled with 0 errors and 0 warnings**, and the 4 `LFF.*` tests pass. This retires R14 for the Mac. | `Saved/Logs/T1.1-build-mac.log`, `T1.2-tests-mac.log` |
 
 ## 2. Assumptions (temporary, dated 2026-09-28)
 
 | # | Assumption | Invalidated if |
 |---|---|---|
 | A1 | The Mac build is made on the current Mac. **The Windows build needs a Windows PC with UE 5.8.3 and VS 2022**, because Unreal can't cross-compile Win64 from macOS. | A Windows machine or CI is unavailable (see R11). |
-| A2 | The workstation uses the UE 5.8.3 Launcher build (not a source build). | The user says it's a source build. |
+| A2 | ~~The workstation uses the UE 5.8.3 Launcher build.~~ Verified as F30. | — |
 | A3 | V1 collects no personal data and has telemetry off. The "ticket" is a **synthetic example** stored in a text data file. No real ticket data or scanning. | — |
 | A4 | Example ticket: **Section 111, Row 10, Seat 8**, Gate and nearby amenities all Illustrative. The user can change it in one JSON file. | The user or the Eagles Autism Foundation picks another seat. |
 | A5 | Branding approval (F24) covers the Eagles marks in the demo. The logo files come from the user or the Eagles Autism Foundation. Sponsor or third-party marks not owned by the Eagles are still reviewed case by case. | — |
@@ -94,13 +99,13 @@ Last updated: 2026-09-28 (Phase 3 golden-path code, cycle 4)
 | R10 | A public Release exposes the Cesium ion token and the model data. | Med-High | D15 restricted token; Q-B; Q-D. |
 | R11 | **No Windows build machine identified yet.** Unreal can't cross-compile Win64 from macOS. | High | Q-A: name a Windows PC with UE 5.8.3 + VS 2022 by Oct 3, or ship the Mac build only with Windows to follow. |
 | R13 | Google tiles are online-only, and their use is metered through Cesium ion. | Med | Restricted token; confirm the ion plan quota; the video is the offline fallback. |
-| R14 | The C++ was written without a compiler (about 1,100 lines). | High | Small, standard APIs; mechanical checks done; first workstation compile is the next gate. |
+| R14 | The C++ was written without a compiler (about 1,100 lines). | Low (Mac) | **Retired on the Mac (F33).** Win64 (MSVC) is still uncompiled, so T1.3 stays open. |
 | R12 | Only 11 days remain until Oct 9, and all engine work depends on one workstation. | High | Keep scope to the golden path. Record the video early as a fallback. |
 | R9 | Unreal MCP is experimental. Tool names and behavior may change or break mid-project. | Med | D5: CLI evidence is authoritative. MCP is optional acceleration. |
 | R8 | The wrap-around Next (F6) breaks predictability. | Low (easy fix) | Stop at the final step and show an explicit “Start again” action. |
 
 ## 6. Dependencies / missing inputs
-- READY: a UE 5.8.3 workstation (F18). PENDING: Claude Code with Unreal MCP connected there, and the Cesium Fab version recorded.
+- READY: a UE 5.8.3 workstation (F30), Cesium 2.29.1 (F31), Claude Code running there, and Unreal MCP enabled and answering on `127.0.0.1:8000` (F34).
 - PENDING: the CGTrader model and its license (F20). A proxy is used until then.
 - KNOWN: desktop PC or Mac, keyboard and mouse plus a controller (F21). UNKNOWN: GPU, and whether the machine is online.
 - BLOCKED: a Cesium ion account or token policy.
@@ -115,10 +120,17 @@ The golden path (see the brief) plus quality gates 1–7.
 ## 9. Implementation status
 | Gate | Status |
 |---|---|
-| G1 Versions/license/asset/hardware/deploy known | MOSTLY MET: UE 5.8.3, Cesium latest from Fab, CGTrader model, desktop target, Releases + video. Open: Cesium version number, model license (Q-D), GPU. |
+| G1 Versions/license/asset/hardware/deploy known | MOSTLY MET: UE 5.8.3 (CL 58210709), Cesium 2.29.1, CGTrader model, desktop target, Releases + video. Open: model license (Q-D), GPU. |
 | G2 Model imports and has a perf baseline | WAIVED for implementation start (D17). Proxy stadium. |
 | G3 Stadium aligns reproducibly with Cesium | PARTLY WAIVED (D17). Strategy accepted (ADR-0001); calibration happens on the workstation. |
-| G4 Four-stop golden path works | CODE WRITTEN, not compiled. Next: TEST_PLAN T1, then T2 on the Mac. |
+| G4 Four-stop golden path works | **T1.1 PASS, T1.2 PASS on the Mac** (2026-09-28, UE 5.8.3 CL 58210709; commit: the one after 7f088a3). T1.3 (Windows) is open. Next: create the `L_LFF_Stadium` map and assets (ManualSetup), then run T2 PIE. |
+
+### Evidence log
+| Date | Machine | Check | Result | Log |
+|---|---|---|---|---|
+| 2026-09-28 | Mac, UE 5.8.3 | T1.1 editor compile | First run failed (RulesError): the target files were in the module folder. Second run failed: V5 build settings aren't allowed with the shared editor environment. **Third run passed**: exit 0, 14 actions, 0 warnings, 24 s. | `Saved/Logs/T1.1-build-mac.log` |
+| 2026-09-28 | Mac, UE 5.8.3 | T1.2 `Automation RunTests LFF.` | **PASS**: found 4 tests (StateMachine.EdgeCases, .Navigation, .PauseRestart, Journey.Rules), 4 Success, exit 0. Unrelated: Cesium logs an uninitialized-enum error for `FCesiumMetadataPropertyStatisticValue::Semantic` in its own headers. | `Saved/Logs/T1.2-tests-mac.log` |
+| 2026-09-28 | Mac, UE 5.8.3 | Unreal MCP smoke test (LOCAL_AGENT_SETUP §2 step 6) | **PASS**. `get_current_level` returned `/Temp/Untitled_0`, and `find_actors` returned 7 default actors (WorldSettings, Brush_0, DefaultPhysicsVolume_0, BuoyancyManager_0, GameplayDebuggerPlayerManager_0, ChaosDebugDrawActor, CesiumGaussianSplatSystemActor). Run over raw JSON-RPC, because this Claude Code session started before `.mcp.json` existed. | This row |
 | G5 Accessibility controls and reduced motion | OPEN |
 | G6 Packaged build on target hardware | OPEN. Mac on this workstation; Win64 blocked on R11. |
 | G7 Stakeholder approval | OPEN. Approvers: the user plus the Eagles Autism Foundation. |

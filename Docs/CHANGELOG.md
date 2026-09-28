@@ -1,6 +1,16 @@
 # Changelog
 
 ## 2026-09-28
+- **First workstation build (Mac).**
+  - Moved `VirtualStadium.Target.cs` and `VirtualStadiumEditor.Target.cs` from `Source/VirtualStadium/` to `Source/`, and switched both to `BuildSettingsVersion.Latest`.
+  - The editor target now compiles with 0 warnings, and the 4 `LFF.*` tests pass headless (T1.1 and T1.2).
+  - Verified the UE, Cesium and Unreal MCP details in `LOCAL_AGENT_SETUP.md` §1–2 and the ledger (F30–F33).
+  - Ignored the Cesium request cache and `.DS_Store`.
+- **Unreal MCP connected (Mac).**
+  - Enabled Unreal MCP, Terminal, EditorToolset, UMG ToolSet and AutomationTestToolset in the editor.
+  - Committed the generated `.mcp.json`, `Content/CesiumSettings/CesiumIonServers/CesiumIonSaaS.uasset`, and the engine-generated Android File Server block in `DefaultEngine.ini` (committed once so the editor stops re-adding it).
+  - The smoke test passed (LEDGER F34).
+  - Documented the `call_tool` calling convention and the approval risk in `LOCAL_AGENT_SETUP.md`.
 - Phase 0 started. Added `Docs/LEDGER.md`, `Docs/USAGE_LEDGER.md`, `Docs/CHANGELOG.md` and `Docs/ADR/`. No code or config changes.
 - Retargeted the project to UE 5.8 (`VirtualStadium.uproject`, README and ManualSetup prerequisites) at the user's direction.
 - Added `Docs/LOCAL_AGENT_SETUP.md`, which covers the Unreal MCP connection, CLI build and package commands, and 5.8 migration watch items.
