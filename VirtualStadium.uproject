@@ -1,0 +1,20 @@
+{
+  "FileVersion": 3,
+  "EngineAssociation": "5.4",
+  "Category": "Games",
+  "Description": "Prototype-friendly Cesium for Unreal starter project for an accessible virtual stadium schedule experience.",
+  "Modules": [
+    {
+      "Name": "VirtualStadium",
+      "Type": "Runtime",
+      "LoadingPhase": "Default"
+    }
+  ],
+  "Plugins": [
+    {
+      "Name": "CesiumForUnreal",
+      "Enabled": true
+    }
+  ]
+}
+
