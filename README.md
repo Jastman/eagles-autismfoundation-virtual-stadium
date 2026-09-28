@@ -2,6 +2,8 @@
 
 Prototype-friendly Unreal Engine starter project for an interactive **Cesium for Unreal** schedule experience that helps neurodiverse fans prepare for game day with a predictable, step-by-step virtual tour of Lincoln Financial Field.
 
+Virtual schedule: https://static.clubs.nfl.com/image/upload/eagles/f1h4ec616hii4k9yqeay
+
 This first version is intentionally modular and uses placeholder assets only. Any proprietary stadium model, official branding, or venue-specific interior data should be imported later using licensed content.
 
 ## What is included
