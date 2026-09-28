@@ -85,6 +85,10 @@ protected:
     UPROPERTY(meta = (BindWidgetOptional))
     TObjectPtr<UWidget> RestartConfirmPanel;
 
+    /** Holds the one set of toggle buttons. Shown on the intro and while Settings is open. */
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UWidget> TogglesPanel;
+
     // Optional buttons.
     UPROPERTY(meta = (BindWidgetOptional))
     TObjectPtr<UButton> NextButton;

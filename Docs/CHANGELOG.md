@@ -1,6 +1,10 @@
 # Changelog
 
 ## 2026-09-28
+- **One set of toggles (C++ plus HUD).**
+  - Added the optional `TogglesPanel` binding to `ULFFHUDWidget`, with `LFFJourneyRules::ShouldShowToggles` and tests.
+  - `WBP_LFF_HUD` now shows Less movement, Calm Mode and Large text on the intro *and* in Settings. The intro and Settings headers sit above them, with Close in the Settings title bar.
+  - Updated JOURNEY_SCHEMA, ManualSetup §5 and the LEDGER.
 - **Scripted level and HUD (Mac).**
   - Added `Tools/Editor/build_lff_stadium_level.py`: a headless editor script that imports `DT_LFF_GoldenPath` from the JSON and builds `L_LFF_Stadium`. The level has the georeference (tagged `DEFAULT_GEOREFERENCE`), the Google tileset, the sun, and `LFF_SiteRoot` with its anchor. Under the root sit the 4 `CT_` targets, the labels, and the concourse and seat proxies. The script validates the structure before saving.
   - Added `Tools/Editor/build_wbp_lff_hud.py` and `Tools/Editor/unreal_mcp.py`, which build `WBP_LFF_HUD` through Unreal MCP.

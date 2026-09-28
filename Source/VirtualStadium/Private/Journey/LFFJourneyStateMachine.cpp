@@ -197,6 +197,11 @@ namespace LFFJourneyRules
         return FMath::Clamp(Seconds, MinSeconds, FMath::Max(MinSeconds, MaxSeconds));
     }
 
+    bool ShouldShowToggles(const bool bStarted, const bool bSettingsOpen)
+    {
+        return !bStarted || bSettingsOpen;
+    }
+
     bool ShouldShowDisclaimer(const ELFFDisclaimerLevel Level)
     {
         return Level != ELFFDisclaimerLevel::Verified;

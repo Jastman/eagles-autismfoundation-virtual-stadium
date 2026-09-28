@@ -50,4 +50,6 @@ namespace LFFJourneyRules
     VIRTUALSTADIUM_API ELFFTransitionProfile ResolveTransitionProfile(ELFFTransitionProfile Authored, bool bReducedMotion);
     VIRTUALSTADIUM_API float ClampDuration(float AuthoredSeconds, float DefaultSeconds, float MinSeconds, float MaxSeconds);
     VIRTUALSTADIUM_API bool ShouldShowDisclaimer(ELFFDisclaimerLevel Level);
+    /** The visitor toggles are offered on the intro and whenever Settings is open (one set of buttons, LEDGER D13). */
+    VIRTUALSTADIUM_API bool ShouldShowToggles(bool bStarted, bool bSettingsOpen);
 }

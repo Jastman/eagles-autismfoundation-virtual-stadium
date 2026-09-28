@@ -5,6 +5,7 @@
 #include "Components/Widget.h"
 #include "Engine/World.h"
 #include "Framework/Application/SlateApplication.h"
+#include "Journey/LFFJourneyStateMachine.h"
 #include "Journey/LFFJourneySubsystem.h"
 
 #define LOCTEXT_NAMESPACE "LFFHUD"
@@ -96,6 +97,7 @@ void ULFFHUDWidget::HandleJourneyChanged(const FLFFJourneySnapshot& Snapshot)
     ShowWidget(PausePanel.Get(), Snapshot.bPaused);
     ShowWidget(SettingsPanel.Get(), Snapshot.bSettingsOpen);
     ShowWidget(RestartConfirmPanel.Get(), Snapshot.bRestartConfirmOpen);
+    ShowWidget(TogglesPanel.Get(), LFFJourneyRules::ShouldShowToggles(Snapshot.bStarted, Snapshot.bSettingsOpen));
 
     // Buttons stay in place and are disabled rather than hidden, so the layout never shifts.
     if (NextButton != nullptr)

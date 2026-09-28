@@ -62,7 +62,7 @@ Last updated: 2026-09-28 (cycle 5: first workstation compile, tests, MCP, and sc
 - Q-D: Does the CGTrader license allow distributing the model inside a packaged executable on GitHub Releases? Check the license text when you buy it.
 
 ## 3b. Open items found while building (2026-09-28)
-- **The toggles appear in only one panel.** ManualSetup §5 asks for Less movement and Calm Mode in `IntroPanel` *and* "the four toggles" in `SettingsPanel`. Widget names are unique and C++ binds one of each, so `WBP_LFF_HUD` puts Less movement and Calm Mode in `IntroPanel` and Large text in `SettingsPanel`. Sound is in the top bar. During the journey, keys 1–4 still work, and Settings lists them. Fixing this needs a small C++ change, for example a bindable `TogglesPanel` shown when `!bStarted || bSettingsOpen`. T2 row 11 ("click each toggle") can't pass until then.
+- **Resolved: the toggles only appeared in one panel.** C++ now binds an optional `TogglesPanel`, shown when `LFFJourneyRules::ShouldShowToggles(bStarted, bSettingsOpen)` is true (`!bStarted || bSettingsOpen`; covered by `LFF.Journey.Rules`). `WBP_LFF_HUD` puts one set of toggles in it, with the intro and Settings headers above. Sound stays in the top bar, so T2 row 11 can pass.
 - **HUD wording is placeholder** (headings, pause, restart and settings text) until the user and the Eagles Autism Foundation approve it (F24).
 
 ## 4. Decisions
@@ -141,6 +141,7 @@ The golden path (see the brief) plus quality gates 1–7.
 | 2026-09-28 | Mac, UE 5.8.3 | `build_lff_stadium_level.py` (headless) | **PASS**: 4 table rows imported; `validate OK: 1 georeference, 1 anchor (LFF_SiteRoot), 0 origin shift, 4 targets`; saved. Exit 1 comes from the known editor-shutdown crash after the save (LOCAL_AGENT_SETUP §5). | `Saved/Logs/build-level-full.log` |
 | 2026-09-28 | Mac, UE 5.8.3 | `build_wbp_lff_hud.py` (MCP) | **PASS**: 94 widgets, all 30 contract names, compiled, saved. | Script output |
 | 2026-09-28 | Mac, UE 5.8.3 | PIE smoke test (not T2) | **PASS (intro only)**. `Game class is 'LFFGameMode'`. The HUD intro shows the card copy, badge, disclaimer and the two toggles; Back, Start again and Pause are disabled; Start is enabled. No LFF errors. Tiles: 401 (no token). Input wasn't driven, because MCP has no input tool. | Editor capture |
+| 2026-09-28 | Mac, UE 5.8.3 | TogglesPanel change: T1.1 and T1.2 re-run, HUD rebuilt | **PASS**. The build succeeded with 0 warnings (9 actions). All 4 `LFF.*` tests pass, and `Rules` now includes 4 `ShouldShowToggles` cases. The HUD rebuilt with 93 widgets and all 31 contract names. In PIE, the intro shows TogglesPanel with the intro header and 3 toggles, and the Settings header is hidden. No LFF or UMG errors. | `Saved/Logs/T1.*-mac.log` |
 | 2026-09-28 | Mac, UE 5.8.3 | Unreal MCP smoke test (LOCAL_AGENT_SETUP §2 step 6) | **PASS**. `get_current_level` returned `/Temp/Untitled_0`, and `find_actors` returned 7 default actors (WorldSettings, Brush_0, DefaultPhysicsVolume_0, BuoyancyManager_0, GameplayDebuggerPlayerManager_0, ChaosDebugDrawActor, CesiumGaussianSplatSystemActor). Run over raw JSON-RPC, because this Claude Code session started before `.mcp.json` existed. | This row |
 | G5 Accessibility controls and reduced motion | OPEN |
 | G6 Packaged build on target hardware | OPEN. Mac on this workstation; Win64 blocked on R11. |

@@ -76,7 +76,8 @@ Esc also ends PIE in the editor. That's expected there; test Cancel in a package
 ## `WBP_LFF_HUD` widget names (parent class `LFFHUDWidget`)
 - **Required.** The Blueprint won't compile without these: `DisclaimerText`, `PrototypeBadgeText`, `TitleText`, `BodyText` (all `TextBlock`).
 - **Optional text:** `ProgressText`, `TargetMissingText`, `NextLabel`, `PauseLabel`, `ReducedMotionLabel`, `SoundLabel`, `CalmModeLabel`, `LargeTextLabel`.
-- **Optional panels** (any widget type): `DisclaimerPanel`, `IntroPanel`, `PausePanel`, `SettingsPanel`, `RestartConfirmPanel`.
+- **Optional panels** (any widget type): `DisclaimerPanel`, `IntroPanel`, `PausePanel`, `SettingsPanel`, `RestartConfirmPanel`, `TogglesPanel`.
+- `TogglesPanel` holds the single set of toggle buttons. C++ shows it on the intro and while Settings is open (`LFFJourneyRules::ShouldShowToggles`). `IntroPanel` and `SettingsPanel` can be headers inside it.
 - **Optional buttons:** `NextButton`, `BackButton`, `PauseButton`, `ResumeButton`, `SettingsButton`, `SettingsCloseButton`, `RestartButton`, `RestartYesButton`, `RestartNoButton`, `ReducedMotionButton`, `SoundButton`, `CalmModeButton`, `LargeTextButton`.
 
 Layout rules (from `ACCESSIBILITY.md`):

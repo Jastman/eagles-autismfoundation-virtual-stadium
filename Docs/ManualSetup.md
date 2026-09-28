@@ -40,10 +40,14 @@ Right-click in `/Game/LFF/Data` → **Import** → `SourceData/Journey/LFF_Golde
 - **Top centre:** `DisclaimerPanel` holding `DisclaimerText`. Use a neutral colour, at least 28 pt, with no animation.
 - **Left card:** `ProgressText`, `TitleText` (48 pt) and `BodyText` (32 pt), plus `TargetMissingText`.
 - **Bottom:** `BackButton` on the left and `NextButton` (`NextLabel`) on the right. Keep them at least 400 px apart and put the key hints in the button text. Put `RestartButton` ("Start again? (R)") next to Back. Keep the bottom 60 px clear for the Cesium/Google credits.
+- **Right-side panel `TogglesPanel`.** C++ shows it on the intro and while Settings is open. From top to bottom:
+  - `IntroPanel`, a "Before you start" header.
+  - `SettingsPanel`, a "Settings" title bar with `SettingsCloseButton`.
+  - `ReducedMotionButton`, `CalmModeButton` and `LargeTextButton`, each with its `*Label`.
+
+  Widget names must be unique, so the toggles exist once and the two headers share them. `SoundButton` stays in the top bar so it's always reachable.
 - **Overlays** (collapsed by default; C++ shows them):
-  - `IntroPanel`, containing `ReducedMotionButton`/`ReducedMotionLabel` and `CalmModeButton`/`CalmModeLabel`.
   - `PausePanel`, containing `ResumeButton`.
-  - `SettingsPanel`, containing the four toggles (`LargeTextButton`/`LargeTextLabel` included) and `SettingsCloseButton`.
   - `RestartConfirmPanel`, containing `RestartYesButton` and `RestartNoButton`.
 - **Every button:** turn off **Is Focusable** (C++ also hands focus back to the viewport after each click).
 - **Event Graph (optional):** handle **On Snapshot Changed** for the Calm Mode muted palette and for large text (render scale about 1.25 on the card). Don't hide the disclaimer or the badge; C++ shows them again anyway.

@@ -129,6 +129,11 @@ bool FLFFJourneyRulesTest::RunTest(const FString& Parameters)
     TestTrue(TEXT("Illustrative shows the disclaimer"), ShouldShowDisclaimer(ELFFDisclaimerLevel::Illustrative));
     TestTrue(TEXT("Approximate shows the disclaimer"), ShouldShowDisclaimer(ELFFDisclaimerLevel::Approximate));
     TestFalse(TEXT("Verified hides the disclaimer"), ShouldShowDisclaimer(ELFFDisclaimerLevel::Verified));
+
+    TestTrue(TEXT("Toggles show on the intro"), ShouldShowToggles(false, false));
+    TestTrue(TEXT("Toggles show on the intro with Settings open"), ShouldShowToggles(false, true));
+    TestTrue(TEXT("Toggles show when Settings opens mid-journey"), ShouldShowToggles(true, true));
+    TestFalse(TEXT("Toggles hide during the journey"), ShouldShowToggles(true, false));
     return true;
 }
 

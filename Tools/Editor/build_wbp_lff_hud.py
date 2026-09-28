@@ -33,7 +33,7 @@ MIN_BUTTON = 120
 BOUND = {
     "DisclaimerText", "PrototypeBadgeText", "TitleText", "BodyText", "ProgressText", "TargetMissingText",
     "NextLabel", "PauseLabel", "ReducedMotionLabel", "SoundLabel", "CalmModeLabel", "LargeTextLabel",
-    "DisclaimerPanel", "IntroPanel", "PausePanel", "SettingsPanel", "RestartConfirmPanel",
+    "DisclaimerPanel", "IntroPanel", "PausePanel", "SettingsPanel", "RestartConfirmPanel", "TogglesPanel",
     "NextButton", "BackButton", "PauseButton", "ResumeButton", "SettingsButton", "SettingsCloseButton",
     "RestartButton", "RestartYesButton", "RestartNoButton", "ReducedMotionButton", "SoundButton",
     "CalmModeButton", "LargeTextButton",
@@ -132,12 +132,19 @@ def build():
     text("BodyText", "Body", card, BODY_PT, wrap=760, slot=gap(8))
     text("TargetMissingText", "This step is not available yet.", card, BODY_PT, "Bold", wrap=760, color=NOTICE)
 
-    # Intro choices (right side). The two one-click toggles from LEDGER D13.
-    intro = panel("IntroPanel", root, canvas((1, 0.5), (1, 0.5), (-40, 20)))
-    text("IntroHeading", "Before you start", intro, BODY_PT, "Bold", slot=gap(16))
-    button("ReducedMotionButton", "ReducedMotionLabel", "Less movement: Off", "(1)", intro, 520, gap(16))
-    button("CalmModeButton", "CalmModeLabel", "Calm Mode: Off", "(3)", intro, 520, gap(16))
+    # Right side: one set of toggles. C++ shows TogglesPanel on the intro and while Settings is open, and
+    # shows whichever header applies above them. Sound stays in the top bar so it's reachable at any time.
+    toggles = panel("TogglesPanel", root, canvas((1, 0.5), (1, 0.5), (-40, 20)))
+    intro = add("VerticalBox", "IntroPanel", toggles, None, gap(16))
+    text("IntroHeading", "Before you start", intro, BODY_PT, "Bold", slot=gap(8))
     text("IntroHint", "You can change these at any time.\nPress S for settings.", intro, SMALL_PT, wrap=520)
+    settings = add("HorizontalBox", "SettingsPanel", toggles, {"Visibility": "Collapsed"}, gap(16))
+    text("SettingsTitle", "Settings", settings, TITLE_PT, "Bold",
+         slot={"Size": {"value": 1, "sizeRule": "Fill"}, "VerticalAlignment": "VAlign_Center"})
+    button("SettingsCloseButton", "SettingsCloseLabel", "Close", "(S)", settings, 220)
+    button("ReducedMotionButton", "ReducedMotionLabel", "Less movement: Off", "(1)", toggles, 520, gap(16))
+    button("CalmModeButton", "CalmModeLabel", "Calm Mode: Off", "(3)", toggles, 520, gap(16))
+    button("LargeTextButton", "LargeTextLabel", "Large text: Off", "(4)", toggles, 520)
 
     # Bottom row. Fixed positions, never hidden (C++ disables instead). Bottom 80 px stays clear for credits.
     button("BackButton", "BackLabel", "Back", "(←)", root, 300, canvas((0, 1), (0, 1), (40, -80)))
@@ -157,19 +164,13 @@ def build():
     text("PauseBody", "Nothing will move until you resume.", pause, BODY_PT, wrap=760, slot=gap(24))
     button("ResumeButton", "ResumeLabel", "Resume", "(P)", pause, 320)
 
-    settings = panel("SettingsPanel", root, centre, 56)
-    text("SettingsTitle", "Settings", settings, TITLE_PT, "Bold", slot=gap(16))
-    button("LargeTextButton", "LargeTextLabel", "Large text: Off", "(4)", settings, 520, gap(24))
-    text("SettingsKeys", "Keys: 1 Less movement · 2 Sound · 3 Calm Mode · 4 Large text", settings, SMALL_PT, wrap=760, slot=gap(24))
-    button("SettingsCloseButton", "SettingsCloseLabel", "Close", "(S)", settings, 320)
-
     restart = panel("RestartConfirmPanel", root, centre, 56)
     text("RestartTitle", "Start again?", restart, TITLE_PT, "Bold", slot=gap(16))
     text("RestartBody", "You will go back to the beginning.", restart, BODY_PT, wrap=760, slot=gap(24))
     choices = add("HorizontalBox", "RestartChoices", restart)
     button("RestartYesButton", "RestartYesLabel", "Yes, start again", "(Enter)", choices, 380, {"Padding": pad(0, 0, 24, 0)})
     button("RestartNoButton", "RestartNoLabel", "No, keep going", "(Esc)", choices, 380)
-    for name in ("PausePanel", "SettingsPanel", "RestartConfirmPanel"):
+    for name in ("PausePanel", "RestartConfirmPanel"):
         set_props({"refPath": f"{BP['refPath']}:WidgetTree.{name}"}, {"Visibility": "Collapsed"})
 
     # Always on top: the prototype badge and the disclaimer (C++ re-shows both on every update).
