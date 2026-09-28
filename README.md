@@ -3,24 +3,23 @@
 
 An interactive Cesium for Unreal experience designed to help neurodiverse fans and their families prepare for game day at Lincoln Financial Field.
 
-Overview
+## Overview
 
 This project transforms the Philadelphia Eagles’ existing virtual schedule into a guided 3D stadium experience. Fans can preview key stages of their visit—from arrival and stadium entry to concessions, sensory spaces, seating, and departure—in a predictable, accessible format.
 
-Goals
+## Goals
 
 • Reduce uncertainty and anxiety before game day
 • Provide a guided camera fly-through of the fan journey
 • Highlight important locations, including concessions, restrooms, seating, and sensory spaces
 • Demonstrate the potential of Cesium and Unreal Engine for accessible sports experiences
 
-Technology
+## Technology
+- Unreal Engine
+- Cesium for Unreal
+- [3D model of Lincoln Financial Field](https://www.cgtrader.com/3d-models/exterior/stadium/lincoln-financial-field-philadelphia-usa)
 
-• Unreal Engine
-• Cesium for Unreal
-• 3D model of Lincoln Financial Field
-
-Initial Prototype
+## Initial Prototype
 
 The first version will:
 
@@ -30,7 +29,7 @@ The first version will:
 • Add crowds, screen animations, and other game-day elements where practical
 • Run as an interactive application on a large display
 
-Future Vision
+## Future Vision
 
 Future versions could include:
 
@@ -42,7 +41,7 @@ Future versions could include:
 • Personalized accessibility settings
 • VR support
 
-Status
+## Status
 
 Early prototype in development for the Eagles Autism Foundation partnership.
 
