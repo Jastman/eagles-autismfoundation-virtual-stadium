@@ -48,6 +48,7 @@ void AStadiumStopMarker::ConfigureFromStop(const FStadiumScheduleStop& Stop)
     }
     else
     {
+        MeshComponent->SetStaticMesh(nullptr);
         MeshComponent->SetVisibility(false);
     }
 }

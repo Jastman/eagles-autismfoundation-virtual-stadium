@@ -95,6 +95,8 @@ This first version is intentionally modular and uses placeholder assets only. An
 
 This starter binds legacy `ActionMappings` from `Config/DefaultInput.ini`.
 
+If the project was already open when these mappings were added or pulled, restart the editor or reload input settings before testing the controls.
+
 - `Left Arrow` / `Gamepad D-Pad Left` → previous stop
 - `Right Arrow`, `Space`, or `Gamepad D-Pad Right` → next stop
 - `R` or `Gamepad Bottom Face Button` → restart tour

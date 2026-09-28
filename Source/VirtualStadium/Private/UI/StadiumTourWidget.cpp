@@ -5,6 +5,11 @@
 
 void UStadiumTourWidget::InitializeFromTour(AStadiumTourCamera* InTourCamera)
 {
+    if (TourCamera != nullptr)
+    {
+        TourCamera->OnStopChanged.RemoveDynamic(this, &UStadiumTourWidget::HandleStopChanged);
+    }
+
     TourCamera = InTourCamera;
 
     if (TourCamera != nullptr)
@@ -83,6 +88,16 @@ void UStadiumTourWidget::NativeConstruct()
     {
         RestartButton->OnClicked.AddDynamic(this, &UStadiumTourWidget::HandleRestartClicked);
     }
+}
+
+void UStadiumTourWidget::NativeDestruct()
+{
+    if (TourCamera != nullptr)
+    {
+        TourCamera->OnStopChanged.RemoveDynamic(this, &UStadiumTourWidget::HandleStopChanged);
+    }
+
+    Super::NativeDestruct();
 }
 
 void UStadiumTourWidget::HandlePreviousClicked()
