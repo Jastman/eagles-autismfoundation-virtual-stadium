@@ -4,8 +4,8 @@ The repository contains a code-first starter scaffold, but a few steps must stil
 
 ## 1. Install Cesium for Unreal
 
-1. Install Unreal Engine 5.4 or newer.
-2. Add the **Cesium for Unreal** plugin to your engine or project.
+1. Install Unreal Engine 5.8.
+2. Add the **Cesium for Unreal** plugin (v2.28.0+, reported as the first release supporting UE 5.8) to your engine or project.
 3. Open `VirtualStadium.uproject`.
 4. If prompted, rebuild the `VirtualStadium` module.
 

@@ -85,14 +85,14 @@ Early prototype in development for the Eagles Autism Foundation partnership.
 
 ## Prerequisites
 
-- Unreal Engine 5.4 or newer
-- Cesium for Unreal plugin
+- Unreal Engine 5.8 (project target; see `Docs/LOCAL_AGENT_SETUP.md`)
+- Cesium for Unreal v2.28.0 or newer (first release reported to support UE 5.8)
 - A workstation capable of opening Unreal C++ projects
 - Optional: licensed stadium model or neutral placeholder geometry
 
 ## Setup
 
-1. Install Unreal Engine 5.4+.
+1. Install Unreal Engine 5.8.
 2. Install **Cesium for Unreal**.
 3. Open `VirtualStadium.uproject`.
 4. Allow Unreal to build the `VirtualStadium` C++ module.

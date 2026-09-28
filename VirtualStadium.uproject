@@ -1,6 +1,6 @@
 {
   "FileVersion": 3,
-  "EngineAssociation": "5.4",
+  "EngineAssociation": "5.8",
   "Category": "Games",
   "Description": "Prototype-friendly Cesium for Unreal starter project for an accessible virtual stadium schedule experience.",
   "Modules": [
