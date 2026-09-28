@@ -35,6 +35,13 @@ The repository contains a code-first starter scaffold, but a few steps must stil
    - `Tour Widget Class` → `WBP_StadiumTourWidget`
 3. Leave `Auto Spawn Markers` enabled to generate placeholder wayfinding markers for every stop.
 
+## 4.5. Confirm input setup
+
+This starter binds legacy `ActionMappings` from `Config/DefaultInput.ini`.
+
+- If your UE5 project still uses legacy input, the controls will work as-is.
+- If your team standardizes on Enhanced Input, recreate `TourPrevious`, `TourNext`, and `TourRestart` in an input mapping context before testing.
+
 ## 5. Create the accessible UI widget
 
 1. Create a Widget Blueprint based on `StadiumTourWidget`.

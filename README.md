@@ -56,6 +56,7 @@ This first version is intentionally modular and uses placeholder assets only. An
 3. Open `VirtualStadium.uproject`.
 4. Allow Unreal to build the `VirtualStadium` C++ module.
 5. Follow `Docs/ManualSetup.md` to create the prototype level, data asset, widget blueprint, and marker blueprint.
+6. Keep Unreal's legacy input mappings enabled, or mirror the `TourPrevious`, `TourNext`, and `TourRestart` actions into an Enhanced Input mapping context before testing controls.
 
 ## Architecture
 
@@ -91,6 +92,8 @@ This first version is intentionally modular and uses placeholder assets only. An
   - intended for a Blueprint widget with accessible visual design
 
 ## Controls
+
+This starter binds legacy `ActionMappings` from `Config/DefaultInput.ini`.
 
 - `Left Arrow` / `Gamepad D-Pad Left` → previous stop
 - `Right Arrow`, `Space`, or `Gamepad D-Pad Right` → next stop

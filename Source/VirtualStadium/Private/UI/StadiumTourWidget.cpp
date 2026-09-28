@@ -32,16 +32,22 @@ FText UStadiumTourWidget::GetProgressText() const
         return FText::FromString(TEXT("Stop 0 of 0"));
     }
 
+    const int32 StopCount = TourCamera->GetStopCount();
+    if (StopCount <= 0)
+    {
+        return FText::FromString(TEXT("Stop 0 of 0"));
+    }
+
     return FText::Format(
         NSLOCTEXT("VirtualStadium", "TourProgress", "Stop {0} of {1}"),
-        FText::AsNumber(CachedIndex + 1),
-        FText::AsNumber(TourCamera->GetStopCount())
+        FText::AsNumber(FMath::Max(CachedIndex + 1, 1)),
+        FText::AsNumber(StopCount)
     );
 }
 
 float UStadiumTourWidget::GetProgressFraction() const
 {
-    if (TourCamera == nullptr || TourCamera->GetStopCount() <= 0)
+    if (TourCamera == nullptr || TourCamera->GetStopCount() <= 0 || CachedIndex < 0)
     {
         return 0.0f;
     }

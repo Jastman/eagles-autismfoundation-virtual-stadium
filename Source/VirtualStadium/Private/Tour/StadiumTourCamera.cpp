@@ -16,17 +16,15 @@ void AStadiumTourCamera::BeginPlay()
 {
     Super::BeginPlay();
 
-    if (GetStopCount() <= 0)
+    if (GetStopCount() > 0)
     {
-        return;
-    }
+        CurrentStopIndex = FMath::Clamp(StartingIndex, 0, GetStopCount() - 1);
+        ApplyStop(CurrentStopIndex, false);
 
-    CurrentStopIndex = FMath::Clamp(StartingIndex, 0, GetStopCount() - 1);
-    ApplyStop(CurrentStopIndex, false);
-
-    if (bAutoSpawnMarkers)
-    {
-        SpawnMarkers();
+        if (bAutoSpawnMarkers)
+        {
+            SpawnMarkers();
+        }
     }
 
     if (APlayerController* PlayerController = GetWorld()->GetFirstPlayerController())
