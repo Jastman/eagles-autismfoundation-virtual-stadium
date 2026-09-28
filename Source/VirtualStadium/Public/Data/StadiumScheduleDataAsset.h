@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Engine/DataAsset.h"
+#include "Engine/PrimaryDataAsset.h"
 #include "Data/StadiumScheduleStop.h"
 #include "StadiumScheduleDataAsset.generated.h"
 
@@ -20,4 +20,3 @@ public:
     UFUNCTION(BlueprintPure, Category = "Schedule")
     FStadiumScheduleStop GetStopAt(int32 Index) const;
 };
-

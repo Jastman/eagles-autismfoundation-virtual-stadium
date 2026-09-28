@@ -52,9 +52,9 @@ This first version is intentionally modular and uses placeholder assets only. An
 
 1. Install Unreal Engine 5.4+.
 2. Install **Cesium for Unreal**.
-3. Open `/home/runner/work/eagles-autismfoundation-virtual-stadium/eagles-autismfoundation-virtual-stadium/VirtualStadium.uproject`.
+3. Open `VirtualStadium.uproject`.
 4. Allow Unreal to build the `VirtualStadium` C++ module.
-5. Follow `/home/runner/work/eagles-autismfoundation-virtual-stadium/eagles-autismfoundation-virtual-stadium/Docs/ManualSetup.md` to create the prototype level, data asset, widget blueprint, and marker blueprint.
+5. Follow `Docs/ManualSetup.md` to create the prototype level, data asset, widget blueprint, and marker blueprint.
 
 ## Architecture
 
@@ -97,7 +97,7 @@ This first version is intentionally modular and uses placeholder assets only. An
 
 ## Editing stop order and content
 
-- Update `/home/runner/work/eagles-autismfoundation-virtual-stadium/eagles-autismfoundation-virtual-stadium/Content/Data/ScheduleStops.template.json` as the human-readable source template.
+- Update `Content/Data/ScheduleStops.template.json` as the human-readable source template.
 - Mirror those values into the `DA_LFF_ScheduleStops` Unreal Data Asset.
 - Reorder the `Stops` array in the Data Asset to change the tour flow.
 - Add preview images and neutral placeholder meshes as they become available.
@@ -110,7 +110,7 @@ This first version is intentionally modular and uses placeholder assets only. An
 
 ## Importing a purchased stadium model
 
-See `/home/runner/work/eagles-autismfoundation-virtual-stadium/eagles-autismfoundation-virtual-stadium/Docs/ImportingStadiumModel.md`.
+See `Docs/ImportingStadiumModel.md`.
 
 ## Manual Unreal Editor work
 

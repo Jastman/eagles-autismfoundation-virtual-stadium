@@ -6,7 +6,7 @@ The repository contains a code-first starter scaffold, but a few steps must stil
 
 1. Install Unreal Engine 5.4 or newer.
 2. Add the **Cesium for Unreal** plugin to your engine or project.
-3. Open `/home/runner/work/eagles-autismfoundation-virtual-stadium/eagles-autismfoundation-virtual-stadium/VirtualStadium.uproject`.
+3. Open `VirtualStadium.uproject`.
 4. If prompted, rebuild the `VirtualStadium` module.
 
 ## 2. Create the prototype level
@@ -22,7 +22,7 @@ The repository contains a code-first starter scaffold, but a few steps must stil
 
 1. In the Content Browser, create a **Primary Data Asset** using `StadiumScheduleDataAsset`.
 2. Name it `DA_LFF_ScheduleStops`.
-3. Copy the placeholder stop order from `/home/runner/work/eagles-autismfoundation-virtual-stadium/eagles-autismfoundation-virtual-stadium/Content/Data/ScheduleStops.template.json`.
+3. Copy the placeholder stop order from `Content/Data/ScheduleStops.template.json`.
 4. Populate each stop's title, description, camera transform, fly duration, preview image, and placeholder settings.
 5. Reorder the `Stops` array whenever the game-day sequence changes.
 
