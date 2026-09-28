@@ -5,9 +5,11 @@ Run headless with the editor closed (see Docs/LOCAL_AGENT_SETUP.md §3):
 
 Refuses to overwrite an existing level, so it can't clobber hand-framed shots. Delete the map first to rebuild.
 
-Camera and proxy poses are SEEDS in the local stadium frame (origin = midfield turf, +X east, +Y south,
-+Z up, cm). They were placed without the Google tiles loaded. Pilot and reframe each CT_ target once the
-tiles stream (ManualSetup §3), and record the calibrated origin in Docs/CESIUM_PLACEMENT.md.
+Poses are in the local stadium frame: origin = midfield turf, +X across the field (toward the east stand),
++Y along the field (toward the south end), +Z up, cm. LFF_SiteRoot is then rotated by SITE_HEADING_DEG so
+this frame lines up with the real field. The origin, heading and the gate/seat poses were calibrated against
+the Google tiles on 2026-09-28 (Docs/CESIUM_PLACEMENT.md, revision 2026-09-28a). Fine framing is still
+done by piloting each CT_ target (ManualSetup §3).
 """
 import os
 import unreal
@@ -17,8 +19,10 @@ TABLE_DIR, TABLE_NAME = "/Game/LFF/Data", "DT_LFF_GoldenPath"
 PROJECT_DIR = unreal.Paths.convert_relative_path_to_full(unreal.Paths.project_dir())
 JOURNEY_JSON = os.path.join(PROJECT_DIR, "SourceData", "Journey", "LFF_GoldenPath.json")
 
-# Seed origin (CESIUM_PLACEMENT §3): midfield, ellipsoidal height. Calibrate against the tiles later.
-ORIGIN_LAT, ORIGIN_LON, ORIGIN_HEIGHT_ELLIPSOID_M = 39.9008, -75.1675, -30.0
+# Placement revision 2026-09-28a (CESIUM_PLACEMENT.md): midfield from overhead captures and pitch-wall
+# traces (about ±1 m), turf height from line traces onto the tiles (ellipsoidal, about ±0.3 m).
+ORIGIN_LAT, ORIGIN_LON, ORIGIN_HEIGHT_ELLIPSOID_M = 39.9008036, -75.1674790, -31.04
+SITE_HEADING_DEG = -6.5  # field axis about 353.5 deg true (pitch-wall traces and line tilt, ±1 deg)
 GOOGLE_PHOTOREALISTIC_ION_ASSET = 2275207
 PHILADELPHIA_UTC_OFFSET_OCT = -4.0  # EDT
 
@@ -128,10 +132,11 @@ def build_level():
     text("LBL_Plaza", "Plaza (illustration)", (-4500, -19500, 900), ext_cam, 350, root, "LFF_SiteRoot/LFF_Labels",
          ("LFF_Label", "LBL_Plaza"))
 
-    # Step 2: gate entry on the north facade (Illustrative; not a real gate name).
-    gate_cam, gate_look = (-1500, -18000, 200), (0, -13500, 700)
+    # Step 2: gate entry, 35 m outside the north headhouse facade (about 135 m north of midfield; plaza
+    # about +0.7 m), standing eye height (Illustrative; not a real gate name).
+    gate_cam, gate_look = (-1500, -17000, 260), (0, -13500, 600)
     target("CT_GateEntry", gate_cam, gate_look, root)
-    text("LBL_Gate", "Gate (illustration)", (0, -14500, 700), gate_cam, 150, root, "LFF_SiteRoot/LFF_Labels",
+    text("LBL_Gate", "Gate (illustration)", (0, -14200, 600), gate_cam, 150, root, "LFF_SiteRoot/LFF_Labels",
          ("LFF_Label", "LBL_Gate"))
 
     # Step 3: enclosed proxy concourse west of the lower bowl, running north-south.
@@ -154,15 +159,18 @@ def build_level():
     text("LBL_Food", "Food (example)", (cx - width / 2 + 5, 200, floor_z + 230), (cx, 200, floor_z + 230),
          40, root, lbl, ("LFF_Label", "LBL_Food"))
 
-    # Step 4: example seat, west sideline lower bowl, looking east across midfield.
+    # Step 4: example seat, about row 10 of the west lower bowl on the halfway line, looking at midfield.
+    # Traced: pitch wall at 41.5 m, seats rise 0.25 m per metre, so the seat is about 3.9 m up; eye +1.3 m.
+    # The tiles provide the seating bowl itself, so there are no proxy seat rows (they would z-fight).
     ps = "LFF_SiteRoot/LFF_Proxy/Seats"
-    seat_cam, seat_look = (-4200, 0, 650), (0, 0, 0)
+    seat_cam, seat_look = (-5050, 0, 520), (0, 0, 0)
     target("CT_SeatFieldView", seat_cam, seat_look, root)
-    box("PX_SeatRow_Front", (-4050, 0, 480), (60, 900, 50), root, ps)
-    box("PX_SeatRow_Below", (-3960, 0, 400), (60, 900, 50), root, ps)
-    text("PX_Seats_Illustration", "Illustration", (-4000, -380, 560), seat_cam, 20, root, ps)
-    text("LBL_Section", "Section 111, Row 10 (example ticket)", (-3950, 0, 620), seat_cam, 25, root, lbl,
+    text("PX_Seats_Illustration", "Illustration", (-4900, -420, 560), seat_cam, 20, root, ps)
+    text("LBL_Section", "Section 111, Row 10 (example ticket)", (-4900, 0, 470), seat_cam, 25, root, lbl,
          ("LFF_Label", "LBL_Section"))
+
+    # Align the whole site frame with the real field. Children follow; the anchor updates to the new pose.
+    root.set_actor_rotation(unreal.Rotator(roll=0.0, pitch=0.0, yaw=SITE_HEADING_DEG), False)
 
     validate()
     if not les.save_current_level():

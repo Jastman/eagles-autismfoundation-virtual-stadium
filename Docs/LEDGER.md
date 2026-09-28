@@ -43,6 +43,8 @@ Last updated: 2026-09-28 (cycle 5: first workstation compile, tests, MCP, and sc
 | F34 | Unreal MCP is **connected on the Mac**. The enabled plugins are `ModelContextProtocol`, `Terminal`, `EditorToolset`, `UMGToolSet` and `AutomationTestToolset`; the editor wrote them to `.uproject`. The server listens on `127.0.0.1:8000` only. `.mcp.json` is committed and has no secrets. The server exposes 3 top-level tools and 22 toolsets. | `lsof`, MCP `initialize` / `list_toolsets` |
 | F35 | `L_LFF_Stadium`, `DT_LFF_GoldenPath` and `WBP_LFF_HUD` now exist. They're built by the scripts in `Tools/Editor/` (LOCAL_AGENT_SETUP §5). The level uses **seed** placement values and **seed** camera poses, placed without tiles; neither has been calibrated or framed. | Build logs, MCP `GetWidgets` |
 | F36 | In PIE, the game mode loads, the HUD shows the intro and the controls are in the right states. Google tiles return **401** because no project ion token is selected; the user is signed in to ion in the Cesium panel. | PIE capture, Output Log, 2026-09-28 |
+| F37 | **Google tiles stream and render** once a project token is chosen and `ExtendDefaultLuminanceRange=True` is set. The hand-written `DefaultEngine.ini` lacked that UE5 default, so CesiumSunSky blew every frame out to white even though the tiles had loaded (100% progress, about 52 MB cached). | CVar check, captures |
+| F38 | **Placement revision 2026-09-28a** is applied and saved: origin 39.9008036, -75.1674790, -31.04 m ellipsoidal; SiteRoot heading -6.5°. The build script matches it. The gate and seat targets were re-posed from tile traces (gate 35 m outside the north headhouse; seat about row 10 of the west lower bowl). The proxy seat rows were removed because the tiles provide the bowl. | CESIUM_PLACEMENT V1 table |
 | F33 | The first compile needed two build-rule fixes: the target files moved to `Source/`, and `BuildSettingsVersion.V5` became `Latest`. **The ~1,100 lines of C++ then compiled with 0 errors and 0 warnings**, and the 4 `LFF.*` tests pass. This retires R14 for the Mac. | `Saved/Logs/T1.1-build-mac.log`, `T1.2-tests-mac.log` |
 
 ## 2. Assumptions (temporary, dated 2026-09-28)
@@ -63,6 +65,7 @@ Last updated: 2026-09-28 (cycle 5: first workstation compile, tests, MCP, and sc
 
 ## 3b. Open items found while building (2026-09-28)
 - **Resolved: the toggles only appeared in one panel.** C++ now binds an optional `TogglesPanel`, shown when `LFFJourneyRules::ShouldShowToggles(bStarted, bSettingsOpen)` is true (`!bStarted || bSettingsOpen`; covered by `LFF.Journey.Rules`). `WBP_LFF_HUD` puts one set of toggles in it, with the intro and Settings headers above. Sound stays in the top bar, so T2 row 11 can pass.
+- **Labels are hard to read against the tiles.** `LBL_Gate` is small and low-contrast from 25 m, because TextRender uses plain lit white text. Consider a larger world size and an unlit or backed label material. Check this in PIE.
 - **HUD wording is placeholder** (headings, pause, restart and settings text) until the user and the Eagles Autism Foundation approve it (F24).
 
 ## 4. Decisions
@@ -130,7 +133,7 @@ The golden path (see the brief) plus quality gates 1–7.
 |---|---|
 | G1 Versions/license/asset/hardware/deploy known | MOSTLY MET: UE 5.8.3 (CL 58210709), Cesium 2.29.1, CGTrader model, desktop target, Releases + video. Open: model license (Q-D), GPU. |
 | G2 Model imports and has a perf baseline | WAIVED for implementation start (D17). Proxy stadium. |
-| G3 Stadium aligns reproducibly with Cesium | PARTLY WAIVED (D17). Strategy accepted (ADR-0001); calibration happens on the workstation. |
+| G3 Stadium aligns reproducibly with Cesium | PARTLY WAIVED (D17). The site frame is calibrated to the tiles (F38: ±1 m, ±1°, ±0.3 m). The model alignment checks V3–V8 wait for the CGTrader model. |
 | G4 Four-stop golden path works | **T1.1 PASS, T1.2 PASS on the Mac** (2026-09-28, UE 5.8.3 CL 58210709, commit c567429). The map, table and HUD are built (F35), and PIE reaches the intro (F36). T1.3 (Windows) is open. Next: select the ion token, calibrate the origin, frame the 4 targets, then run the T2 PIE checklist. |
 
 ### Evidence log
@@ -142,6 +145,7 @@ The golden path (see the brief) plus quality gates 1–7.
 | 2026-09-28 | Mac, UE 5.8.3 | `build_wbp_lff_hud.py` (MCP) | **PASS**: 94 widgets, all 30 contract names, compiled, saved. | Script output |
 | 2026-09-28 | Mac, UE 5.8.3 | PIE smoke test (not T2) | **PASS (intro only)**. `Game class is 'LFFGameMode'`. The HUD intro shows the card copy, badge, disclaimer and the two toggles; Back, Start again and Pause are disabled; Start is enabled. No LFF errors. Tiles: 401 (no token). Input wasn't driven, because MCP has no input tool. | Editor capture |
 | 2026-09-28 | Mac, UE 5.8.3 | TogglesPanel change: T1.1 and T1.2 re-run, HUD rebuilt | **PASS**. The build succeeded with 0 warnings (9 actions). All 4 `LFF.*` tests pass, and `Rules` now includes 4 `ShouldShowToggles` cases. The HUD rebuilt with 93 widgets and all 31 contract names. In PIE, the intro shows TogglesPanel with the intro header and 3 toggles, and the Settings header is hidden. No LFF or UMG errors. | `Saved/Logs/T1.*-mac.log` |
+| 2026-09-28 | Mac, UE 5.8.3 | Tiles plus calibration pass | **PASS (provisional)**. The tileset loads to 100%. Overhead captures at 3 km, 800 m, 250 m and 120 m show midfield about 1.8 m east and 0.4 m north of the seed; the traced turf is -1.04 m below the seed origin; pitch-wall traces give a heading of about -6°. After the change, turf reads Z ≈ -0.2 m and the walls are symmetric within about 1 m. The target captures show the north headhouse (steps 1–2) and a row-10 view across the pitch (step 4). | Captures in session scratchpad; values in CESIUM_PLACEMENT |
 | 2026-09-28 | Mac, UE 5.8.3 | Unreal MCP smoke test (LOCAL_AGENT_SETUP §2 step 6) | **PASS**. `get_current_level` returned `/Temp/Untitled_0`, and `find_actors` returned 7 default actors (WorldSettings, Brush_0, DefaultPhysicsVolume_0, BuoyancyManager_0, GameplayDebuggerPlayerManager_0, ChaosDebugDrawActor, CesiumGaussianSplatSystemActor). Run over raw JSON-RPC, because this Claude Code session started before `.mcp.json` existed. | This row |
 | G5 Accessibility controls and reduced motion | OPEN |
 | G6 Packaged build on target hardware | OPEN. Mac on this workstation; Win64 blocked on R11. |

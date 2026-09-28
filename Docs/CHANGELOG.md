@@ -1,6 +1,12 @@
 # Changelog
 
 ## 2026-09-28
+- **Tiles render and the site is calibrated.**
+  - Added `r.DefaultFeature.AutoExposure.ExtendDefaultLuminanceRange=True` to `DefaultEngine.ini`. Without it CesiumSunSky rendered everything white.
+  - Applied placement revision 2026-09-28a (origin 39.9008036, -75.1674790, -31.04 m; SiteRoot -6.5°), measured from the tiles with overhead captures and line traces.
+  - Re-posed CT_GateEntry and CT_SeatFieldView and their labels, and removed the proxy seat rows.
+  - `build_lff_stadium_level.py` carries the same values.
+  - Docs: CESIUM_PLACEMENT, LEDGER F37–F38 and G3, LOCAL_AGENT_SETUP §5 gotchas.
 - **One set of toggles (C++ plus HUD).**
   - Added the optional `TogglesPanel` binding to `ULFFHUDWidget`, with `LFFJourneyRules::ShouldShowToggles` and tests.
   - `WBP_LFF_HUD` now shows Less movement, Calm Mode and Large text on the intro *and* in Settings. The intro and Settings headers sit above them, with Close in the Settings title bar.

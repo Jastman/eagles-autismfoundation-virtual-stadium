@@ -188,8 +188,11 @@ Not used in v1: there's one site and one fixed origin. Reconsider it only if we 
 
 | Value | Setting | Recorded by / date |
 |---|---|---|
-| Origin latitude (deg) | 39.9008 (**seed, not calibrated**) | `build_lff_stadium_level.py`, 2026-09-28 |
-| Origin longitude (deg) | -75.1675 (**seed, not calibrated**) | `build_lff_stadium_level.py`, 2026-09-28 |
-| Origin height (m, ellipsoidal) | -30.0 (**seed**; replace with the §4 step 3 tile sample) | `build_lff_stadium_level.py`, 2026-09-28 |
-| LFF_SiteRoot heading (deg) | 0 (**seed**; field axis assumed north–south) | `build_lff_stadium_level.py`, 2026-09-28 |
+| Placement revision | **2026-09-28a** (against Google tiles, before the CGTrader model) | Claude Code via Unreal MCP, 2026-09-28 |
+| Origin latitude (deg) | **39.9008036** (±1 m) | Midfield from 120 m and 250 m overhead captures plus pitch-wall traces. The seed was about 1.8 m west and 0.4 m south of midfield. |
+| Origin longitude (deg) | **-75.1674790** (±1 m) | Same |
+| Origin height (m, ellipsoidal) | **-31.04** (±0.3 m) | Line traces onto the turf, 5 points, flat within 7 cm. After the change, turf reads Z = -0.05 to -0.33 m (tile LOD noise). The plaza is about +1.2 m and the north plaza about +0.7 m relative to turf. Sanity check: with N ≈ -33.3 m this is about 2.3 m orthometric, within 3 m of the published ~3 m. |
+| LFF_SiteRoot heading (deg) | **-6.5** (±1°); field axis about 353.5° true | East and west pitch-wall traces at fixed Y (5.9° and 6.1°), in the rotated frame (about 7.5°), and the painted-line tilt in the overhead capture (about 7°). This doesn't yet meet the §6 V4 two-estimate ≤0.5° check, which is due at model alignment. |
+| Landmark check (§4 step 7) | The round arena about 390 m west matches Xfinity Mobile Arena (§3: 381 m at about 275°) | 3 km overhead capture |
+| Notes | The pitch imagery is marked as a **soccer pitch** (2026 World Cup), not NFL lines. Use the pitch centre and walls, not yard lines, for calibration. | |
 | Cesium for Unreal version | v2.29.1 | user, 2026-09-28 |
