@@ -56,6 +56,9 @@ Separately, the project was rendering with UE4-era settings: no global illuminat
 6. **Cinematic look.**
    - **Project settings** (`DefaultEngine.ini`): Lumen GI and reflections, virtual shadow maps, mesh distance fields, no static lighting, TSR.
    - **Level** (`Tools/Editor/setup_cinematic_look.py`): an unbound post-process volume with high-quality Lumen and gentle histogram exposure (EV 7–15), subtle aerial fog, and the sun at 3:30 pm on Oct 9.
+     - **Amended 2026-09-29 (user direction):** the sun is at **1:00 pm local (EDT) on Oct 18, 2026**, the Eagles home game closest to the demo. `TimeZone` is −5 with CesiumSunSky's own daylight saving; the earlier −4 double-counted DST and put the sun an hour late.
+     - **Partly cloudy sky:** a static VolumetricCloud layer (`MI_LFF_Clouds_PartlyCloudy`, coverage −0.08). Wind drift and storm lightning are zeroed, so nothing moves or flashes; a frame diff over 10 s showed 0% changed pixels.
+     - **No cloud shadows on the ground,** for performance (PERF_BASELINE).
    - **Kept off for comfort:** motion blur, lens flares, grain, chromatic aberration and depth of field.
 
 ## Findings during integration

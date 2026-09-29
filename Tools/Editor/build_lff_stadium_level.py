@@ -25,7 +25,7 @@ JOURNEY_JSON = os.path.join(PROJECT_DIR, "SourceData", "Journey", "LFF_GoldenPat
 ORIGIN_LAT, ORIGIN_LON, ORIGIN_HEIGHT_ELLIPSOID_M = 39.9008036, -75.1674790, -31.04
 SITE_HEADING_DEG = -6.5  # field axis about 353.5 deg true (pitch-wall traces and line tilt, ±1 deg)
 GOOGLE_PHOTOREALISTIC_ION_ASSET = 2275207
-PHILADELPHIA_UTC_OFFSET_OCT = -4.0  # EDT
+PHILADELPHIA_STANDARD_UTC_OFFSET = -5.0  # EST; CesiumSunSky applies daylight saving itself (EDT in October)
 
 CUBE = "/Engine/BasicShapes/Cube.Cube"  # 100 cm cube, pivot at centre
 SIGN_PLATE_MATERIAL = "/Game/LFF/Materials/MI_LFF_SignPlate"
@@ -149,7 +149,7 @@ def build_level():
     # No token here: the tileset uses the project default from CesiumIonSaaS (set via the Cesium panel).
 
     sun = spawn(unreal.CesiumSunSky, "CesiumSunSky", folder="Cesium")
-    for prop, value in (("time_zone", PHILADELPHIA_UTC_OFFSET_OCT), ("solar_time", 13.0), ("month", 10), ("day", 9)):
+    for prop, value in (("time_zone", PHILADELPHIA_STANDARD_UTC_OFFSET), ("solar_time", 13.0), ("month", 10), ("day", 18)):
         try:
             sun.set_editor_property(prop, value)
         except Exception as e:  # property names are Cesium-version dependent

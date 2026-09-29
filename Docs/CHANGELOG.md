@@ -1,6 +1,12 @@
 # Changelog
 
 ## 2026-09-29
+- **Sky and time of day.**
+  - The sun is at 1:00 pm local on Oct 18, 2026 (EDT, via TimeZone −5 plus CesiumSunSky DST). This fixes the earlier −4, which was an hour late.
+  - Partly cloudy volumetric sky (`MI_LFF_Clouds_PartlyCloudy`): static, no lightning, half samples, no ground cloud shadows.
+  - `setup_cinematic_look.py` and `build_lff_stadium_level.py` updated to match.
+  - 60 fps is kept (PERF_BASELINE).
+- **Git LFS** now tracks `Content/LFF/Stadium/**` (`.gitattributes`).
 - **Official stadium model integrated (ADR-0004).**
   - Blender pipeline `Tools/Pipeline/prepare_stadium.py`: OBJ in, NFL field, 26 chunks, tile registration.
   - Unreal import `Tools/Editor/import_stadium.py`: Nanite, PBR materials, the tile clip polygon and overlay, the proxy concourse removed.
