@@ -19,3 +19,6 @@ Content/CesiumSettings/CesiumIonServers/
 
 # Python bytecode (Tools/Editor)
 __pycache__/
+
+# Licensed CGTrader source model (5+ GB). Never commit; import from here into /Game/LFF/Stadium.
+/Assets/

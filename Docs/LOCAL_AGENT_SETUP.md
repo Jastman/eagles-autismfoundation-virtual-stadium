@@ -121,3 +121,43 @@ Things to know:
 - **Line traces work on the tiles** (`SceneTools.trace_world`), because Cesium builds collision. Batch them in `ProgrammaticToolset.execute_tool_script` for profiles (hundreds of traces take seconds). Traces return `None` where no tile with collision is loaded.
 - **The Cesium ion token** lives in `DefaultIonAccessToken` on `Content/CesiumSettings/CesiumIonServers/CesiumIonSaaS.uasset`. That folder is **git-ignored** so the token can't be committed. On each machine, choose the token in the Cesium panel → **Token** (use the restricted demo token, D15). Cesium recreates the asset if it's missing. After choosing the token, **save** `CesiumIonSaaS` (it stays dirty in memory otherwise) and refresh the tileset.
 
+## 6. Stadium model pipeline (ADR-0004)
+
+Run these in order. Everything they read lives in `Assets/` and `Saved/StadiumImport/`, and neither folder is committed.
+
+1. **Sample the tile heights.** With the editor open and the tiles visible, before the site is clipped:
+
+   ```bash
+   python3 Tools/Editor/sample_tile_dsm.py
+   ```
+
+   It writes `Saved/StadiumImport/tile_dsm.json`. You only need to rerun it if the georeference changes.
+2. **Prepare the model in Blender** (about 25 min, mostly OBJ import of the seats):
+
+   ```bash
+   /Applications/Blender.app/Contents/MacOS/Blender -b --factory-startup --python Tools/Pipeline/prepare_stadium.py -- --src "Assets/Eagles Stadium Philadelphia 3D Model/OBJ File format (Exchange)" --tile-dsm Saved/StadiumImport/tile_dsm.json --out Saved/StadiumImport/v1
+   ```
+
+3. **Import into Unreal and swap it into the level** (editor closed; about 30 min, mostly Nanite builds):
+
+   ```bash
+   Tools/Editor/run_headless.sh Tools/Editor/import_stadium.py "LFF stadium"
+   ```
+
+4. **Apply the cinematic look** (editor closed):
+
+   ```bash
+   Tools/Editor/run_headless.sh Tools/Editor/setup_cinematic_look.py "LFF look"
+   ```
+
+5. **Preview framing without the editor:**
+
+   ```bash
+   /Applications/Blender.app/Contents/MacOS/Blender -b --factory-startup --python Tools/Pipeline/probe_views.py -- --chunks Saved/StadiumImport/v1 --out <dir> --views views.json
+   ```
+
+Notes:
+- `run_headless.sh` exists because 5.8.3 editors hang or crash in `quit_editor` after these scripts. It stops that exact process once the script logs DONE or FAILED. Headless logs go to `~/Library/Logs/Unreal Engine/VirtualStadiumEditor/`, not to the redirected stdout.
+- **Tiles don't stream while the editor is in the background** unless `bThrottleCPUWhenNotForeground=False` is set. That setting is per user (`Saved/Config/MacEditor/EditorPerProjectUserSettings.ini`, under `[/Script/UnrealEd.EditorPerformanceSettings]`). Without it, Cesium gets no camera: tile load progress sits at 0 and nothing is logged.
+- **The standalone game logs** to `~/Library/Logs/VirtualStadium/`.
+

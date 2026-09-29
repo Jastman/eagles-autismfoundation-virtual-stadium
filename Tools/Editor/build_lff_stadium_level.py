@@ -174,29 +174,23 @@ def build_level():
     text("LBL_Gate", "Gate (illustration)", (0, -14200, 600), gate_cam, 200, root, "LFF_SiteRoot/LFF_Labels",
          ("LFF_Label", "LBL_Gate"))
 
-    # Step 3: enclosed proxy concourse west of the lower bowl, running north-south.
-    px = "LFF_SiteRoot/LFF_Proxy/Concourse"
-    cx, floor_z, width, length, height = -7000, 300, 800, 3000, 500
-    box("PX_Concourse_Floor", (cx, 0, floor_z - 10), (width, length, 20), root, px)
-    box("PX_Concourse_Ceiling", (cx, 0, floor_z + height + 10), (width, length, 20), root, px)
-    box("PX_Concourse_WallW", (cx - width / 2 - 10, 0, floor_z + height / 2), (20, length, height), root, px)
-    box("PX_Concourse_WallE", (cx + width / 2 + 10, 0, floor_z + height / 2), (20, length, height), root, px)
-    box("PX_Concourse_EndN", (cx, -length / 2 - 10, floor_z + height / 2), (width + 40, 20, height), root, px)
-    box("PX_Concourse_EndS", (cx, length / 2 + 10, floor_z + height / 2), (width + 40, 20, height), root, px)
-    conc_cam, conc_look = (cx, 1200, floor_z + 170), (cx, -1500, floor_z + 150)
-    target("CT_InteriorConcourse", conc_cam, conc_look, root)
-    text("PX_Concourse_Illustration", "Illustration", (cx, -1480, floor_z + 420), conc_cam, 45, root, px)
+    # Step 3: the model's open-air perimeter concourse at plaza level on the west side (ADR-0004). Probed in the
+    # model: floor +1.58 m, ~6 m clear height, inner wall at u ~ -72.3 m, open to the west, long run north-south.
+    # Standing eye height, looking north along the concourse; signs on the inner wall (on the visitor's right).
     lbl = "LFF_SiteRoot/LFF_Labels"
-    text("LBL_Concourse", "Concourse (illustration)", (cx, -600, floor_z + 330), conc_cam, 60, root, lbl,
+    floor_z = 158
+    conc_cam, conc_look = (-7800, 800, floor_z + 165), (-7800, -3000, floor_z + 150)
+    target("CT_InteriorConcourse", conc_cam, conc_look, root)
+    text("LBL_Concourse", "Concourse (illustration)", (-7800, -200, floor_z + 390), conc_cam, 60, root, lbl,
          ("LFF_Label", "LBL_Concourse"))
-    text("LBL_Restroom", "Restrooms (example)", (cx + width / 2 - 8, -200, floor_z + 230), (cx, -200, floor_z + 230),
+    text("LBL_Restroom", "Restrooms (example)", (-7240, -400, floor_z + 230), (-8000, -400, floor_z + 230),
          50, root, lbl, ("LFF_Label", "LBL_Restroom"))
-    text("LBL_Food", "Food (example)", (cx - width / 2 + 8, 200, floor_z + 230), (cx, 200, floor_z + 230),
+    text("LBL_Food", "Food (example)", (-7262, -1200, floor_z + 230), (-8000, -1200, floor_z + 230),
          50, root, lbl, ("LFF_Label", "LBL_Food"))
 
     # Step 4: example seat, about row 10 of the west lower bowl on the halfway line, looking at midfield.
     # Traced: pitch wall at 41.5 m, seats rise 0.25 m per metre, so the seat is about 3.9 m up; eye +1.3 m.
-    # The tiles provide the seating bowl itself, so there are no proxy seat rows (they would z-fight).
+    # Framed against the tiles first; checked against the CGTrader model (its 3D seats fill the foreground).
     seat_cam, seat_look = (-5050, 0, 520), (0, 0, 0)
     target("CT_SeatFieldView", seat_cam, seat_look, root)
     # 3 m ahead and about 0.9 m below eye level, so the sign sits in the lower third and doesn't cover the pitch

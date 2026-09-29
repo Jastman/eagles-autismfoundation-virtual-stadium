@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-09-29
+- **Official stadium model integrated (ADR-0004).**
+  - Blender pipeline `Tools/Pipeline/prepare_stadium.py`: OBJ in, NFL field, 26 chunks, tile registration.
+  - Unreal import `Tools/Editor/import_stadium.py`: Nanite, PBR materials, the tile clip polygon and overlay, the proxy concourse removed.
+  - Also added `setup_cinematic_look.py`, `sample_tile_dsm.py`, `run_headless.sh` and `probe_views.py`.
+  - The concourse target and its signs moved to the model's plaza-level concourse.
+- **Cinematic rendering.**
+  - `DefaultEngine.ini` now enables Lumen GI and reflections, VSM, distance fields, no static lighting, TSR and `CachedLightingPreExposure=8`.
+  - `PPV_LFF_Cinematic`, the aerial fog and the sun at 3:30 pm Oct 9 are set.
+  - The turf material is toned down.
+- **Performance:** 60 fps at 1080p on the M4 Max (`Docs/PERF_BASELINE.md`).
+- `Assets/` is git-ignored. Updated LEDGER F40–F42, D25 and G2, and ASSET_INGESTION.
+
 ## 2026-09-28
 - **Legible labels.**
   - Each label is now white text on a dark sign plate (`MI_LFF_SignPlate`, a component of the label actor), created by `build_lff_stadium_level.py`.

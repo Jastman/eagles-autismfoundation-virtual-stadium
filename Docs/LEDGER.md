@@ -46,6 +46,9 @@ Last updated: 2026-09-28 (cycle 5: first workstation compile, tests, MCP, and sc
 | F37 | **Google tiles stream and render** once a project token is chosen and `ExtendDefaultLuminanceRange=True` is set. The hand-written `DefaultEngine.ini` lacked that UE5 default, so CesiumSunSky blew every frame out to white even though the tiles had loaded (100% progress, about 52 MB cached). | CVar check, captures |
 | F38 | **Placement revision 2026-09-28a** is applied and saved: origin 39.9008036, -75.1674790, -31.04 m ellipsoidal; SiteRoot heading -6.5°. The build script matches it. The gate and seat targets were re-posed from tile traces (gate 35 m outside the north headhouse; seat about row 10 of the west lower bowl). The proxy seat rows were removed because the tiles provide the bowl. | CESIUM_PLACEMENT V1 table |
 | F39 | A headless editor run's orphaned `CrashReportClient` can hold MCP port 8000 (it inherits the socket). Fixed by giving headless runs `-ModelContextProtocolPort=18000`. | `lsof`, editor log |
+| F40 | **The official CGTrader model is integrated (ADR-0004).**<br>• 26 Nanite chunks, 6.9 M triangles, 95 PBR material instances, 140 textures.<br>• Registered to the tiles at 182.25° and (−2.25, +2.5) m, median residual 0.61 m.<br>• The Google tiles are clipped over the model site. The tiles still load in the editor background (throttling off).<br>• The proxy concourse is replaced by the model's plaza-level concourse. | Pipeline logs, captures |
+| F41 | **Lighting is now UE5-grade.** Lumen GI and reflections, VSM, distance fields, TSR, `CachedLightingPreExposure=8`, and `PPV_LFF_Cinematic` (EV 7–15; no motion blur, flares, grain or chromatic aberration). The previous config had no GI at all. | `DefaultEngine.ini`, `setup_cinematic_look.py` |
+| F42 | **Performance on the Mac at 1080p, intro view:** frame 16.9 ms (60 fps vsync), GPU 12.4 ms, Nanite 0.35 ms. | `Docs/PERF_BASELINE.md` |
 | F33 | The first compile needed two build-rule fixes: the target files moved to `Source/`, and `BuildSettingsVersion.V5` became `Latest`. **The ~1,100 lines of C++ then compiled with 0 errors and 0 warnings**, and the 4 `LFF.*` tests pass. This retires R14 for the Mac. | `Saved/Logs/T1.1-build-mac.log`, `T1.2-tests-mac.log` |
 
 ## 2. Assumptions (temporary, dated 2026-09-28)
@@ -67,7 +70,7 @@ Last updated: 2026-09-28 (cycle 5: first workstation compile, tests, MCP, and sc
 ## 3b. Open items found while building (2026-09-28)
 - **Resolved: the toggles only appeared in one panel.** C++ now binds an optional `TogglesPanel`, shown when `LFFJourneyRules::ShouldShowToggles(bStarted, bSettingsOpen)` is true (`!bStarted || bSettingsOpen`; covered by `LFF.Journey.Rules`). `WBP_LFF_HUD` puts one set of toggles in it, with the intro and Settings headers above. Sound stays in the top bar, so T2 row 11 can pass.
 - **Resolved: labels were hard to read against the tiles.** Every label is now a sign: white text on a dark midnight-green plate (`MI_LFF_SignPlate`). The plate is a component of the label actor, so it shows and hides with it. Text and plate are both lit, so their contrast (about 10:1 by albedo) holds in sun and shade. The gate and concourse signs are larger. The section sign is smaller and sits 3 m ahead in the lower third.
-- **Open: tile geometry intrudes into the concourse proxy.** Traces find tile surfaces inside the corridor, including one at 6 m height about 2.5 m in front of `CT_InteriorConcourse`. The corridor sits inside the west-stand photogrammetry shell under a flat deck at 8.2 m. **Proposed fix:**
+- **Resolved by ADR-0004 (the model replaces the proxy; the tiles are clipped over the site). Was open: tile geometry intrudes into the concourse proxy.** Traces find tile surfaces inside the corridor, including one at 6 m height about 2.5 m in front of `CT_InteriorConcourse`. The corridor sits inside the west-stand photogrammetry shell under a flat deck at 8.2 m. **Proposed fix:**
   - Move the corridor underground, where the tiles have no geometry.
   - Add a C++ rule so a move is a fade if **either** end is authored `ReducedMotion`.
   - Author `interior-concourse` as `ReducedMotion`.
@@ -102,6 +105,7 @@ Last updated: 2026-09-28 (cycle 5: first workstation compile, tests, MCP, and sc
 | D22 | Each platform is packaged on its own OS: Mac on the current Mac, Win64 on a Windows PC. | Accepted |
 | D23 | `Content/CesiumSettings/CesiumIonServers/` (which holds `DefaultIonAccessToken`) is **git-ignored and untracked**. The token is chosen per machine. This supersedes committing `CesiumIonSaaS.uasset` in `c567429`, which never held a token. | Accepted (lead, per CESIUM_PLACEMENT §7) |
 | D24 | Level and HUD setup is **scripted** (`Tools/Editor/`) rather than hand-built, so it can be reproduced on the Windows PC and after a model swap. Hand framing of the `CT_` targets happens after the scripts run, and the scripts never overwrite. | Accepted |
+| D25 | **The official model replaces the Google stadium (ADR-0004).** The tiles are clipped over the model site and the NFL field is used. It's prepared in Blender, imported as Nanite, and the site is registered to the tiles by height matching. | Accepted (user direction 2026-09-29) |
 | D17 | Gate waivers to start implementation: **G2 waived for V1** (proxy stadium; the real model imports through ASSET_INGESTION when it arrives). **G3 partly waived.** The journey code doesn't depend on alignment. Calibration happens on the workstation before the Oct 9 build. | Accepted, risk R2/R4 owned by lead |
 
 ## 5. Risks (top, pre-architecture)
@@ -139,7 +143,7 @@ The golden path (see the brief) plus quality gates 1–7.
 | Gate | Status |
 |---|---|
 | G1 Versions/license/asset/hardware/deploy known | MOSTLY MET: UE 5.8.3 (CL 58210709), Cesium 2.29.1, CGTrader model, desktop target, Releases + video. Open: model license (Q-D), GPU. |
-| G2 Model imports and has a perf baseline | WAIVED for implementation start (D17). Proxy stadium. |
+| G2 Model imports and has a perf baseline | **MET on the Mac** (F40, F42). Open: packaged size under 2 GiB and the Win64 numbers. |
 | G3 Stadium aligns reproducibly with Cesium | PARTLY WAIVED (D17). The site frame is calibrated to the tiles (F38: ±1 m, ±1°, ±0.3 m). The model alignment checks V3–V8 wait for the CGTrader model. |
 | G4 Four-stop golden path works | **T1.1 PASS, T1.2 PASS on the Mac** (2026-09-28, UE 5.8.3 CL 58210709, commit c567429). The map, table and HUD are built (F35), and PIE reaches the intro (F36). T1.3 (Windows) is open. Next: select the ion token, calibrate the origin, frame the 4 targets, then run the T2 PIE checklist. |
 

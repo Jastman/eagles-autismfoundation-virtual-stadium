@@ -1,6 +1,21 @@
 # Stadium Asset Ingestion SOP
 
-**Target:** Lincoln Financial Field model (1.836M polys / 2.328M verts, textured FBX/glTF/USD/OBJ/Blender).
+**Target:** Lincoln Financial Field model, CGTrader "Eagles Stadium Philadelphia 3D Model", **received 2026-09-29** in `Assets/`, which is git-ignored.
+
+**As delivered (measured):**
+- About 7.2 M triangles: stadium plus site 3.47 M, NFL field 40 k, seats about 3.7 M.
+- OBJ, FBX, DWG and 3DM. The FBX has no textures.
+- 152 textures.
+
+**How it's integrated:** see **ADR-0004**. Where this SOP and ADR-0004 differ, ADR-0004 wins. Pipeline:
+1. `Tools/Pipeline/prepare_stadium.py` (Blender)
+2. `Tools/Editor/import_stadium.py`
+3. `Tools/Editor/setup_cinematic_look.py`
+
+**Corrections to the draft below:**
+- **Nanite supports masked materials** (since UE 5.1). Only translucent materials are excluded, and this model has none.
+- **The objects are generically named** (`object_N`), so "preserve named objects" doesn't apply. The sections are spatial chunks.
+- **Texture budget:** about 1 GB at full resolution, streamed. The limit that matters is the 2 GiB release zip (D15), measured at package time.
 **Gating:** Approval at each checkpoint before proceeding. No assets become a build dependency until they pass validation.
 
 ## Pre-Import Gate (VERIFY with vendor and legal)
@@ -146,4 +161,9 @@ Until the real asset is validated and integrated:
 
 ---
 
-**Status:** OPEN — asset not in hand. SOP to be executed when delivery is confirmed.
+**Status:** IN PROGRESS (2026-09-29).
+- **Asset:** received and inventoried.
+- **Scale, axes and pivot:** confirmed (metres, Y-up, midfield origin).
+- **Materials and transparency:** reviewed (no transparency, 20 alpha PNGs, masked materials).
+- **Nanite:** used for all chunks.
+- **Performance baseline and license:** open.
