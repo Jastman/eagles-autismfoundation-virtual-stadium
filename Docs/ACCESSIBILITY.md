@@ -79,13 +79,29 @@
 - Volume capped at 85 dB SPL (approximately 80% of max system volume).
 - **Recommendation for Golden Path v1**: defer noise previews; include captions for static text-to-speech only if added later.
 
+### Voiceover and captions (as built, session 3, 2026-09-30)
+- **The card is the script.** Each step's voice line is exactly its Title then its Body (`SourceData/Audio/VO/VO_MANIFEST.md`, generated from the journey JSON). No extra words, no hype.
+- **Captions = the step card.** It's always on screen on journey steps, whether or not the voice is on, so the captions are never a second, different narration.
+- **Voice is Off by default** and needs Sound on. Sound Off mutes beds, previews and voice. Voice Off + Sound On = beds only. Calm Mode forces Voice off.
+- **One voice at a time.** A new step, Back, a timeline jump, Start Over or Pause stops the voice at once. It starts 0.5 s after the camera arrives, never during a move, never on the splash.
+- **Previews never start under the voice:** picking Soft stops the voice first.
+- The bed ducks 8 dB under the voice. One adult voice later: warm, unhurried, no announcer, no crowd baked in.
+- A missing recording is skipped silently; the card stays.
+
 ---
 
 ## 5. Calm Mode
 
-### What it changes
-- Background music off (or very quiet, <50 dB SPL).
-- Animations use reduced-motion settings (instant cuts, no easing).
+### What it changes (as built, 2026-09-30)
+- **Sound off:** the whole audio device is muted, whatever the Sound toggle says.
+- **Less movement on,** and every camera move is a plain cut (no easing, no fade).
+- **Voice off,** captions (the card) stay.
+- **Crowd hidden** (actors tagged `LFF_Crowd`).
+- **Gates already open, the car already parked, the ticket phone already up and still,** and the splash holds a still wide shot instead of orbiting.
+- **Intensity previews locked off** and their buttons hidden.
+- The Sound and Less movement toggles show Off / On and are disabled until Calm Mode is turned off, which restores the visitor's own choices.
+
+### Still recommended (not built)
 - No bold reds or saturated colors; muted palette (pastels, grays, earth tones).
 - Longer dwell time before any auto-timeout (e.g., 10 minutes instead of 5).
 - No pop-up notifications or warnings; only gentle on-screen text.

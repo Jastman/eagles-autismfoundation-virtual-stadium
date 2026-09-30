@@ -6,6 +6,7 @@
 #include "LFFGameMode.generated.h"
 
 class UDataTable;
+class USoundBase;
 
 /**
  * Journey configuration for the stadium map. Set as GlobalDefaultGameMode in DefaultEngine.ini.
@@ -42,6 +43,13 @@ public:
     UPROPERTY(EditDefaultsOnly, Category = "Copy")
     FText DisclaimerApproximate;
 
+    /** The one small line under the badge on journey steps. */
+    UPROPERTY(EditDefaultsOnly, Category = "Copy")
+    FText DisclaimerLineIllustrative;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Copy")
+    FText DisclaimerLineApproximate;
+
     UPROPERTY(EditDefaultsOnly, Category = "Copy")
     FText TargetMissingText;
 
@@ -64,12 +72,62 @@ public:
     UPROPERTY(EditDefaultsOnly, Category = "Timing")
     FLinearColor FadeColor = FLinearColor(0.08f, 0.08f, 0.10f, 1.0f);
 
-    UPROPERTY(EditDefaultsOnly, Category = "Audio", meta = (ClampMin = "0.0", ClampMax = "1.0"))
-    float BedVolume = 0.3f;
+    /**
+     * Low plaza and crowd murmur, looped while Sound is on (no horns, no fireworks). Steps may override it.
+     * Cooked via DirectoriesToAlwaysCook=/Game/LFF/Audio (DefaultGame.ini).
+     */
+    UPROPERTY(EditDefaultsOnly, Category = "Audio")
+    TSoftObjectPtr<USoundBase> AmbientBed;
 
-    /** Calm Mode multiplies sound volume by this. */
+    /** Short muffled sample for a step's Sound preview. Plays once, only after the visitor picks Soft. */
+    UPROPERTY(EditDefaultsOnly, Category = "Audio")
+    TSoftObjectPtr<USoundBase> PreviewSound;
+
     UPROPERTY(EditDefaultsOnly, Category = "Audio", meta = (ClampMin = "0.0", ClampMax = "1.0"))
-    float CalmVolumeMultiplier = 0.5f;
+    float BedVolume = 0.35f;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Audio", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+    float PreviewVolume = 0.35f;
+
+    /** One full bright-dim cycle of the Lights preview. 4 s is 0.25 Hz, far below any flash threshold. */
+    UPROPERTY(EditDefaultsOnly, Category = "Preview", meta = (ClampMin = "3.0", ClampMax = "10.0"))
+    float LightPulseSeconds = 4.0f;
+
+    /** Peak exposure lift of the Lights preview, in stops. The pulse is a smooth sine, never a step. */
+    UPROPERTY(EditDefaultsOnly, Category = "Preview", meta = (ClampMin = "0.0", ClampMax = "1.5"))
+    float LightPulseStops = 0.9f;
+
+    /** Voiceover level. Kept a little under the bed level; the bed ducks under it while it speaks. */
+    UPROPERTY(EditDefaultsOnly, Category = "Voice", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+    float VoiceVolume = 0.3f;
+
+    /** How far the bed dips while the voice speaks (6-10 dB). */
+    UPROPERTY(EditDefaultsOnly, Category = "Voice", meta = (ClampMin = "-10.0", ClampMax = "-6.0"))
+    float VoiceDuckDecibels = -8.0f;
+
+    /** A short breath after the camera arrives before the voice starts, so a step never opens with a jolt. */
+    UPROPERTY(EditDefaultsOnly, Category = "Voice", meta = (ClampMin = "0.0", ClampMax = "2.0"))
+    float VoiceStartDelaySeconds = 0.5f;
+
+    /** Beds cross-fade over this long when a step names a different one. */
+    UPROPERTY(EditDefaultsOnly, Category = "Audio", meta = (ClampMin = "0.2", ClampMax = "4.0"))
+    float BedCrossfadeSeconds = 1.5f;
+
+    /**
+     * The splash orbit passes through this camera target (the first step's wide shot), circling LFF_SiteRoot at its
+     * radius and height, so Start glides along the orbit into the first step.
+     */
+    UPROPERTY(EditDefaultsOnly, Category = "Splash")
+    FName SplashOrbitTargetId = TEXT("CT_StadiumWide");
+
+    /** One slow lap. */
+    UPROPERTY(EditDefaultsOnly, Category = "Splash", meta = (ClampMin = "25.0", ClampMax = "40.0"))
+    float SplashOrbitSeconds = 40.0f;
+
+    /** "Learn More" on the last step. */
+    UPROPERTY(EditDefaultsOnly, Category = "Copy")
+    FString LearnMoreUrl = TEXT("https://www.philadelphiaeagles.com/eaglesautismfoundation/");
 
     FText GetDisclaimerText(ELFFDisclaimerLevel Level) const;
+    FText GetDisclaimerLine(ELFFDisclaimerLevel Level) const;
 };

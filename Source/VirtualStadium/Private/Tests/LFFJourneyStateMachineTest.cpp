@@ -130,10 +130,103 @@ bool FLFFJourneyRulesTest::RunTest(const FString& Parameters)
     TestTrue(TEXT("Approximate shows the disclaimer"), ShouldShowDisclaimer(ELFFDisclaimerLevel::Approximate));
     TestFalse(TEXT("Verified hides the disclaimer"), ShouldShowDisclaimer(ELFFDisclaimerLevel::Verified));
 
-    TestTrue(TEXT("Toggles show on the intro"), ShouldShowToggles(false, false));
-    TestTrue(TEXT("Toggles show on the intro with Settings open"), ShouldShowToggles(false, true));
-    TestTrue(TEXT("Toggles show when Settings opens mid-journey"), ShouldShowToggles(true, true));
-    TestFalse(TEXT("Toggles hide during the journey"), ShouldShowToggles(true, false));
+    TestTrue(TEXT("Back on step 1 returns to the splash"), ShouldBackReturnToIntro(true, 0, false, true));
+    TestFalse(TEXT("Back on the splash does nothing"), ShouldBackReturnToIntro(false, 0, false, true));
+    TestFalse(TEXT("Back on step 2 is a normal Back"), ShouldBackReturnToIntro(true, 1, false, true));
+    TestFalse(TEXT("Back while paused does nothing"), ShouldBackReturnToIntro(true, 0, true, true));
+    TestFalse(TEXT("A step that disables Back keeps it disabled"), ShouldBackReturnToIntro(true, 0, false, false));
+
+    FLFFVisitorSettings Standard;
+    FLFFVisitorSettings LessMovement;
+    LessMovement.bReducedMotion = true;
+    FLFFVisitorSettings Calm;
+    Calm.bCalmMode = true;
+    FLFFVisitorSettings SoundOn;
+    SoundOn.bSoundEnabled = true;
+    FLFFVisitorSettings CalmWithSound = Calm;
+    CalmWithSound.bSoundEnabled = true;
+
+    TestTrue(TEXT("A clear path eases"), ResolveMove(ELFFTransitionProfile::Ease, Standard, false) == ELFFTransitionProfile::Ease);
+    TestTrue(TEXT("A blocked path fades and cuts"), ResolveMove(ELFFTransitionProfile::Ease, Standard, true) == ELFFTransitionProfile::ReducedMotion);
+    TestTrue(TEXT("Less movement fades and cuts"), ResolveMove(ELFFTransitionProfile::Ease, LessMovement, false) == ELFFTransitionProfile::ReducedMotion);
+    TestTrue(TEXT("Calm Mode cuts"), ResolveMove(ELFFTransitionProfile::Ease, Calm, false) == ELFFTransitionProfile::Instant);
+    TestTrue(TEXT("Calm Mode cuts even an authored fade"), ResolveMove(ELFFTransitionProfile::ReducedMotion, Calm, true) == ELFFTransitionProfile::Instant);
+
+    TestTrue(TEXT("Calm Mode is silent"), !CalmWithSound.IsSoundEffective() && SoundOn.IsSoundEffective());
+    TestTrue(TEXT("Calm Mode means less movement"), Calm.IsReducedMotionEffective());
+
+    TestFalse(TEXT("No preview on ordinary steps"), ShouldShowPreviewControls(ELFFIntensityPreview::None, Standard));
+    TestTrue(TEXT("Preview offered on a loud step"), ShouldShowPreviewControls(ELFFIntensityPreview::Sound, Standard));
+    TestFalse(TEXT("Calm Mode hides the preview"), ShouldShowPreviewControls(ELFFIntensityPreview::Lights, Calm));
+    TestTrue(TEXT("Lights preview plays with sound off"), CanPlayPreview(ELFFIntensityPreview::Lights, Standard));
+    TestFalse(TEXT("Sound preview needs Sound on"), CanPlayPreview(ELFFIntensityPreview::Sound, Standard));
+    TestTrue(TEXT("Sound preview plays with Sound on"), CanPlayPreview(ELFFIntensityPreview::Sound, SoundOn));
+    TestFalse(TEXT("Calm Mode locks previews off"), CanPlayPreview(ELFFIntensityPreview::Sound, CalmWithSound));
+
+    TestFalse(TEXT("A label above the POI shows"), ShouldHideLabelAt(true, FVector2D(0.3f, 0.4f)));
+    TestTrue(TEXT("A label in the lower third hides"), ShouldHideLabelAt(true, FVector2D(0.3f, 0.75f)));
+    TestTrue(TEXT("A label behind the camera hides"), ShouldHideLabelAt(false, FVector2D(0.5f, 0.5f)));
+
+    // Voice: off by default, needs Sound, Calm Mode forces it off; never over a preview; no voice on the splash.
+    FLFFVisitorSettings VoiceOn = SoundOn;
+    VoiceOn.bVoiceEnabled = true;
+    FLFFVisitorSettings VoiceNoSound;
+    VoiceNoSound.bVoiceEnabled = true;
+    FLFFVisitorSettings VoiceCalm = VoiceOn;
+    VoiceCalm.bCalmMode = true;
+    TestFalse(TEXT("Voice is off by default"), Standard.IsVoiceEffective());
+    TestTrue(TEXT("Voice and Sound on reads the card"), ShouldPlayVoice(VoiceOn, true, false));
+    TestFalse(TEXT("Sound Off mutes the voice"), ShouldPlayVoice(VoiceNoSound, true, false));
+    TestFalse(TEXT("Calm Mode forces Voice off"), ShouldPlayVoice(VoiceCalm, true, false));
+    TestFalse(TEXT("No voice on the splash"), ShouldPlayVoice(VoiceOn, false, false));
+    TestFalse(TEXT("No voice over a preview"), ShouldPlayVoice(VoiceOn, true, true));
+    TestTrue(TEXT("-8 dB duck is about 0.4"), FMath::IsNearlyEqual(DecibelsToGain(-8.0f), 0.398f, 0.002f));
+
+    // Crowd: Low by default, Off on request, hidden in Calm Mode.
+    FLFFVisitorSettings CrowdOff;
+    CrowdOff.bCrowdEnabled = false;
+    TestTrue(TEXT("Crowd Low by default"), Standard.IsCrowdShown());
+    TestFalse(TEXT("Crowd Off hides it"), CrowdOff.IsCrowdShown());
+    TestFalse(TEXT("Calm Mode hides the crowd"), Calm.IsCrowdShown());
+
+    // The anthem preview is visual: it plays with Sound off, and Calm Mode locks it off.
+    TestTrue(TEXT("Anthem preview plays with sound off"), CanPlayPreview(ELFFIntensityPreview::Anthem, Standard));
+    TestFalse(TEXT("Calm Mode locks the anthem preview off"), CanPlayPreview(ELFFIntensityPreview::Anthem, Calm));
+
+    // Arrival cues: closed before their step, open on it, stay open after; the splash is always closed.
+    TestTrue(TEXT("Cue on the splash is Before"), ResolveCueState(false, 5, 5) == ELFFCueState::Before);
+    TestTrue(TEXT("Cue before its step is Before"), ResolveCueState(true, 3, 5) == ELFFCueState::Before);
+    TestTrue(TEXT("Cue on its step plays"), ResolveCueState(true, 5, 5) == ELFFCueState::Play);
+    TestTrue(TEXT("Cue after its step is After"), ResolveCueState(true, 9, 5) == ELFFCueState::After);
+    TestTrue(TEXT("An unused cue is Before"), ResolveCueState(true, 9, INDEX_NONE) == ELFFCueState::Before);
+
+    TestTrue(TEXT("The splash orbits by default"), ShouldOrbitSplash(Standard));
+    TestFalse(TEXT("Less movement holds the splash still"), ShouldOrbitSplash(LessMovement));
+    TestFalse(TEXT("Calm Mode holds the splash still"), ShouldOrbitSplash(Calm));
+    return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FLFFJourneyStateMachineJumpTest, "LFF.Journey.StateMachine.Jump",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FLFFJourneyStateMachineJumpTest::RunTest(const FString& Parameters)
+{
+    FLFFJourneyStateMachine Machine;
+    Machine.Load(MakeSteps(6));
+    TestTrue(TEXT("Jump before Start is rejected"), Machine.JumpTo(3) == ELFFCommandResult::RejectedNotStarted);
+
+    Machine.Start();
+    TestTrue(TEXT("Jump forward is accepted"), Machine.JumpTo(4) == ELFFCommandResult::Accepted);
+    TestTrue(TEXT("Jump begins a transition"), Machine.GetPhase() == ELFFJourneyPhase::Transitioning);
+    TestEqual(TEXT("Jump lands on the mark's step"), Machine.GetIndex(), 4);
+    TestTrue(TEXT("Jump back is accepted"), Machine.JumpTo(1) == ELFFCommandResult::Accepted);
+    TestTrue(TEXT("Jump to a missing step is rejected"), Machine.JumpTo(6) == ELFFCommandResult::RejectedAtEnd);
+    TestTrue(TEXT("Jump below zero is rejected"), Machine.JumpTo(-1) == ELFFCommandResult::RejectedAtStart);
+    TestTrue(TEXT("Jump to the current step does nothing"), Machine.JumpTo(1) != ELFFCommandResult::Accepted);
+    TestEqual(TEXT("Index unchanged after rejected jumps"), Machine.GetIndex(), 1);
+
+    Machine.Pause();
+    TestTrue(TEXT("Jump while paused is rejected"), Machine.JumpTo(5) == ELFFCommandResult::RejectedPaused);
     return true;
 }
 

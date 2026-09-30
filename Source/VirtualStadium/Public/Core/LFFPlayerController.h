@@ -46,6 +46,9 @@ private:
     void HandleToggleSound();
     void HandleToggleCalmMode();
     void HandleToggleLargeText();
+    void HandleTogglePreview();
+    void HandleToggleVoice();
+    void HandleToggleCrowd();
 
     UPROPERTY(Transient)
     TObjectPtr<UInputMappingContext> JourneyContext;
@@ -82,6 +85,15 @@ private:
 
     UPROPERTY(Transient)
     TObjectPtr<UInputAction> ToggleLargeTextAction;
+
+    UPROPERTY(Transient)
+    TObjectPtr<UInputAction> TogglePreviewAction;
+
+    UPROPERTY(Transient)
+    TObjectPtr<UInputAction> ToggleVoiceAction;
+
+    UPROPERTY(Transient)
+    TObjectPtr<UInputAction> ToggleCrowdAction;
 
     UPROPERTY(Transient)
     TObjectPtr<ULFFHUDWidget> HUDWidget;

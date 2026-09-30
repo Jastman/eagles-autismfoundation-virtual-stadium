@@ -5,15 +5,17 @@
 #include "Journey/LFFJourneyTypes.h"
 #include "LFFHUDWidget.generated.h"
 
-class UButton;
-class UTextBlock;
-class UWidget;
+class ULFFJourneyPanel;
 class ULFFJourneySubsystem;
 
 /**
- * Base class for WBP_LFF_HUD (/Game/LFF/UI/WBP_LFF_HUD). Layout and styling live in the Blueprint;
- * this class pushes the journey snapshot into named widgets and routes clicks to the subsystem.
- * Required bindings make a Blueprint without the disclaimer or prototype badge fail to compile.
+ * Base class for WBP_LFF_HUD (/Game/LFF/UI/WBP_LFF_HUD), the one HUD on screen.
+ * It holds the five panels, decides which are shown for the current screen, and pushes every
+ * journey snapshot into them:
+ *  - Splash (before Start): the welcome card. TopChrome shows only the badge and Settings.
+ *  - Step (after Start): TopChrome, StepCaption and BottomRail.
+ *  - Settings: the modal layer (Settings, Paused, Start again?) over a dimmed world.
+ * Required bindings make a HUD without one of the panels fail to compile.
  */
 UCLASS(Abstract)
 class VIRTUALSTADIUM_API ULFFHUDWidget : public UUserWidget
@@ -24,140 +26,33 @@ protected:
     virtual void NativeConstruct() override;
     virtual void NativeDestruct() override;
 
-    /** Visual-only reactions (Calm Mode theme, large text). Runs before the disclaimer is re-enforced. */
-    UFUNCTION(BlueprintImplementableEvent, Category = "Journey")
-    void OnSnapshotChanged(const FLFFJourneySnapshot& Snapshot);
-
     UFUNCTION()
     void HandleJourneyChanged(const FLFFJourneySnapshot& Snapshot);
 
-    // Required.
     UPROPERTY(meta = (BindWidget))
-    TObjectPtr<UTextBlock> DisclaimerText;
-
-    UPROPERTY(meta = (BindWidget))
-    TObjectPtr<UTextBlock> PrototypeBadgeText;
+    TObjectPtr<ULFFJourneyPanel> Splash;
 
     UPROPERTY(meta = (BindWidget))
-    TObjectPtr<UTextBlock> TitleText;
+    TObjectPtr<ULFFJourneyPanel> TopChrome;
 
     UPROPERTY(meta = (BindWidget))
-    TObjectPtr<UTextBlock> BodyText;
+    TObjectPtr<ULFFJourneyPanel> StepCaption;
 
-    // Optional text.
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UTextBlock> ProgressText;
+    UPROPERTY(meta = (BindWidget))
+    TObjectPtr<ULFFJourneyPanel> BottomRail;
 
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UTextBlock> TargetMissingText;
-
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UTextBlock> NextLabel;
-
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UTextBlock> PauseLabel;
-
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UTextBlock> ReducedMotionLabel;
-
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UTextBlock> SoundLabel;
-
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UTextBlock> CalmModeLabel;
-
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UTextBlock> LargeTextLabel;
-
-    // Optional panels, shown and hidden from the snapshot.
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UWidget> DisclaimerPanel;
-
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UWidget> IntroPanel;
-
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UWidget> PausePanel;
-
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UWidget> SettingsPanel;
-
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UWidget> RestartConfirmPanel;
-
-    /** Holds the one set of toggle buttons. Shown on the intro and while Settings is open. */
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UWidget> TogglesPanel;
-
-    // Optional buttons.
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UButton> NextButton;
-
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UButton> BackButton;
-
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UButton> PauseButton;
-
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UButton> ResumeButton;
-
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UButton> SettingsButton;
-
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UButton> SettingsCloseButton;
-
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UButton> RestartButton;
-
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UButton> RestartYesButton;
-
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UButton> RestartNoButton;
-
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UButton> ReducedMotionButton;
-
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UButton> SoundButton;
-
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UButton> CalmModeButton;
-
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UButton> LargeTextButton;
+    UPROPERTY(meta = (BindWidget))
+    TObjectPtr<ULFFJourneyPanel> Settings;
 
 private:
     ULFFJourneySubsystem* GetJourney() const;
-    void BindButtons();
-    void ReturnFocusToGame() const;
 
-    UFUNCTION()
-    void HandleNextClicked();
-    UFUNCTION()
-    void HandleBackClicked();
-    UFUNCTION()
-    void HandlePauseClicked();
-    UFUNCTION()
-    void HandleResumeClicked();
-    UFUNCTION()
-    void HandleSettingsClicked();
-    UFUNCTION()
-    void HandleRestartClicked();
-    UFUNCTION()
-    void HandleRestartYesClicked();
-    UFUNCTION()
-    void HandleRestartNoClicked();
-    UFUNCTION()
-    void HandleReducedMotionClicked();
-    UFUNCTION()
-    void HandleSoundClicked();
-    UFUNCTION()
-    void HandleCalmModeClicked();
-    UFUNCTION()
-    void HandleLargeTextClicked();
+    /** Returns true if the panel went from hidden to shown. */
+    static bool ShowPanel(ULFFJourneyPanel* Panel, bool bShown, bool bInstant);
+
+    /** Logs an error if a panel is missing the badge or disclaimer widgets the disclaimer rule needs. */
+    void ValidateContract() const;
 
     TWeakObjectPtr<ULFFJourneySubsystem> BoundJourney;
+    int32 LastStepIndex = INDEX_NONE;
 };

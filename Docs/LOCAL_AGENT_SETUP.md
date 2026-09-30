@@ -99,7 +99,10 @@ These scripts do ManualSetup §2–§5 reproducibly. Each one refuses to overwri
 | Script | Builds | How to run |
 |---|---|---|
 | `build_lff_stadium_level.py` | `DT_LFF_GoldenPath` (imported from the JSON) and `L_LFF_Stadium`: the georeference, Google tileset (ion asset 2275207), sun, `LFF_SiteRoot` with its globe anchor, the 4 `CT_` targets, the labels and the proxies. It validates the structure before saving. | **Close the editor first**, then run the command below this table. |
-| `build_wbp_lff_hud.py` | `WBP_LFF_HUD`, through Unreal MCP. It checks that all 30 contract widget names exist, compiles and saves. | Editor open with the MCP server running: `python3 Tools/Editor/build_wbp_lff_hud.py` |
+| `import_lff_content.py` | `DT_LFF_GoldenPath` from the JSON; the beds and preview sample in `/Game/LFF/Audio` (`Tools/Audio/make_lff_audio.py`); the voice lines (`import_lff_vo.py`); the 30 ticket frames in `/Game/LFF/UI/Ticket` (`Tools/Pipeline/prepare_ticket.py`); the eagle geometry cache, textures and materials in `/Game/LFF/Eagle` (`Tools/Pipeline/prepare_eagle.py`, Blender); `MI_LFF_FireworkGlow`. Replaces them all; skips a part whose source is missing. | Editor closed: `Tools/Editor/run_headless.sh Tools/Editor/import_lff_content.py "LFF content"` |
+| `import_lff_vo.py` | Just the voice lines: `SourceData/Audio/VO/VO_*.wav` → `/Game/LFF/Audio/VO/` (non-looping), and a report of steps whose line is missing. Use it when the recorded voice arrives. | Editor closed: `Tools/Editor/run_headless.sh Tools/Editor/import_lff_vo.py "LFF vo"` |
+| `build_lff_standins.py` | The extra `CT_` targets (including `CT_StadiumWide`, which the splash orbits through), the stand-in props and labels, the cue actors (3 gates, the arriving car, the eagle's flight, fireworks), 10 parked cars and 15 crowd stand-ins, through Unreal MCP. Removes its previous run first (tag `LFF_StandIn`), traces heights onto the model and saves the level. Takes 35 s with the editor in front, several minutes behind other windows. | Editor open on `L_LFF_Stadium`: `python3 Tools/Editor/build_lff_standins.py` |
+| `build_wbp_lff_ui.py` | The five HUD panels and `WBP_LFF_HUD`, through Unreal MCP. It checks each widget's contract names, compiles and saves. `--rebuild` clears and rebuilds existing widget trees in place (the assets are kept). `--extend` only adds the session 3 widgets (Voice, Crowd, timeline, ticket phone, Learn More) to existing trees. | Editor open with the MCP server running: `python3 Tools/Editor/build_wbp_lff_ui.py` |
 
 Command for `build_lff_stadium_level.py`:
 
@@ -111,6 +114,8 @@ Things to know:
 - **Exit code 1 is expected from the headless level build.** On 5.8.3 the editor crashes *after* the script has saved, during Slate text teardown in `quit_editor` (`UserActivityHint=EditorExit`). Check for the `[LFF build] DONE` and `validate OK` log lines instead. They're in the crash folder's `VirtualStadium.log` under `~/Library/Application Support/Epic/UnrealEngine/5.8/Saved/Crashes/` when `Saved/Logs` doesn't get them.
 - **Cesium needs the `DEFAULT_GEOREFERENCE` tag** on the level's georeference. Without it, Cesium spawns a second georeference at its Denver demo origin, and the tileset and anchors resolve to that one. The script tags it and fails if there isn't exactly one.
 - **MCP gotchas:**
+  - `TextRenderComponent.TextRenderColor` takes **0–1** channels over MCP (`{"r": 0.47, ...}`); 0–255 values clamp to white.
+  - `add_to_scene_from_class` with a `parent` takes the transform **relative to that parent**.
   - `ObjectTools.set_properties` takes `values` as a **JSON-encoded string**. An object silently returns `false`.
   - `UMGToolSet.GetWidgets` lists the parent's unbound `BindWidget` names as placeholders with `widget: "None"`. Ignore those when you check what exists.
   - The UMG toolset can't create a level or run console commands, which is why the level build is a headless Python script.

@@ -15,6 +15,8 @@ This is a preview, not real-time directions. Some locations are placeholders and
 
 ---
 
+> **Superseded for step copy (session 3, 2026-09-30).** The 23 journey steps for the Oct 18, 2026 example game (Panthers at Eagles, 1:00 PM) are the source of truth in `SourceData/Journey/LFF_GoldenPath.json`; the same words are the voice script in `SourceData/Audio/VO/VO_MANIFEST.md`. The 4-step copy below is kept for history.
+
 ## Golden Path: 4 Steps
 
 ### Step 1: Arrival

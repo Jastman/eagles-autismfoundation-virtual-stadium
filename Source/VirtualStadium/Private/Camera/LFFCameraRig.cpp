@@ -23,6 +23,9 @@ void ALFFCameraRig::Tick(const float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
 
+    TickLightPulse(DeltaSeconds);
+    TickOrbit(DeltaSeconds);
+
     if (!bEasing || bEasePaused)
     {
         return;
@@ -69,6 +72,7 @@ void ALFFCameraRig::BeginTransition(
     {
     case ELFFTransitionProfile::Ease:
     {
+        ClearFade(FadeSeconds, FadeColor);
         // Start from wherever the camera is now, so retargeting mid-move never jumps.
         StartTransform = GetActorTransform();
         EndTransform = TargetTransform;
@@ -77,7 +81,7 @@ void ALFFCameraRig::BeginTransition(
         Elapsed = 0.0f;
         Duration = EaseSeconds;
         bEasing = true;
-        SetActorTickEnabled(true);
+        UpdateTickEnabled();
         break;
     }
 
@@ -118,6 +122,7 @@ void ALFFCameraRig::BeginTransition(
     case ELFFTransitionProfile::Instant:
     default:
     {
+        ClearFade(FadeSeconds, FadeColor);
         SnapTo(TargetTransform, TargetFieldOfView);
         // Report on the next tick so callers never re-enter the subsystem mid-command.
         World->GetTimerManager().SetTimerForNextTick(
@@ -144,6 +149,150 @@ void ALFFCameraRig::SetTransitionPaused(const bool bPaused)
     bEasePaused = bPaused;
 }
 
+void ALFFCameraRig::StartOrbit(const FVector& Center, const float Radius, const float Height, const FVector& LookAt,
+    const float PeriodSeconds, const float FieldOfView, const float StartAngleDegrees)
+{
+    StopActiveTransition();
+    OrbitCenter = Center;
+    OrbitRadius = FMath::Max(Radius, 100.0f);
+    OrbitHeight = Height;
+    OrbitLookAt = LookAt;
+    OrbitPeriod = FMath::Max(PeriodSeconds, 10.0f);
+    OrbitFieldOfView = FieldOfView;
+    OrbitAngle = StartAngleDegrees;
+    ClearFade(0.35f, FLinearColor(0.08f, 0.08f, 0.10f, 1.0f));
+    bOrbiting = true;
+    bOrbitEasing = false;
+    ApplyOrbitAngle(OrbitAngle);
+    UpdateTickEnabled();
+}
+
+void ALFFCameraRig::StopOrbit()
+{
+    bOrbiting = false;
+    bOrbitEasing = false;
+    UpdateTickEnabled();
+}
+
+float ALFFCameraRig::GetOrbitAngle(const FVector& Center) const
+{
+    const FVector Offset = GetActorLocation() - Center;
+    return FMath::RadiansToDegrees(FMath::Atan2(Offset.Y, Offset.X));
+}
+
+void ALFFCameraRig::EaseOrbitTo(const float TargetAngleDegrees, const float Seconds, const uint32 TransitionId)
+{
+    if (!bOrbiting)
+    {
+        return;
+    }
+
+    ActiveTransitionId = TransitionId;
+    OrbitEaseFrom = OrbitAngle;
+    // The short way round: never more than half a lap.
+    OrbitEaseTo = OrbitAngle + FMath::UnwindDegrees(TargetAngleDegrees - OrbitAngle);
+    Elapsed = 0.0f;
+    Duration = FMath::Max(Seconds, 0.1f);
+    bOrbitEasing = true;
+    bEasePaused = false;
+    UpdateTickEnabled();
+}
+
+void ALFFCameraRig::TickOrbit(const float DeltaSeconds)
+{
+    if (!bOrbiting)
+    {
+        return;
+    }
+
+    if (!bOrbitEasing)
+    {
+        OrbitAngle = FMath::UnwindDegrees(OrbitAngle + 360.0f * DeltaSeconds / OrbitPeriod);
+        ApplyOrbitAngle(OrbitAngle);
+        return;
+    }
+
+    if (bEasePaused)
+    {
+        return;
+    }
+
+    Elapsed += DeltaSeconds;
+    const float Alpha = FMath::Clamp(Elapsed / Duration, 0.0f, 1.0f);
+    OrbitAngle = FMath::Lerp(OrbitEaseFrom, OrbitEaseTo, FMath::InterpEaseInOut(0.0f, 1.0f, Alpha, 2.0f));
+    ApplyOrbitAngle(OrbitAngle);
+
+    if (Alpha >= 1.0f)
+    {
+        bOrbiting = false;
+        bOrbitEasing = false;
+        UpdateTickEnabled();
+        FinishTransition(ActiveTransitionId);
+    }
+}
+
+void ALFFCameraRig::ApplyOrbitAngle(const float AngleDegrees)
+{
+    const float Radians = FMath::DegreesToRadians(AngleDegrees);
+    const FVector Location(OrbitCenter.X + OrbitRadius * FMath::Cos(Radians), OrbitCenter.Y + OrbitRadius * FMath::Sin(Radians), OrbitHeight);
+    FRotator Rotation = (OrbitLookAt - Location).Rotation();
+    Rotation.Roll = 0.0f;
+    SetActorLocationAndRotation(Location, Rotation);
+
+    if (UCameraComponent* Camera = GetCameraComponent())
+    {
+        Camera->SetFieldOfView(OrbitFieldOfView);
+    }
+}
+
+void ALFFCameraRig::SetLightPulse(const bool bOn, const float PeriodSeconds, const float PeakStops)
+{
+    if (bOn && !bPulseOn)
+    {
+        PulseElapsed = 0.0f;
+    }
+
+    bPulseOn = bOn;
+    // 3 s is the floor: at most one gentle rise every few seconds, nowhere near the 3 Hz flash threshold.
+    PulsePeriod = FMath::Max(PeriodSeconds, 3.0f);
+    PulsePeakStops = FMath::Clamp(PeakStops, 0.0f, 1.5f);
+    UpdateTickEnabled();
+}
+
+void ALFFCameraRig::TickLightPulse(const float DeltaSeconds)
+{
+    UCameraComponent* Camera = GetCameraComponent();
+    if (Camera == nullptr || (!bPulseOn && PulseStops <= 0.0f))
+    {
+        return;
+    }
+
+    if (bPulseOn)
+    {
+        PulseElapsed += DeltaSeconds;
+        // 0 -> peak -> 0 as a raised cosine, so it starts from the normal picture with no step.
+        PulseStops = PulsePeakStops * 0.5f * (1.0f - FMath::Cos(UE_TWO_PI * PulseElapsed / PulsePeriod));
+    }
+    else
+    {
+        PulseStops = FMath::Max(0.0f, PulseStops - DeltaSeconds * FMath::Max(PulsePeakStops, 0.1f) / PulseRampSeconds);
+    }
+
+    Camera->PostProcessSettings.bOverride_AutoExposureBias = bPulseOn || PulseStops > 0.0f;
+    Camera->PostProcessSettings.AutoExposureBias = PulseStops;
+    Camera->PostProcessBlendWeight = 1.0f;
+
+    if (!bPulseOn && PulseStops <= 0.0f)
+    {
+        UpdateTickEnabled();
+    }
+}
+
+void ALFFCameraRig::UpdateTickEnabled()
+{
+    SetActorTickEnabled(bEasing || bOrbiting || bPulseOn || PulseStops > 0.0f);
+}
+
 void ALFFCameraRig::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
     StopActiveTransition();
@@ -154,7 +303,9 @@ void ALFFCameraRig::StopActiveTransition()
 {
     bEasing = false;
     bEasePaused = false;
-    SetActorTickEnabled(false);
+    bOrbiting = false;
+    bOrbitEasing = false;
+    UpdateTickEnabled();
 
     if (UWorld* World = GetWorld())
     {
@@ -177,13 +328,25 @@ void ALFFCameraRig::FinishTransition(const uint32 TransitionId)
     }
 
     bEasing = false;
-    SetActorTickEnabled(false);
+    UpdateTickEnabled();
 
     if (UWorld* World = GetWorld())
     {
         if (ULFFJourneySubsystem* Journey = World->GetSubsystem<ULFFJourneySubsystem>())
         {
             Journey->HandleRigTransitionFinished(ActiveTransitionId);
+        }
+    }
+}
+
+void ALFFCameraRig::ClearFade(const float Seconds, const FLinearColor& Color)
+{
+    // A move that replaces a fade-and-cut halfway must never leave the picture dimmed.
+    if (APlayerCameraManager* CameraManager = UGameplayStatics::GetPlayerCameraManager(this, 0))
+    {
+        if (CameraManager->FadeAmount > 0.0f)
+        {
+            StartFade(0.0f, FMath::Max(Seconds, 0.05f), Color, false);
         }
     }
 }

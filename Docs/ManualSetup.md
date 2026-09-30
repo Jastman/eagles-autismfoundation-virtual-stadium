@@ -27,30 +27,23 @@ Open `VirtualStadium.uproject` and accept the rebuild. Or use the CLI commands i
 
 ## 3. Place camera targets and labels (children of `LFF_SiteRoot`)
 - Add four **`LFFCameraTarget`** actors. Set their **Target Id** to `CT_ExteriorArrival`, `CT_GateEntry`, `CT_InteriorConcourse` and `CT_SeatFieldView`.
+- **Scripted (2026-09-29):** `python3 Tools/Editor/build_lff_standins.py` (editor open, MCP running) adds the other 11 targets the 16-step journey names, plus the stand-in props and their labels. It's safe to rerun: it removes what it placed before (tag `LFF_StandIn`).
 - Pilot each one (right-click → Pilot) and frame the shot. Keep the four views close enough that the Google tiles don't reload on every move.
 - Labels are any actors (a `TextRender` is enough) with actor tags **`LFF_Label`** plus one of `LBL_Plaza`, `LBL_Gate`, `LBL_Concourse`, `LBL_Restroom`, `LBL_Food`, `LBL_Section`. They're hidden except on the steps that list them.
 - Every label and proxy says **"Illustration"** or "Example". None of them names a real gate, restroom or sensory room.
 
-## 4. Import the journey table
+## 4. Import the journey table and the sounds
 Right-click in `/Game/LFF/Data` → **Import** → `SourceData/Journey/LFF_GoldenPath.json` → Row type **`LFFJourneyStep`** → save as **`DT_LFF_GoldenPath`**. To update it later, edit the JSON and then choose Reimport.
 
-## 5. Create `/Game/LFF/UI/WBP_LFF_HUD`
-**User Interface → Widget Blueprint → parent `LFFHUDWidget`.** Use the names in `Docs/JOURNEY_SCHEMA.md` → "WBP_LFF_HUD widget names". Suggested layout at 1920×1080:
-- **Top bar:** `PrototypeBadgeText` on the left. `PauseButton` (`PauseLabel`), `SoundButton` (`SoundLabel`) and `SettingsButton` on the right.
-- **Top centre:** `DisclaimerPanel` holding `DisclaimerText`. Use a neutral colour, at least 28 pt, with no animation.
-- **Left card:** `ProgressText`, `TitleText` (48 pt) and `BodyText` (32 pt), plus `TargetMissingText`.
-- **Bottom:** `BackButton` on the left and `NextButton` (`NextLabel`) on the right. Keep them at least 400 px apart and put the key hints in the button text. Put `RestartButton` ("Start again? (R)") next to Back. Keep the bottom 60 px clear for the Cesium/Google credits.
-- **Right-side panel `TogglesPanel`.** C++ shows it on the intro and while Settings is open. From top to bottom:
-  - `IntroPanel`, a "Before you start" header.
-  - `SettingsPanel`, a "Settings" title bar with `SettingsCloseButton`.
-  - `ReducedMotionButton`, `CalmModeButton` and `LargeTextButton`, each with its `*Label`.
+**Scripted:** make the sources, then import them all with the editor closed:
+1. `python3 Tools/Audio/make_lff_audio.py`: the plaza murmur, the cheer bed and the preview sample → `SourceData/Audio/`.
+2. `python3 Tools/Audio/make_vo_script.py` → `SourceData/Audio/VO/VO_MANIFEST.md` and one `.txt` per step (add `--placeholders` for test voices). Put recorded `VO_NN_Name.wav` files there with the same names.
+3. `python3 Tools/Pipeline/prepare_ticket.py`: ticket frames from `Assets/EaglesMobileTicket.gif` → `Saved/TicketImport/`.
+4. `/Applications/Blender.app/Contents/MacOS/Blender -b --factory-startup --python Tools/Pipeline/prepare_eagle.py -- --src "Assets/bald-eagle/source/Bald Eagle 05a.gltf" --out Saved/EagleImport`.
+5. `Tools/Editor/run_headless.sh Tools/Editor/import_lff_content.py "LFF content"` reimports the table and imports the sounds (beds loop), the voice lines (`/Game/LFF/Audio/VO`, never loop), the ticket frames, the eagle and the firework glow material.
 
-  Widget names must be unique, so the toggles exist once and the two headers share them. `SoundButton` stays in the top bar so it's always reachable.
-- **Overlays** (collapsed by default; C++ shows them):
-  - `PausePanel`, containing `ResumeButton`.
-  - `RestartConfirmPanel`, containing `RestartYesButton` and `RestartNoButton`.
-- **Every button:** turn off **Is Focusable** (C++ also hands focus back to the viewport after each click).
-- **Event Graph (optional):** handle **On Snapshot Changed** for the Calm Mode muted palette and for large text (render scale about 1.25 on the card). Don't hide the disclaimer or the badge; C++ shows them again anyway.
+## 5. Create the HUD widgets in `/Game/LFF/UI`
+**Scripted:** with the editor open and Unreal MCP running, run `python3 Tools/Editor/build_wbp_lff_ui.py` (add `--rebuild` to replace existing widget trees, or `--extend` to add only the session 3 widgets to existing ones). It builds `WBP_LFF_Splash`, `WBP_LFF_TopChrome`, `WBP_LFF_StepCaption`, `WBP_LFF_BottomRail` and `WBP_LFF_Settings` (parent `LFFJourneyPanel`), then `WBP_LFF_HUD` (parent `LFFHUDWidget`) holding one of each. The names and layout rules are in `Docs/JOURNEY_SCHEMA.md` → "HUD widgets".
 
 ## 6. Verify in PIE
 Run the PIE checklist in `Docs/TEST_PLAN.md`.

@@ -80,6 +80,9 @@ void ALFFPlayerController::SetupInputComponent()
     EnhancedInput->BindAction(ToggleSoundAction, ETriggerEvent::Started, this, &ALFFPlayerController::HandleToggleSound);
     EnhancedInput->BindAction(ToggleCalmModeAction, ETriggerEvent::Started, this, &ALFFPlayerController::HandleToggleCalmMode);
     EnhancedInput->BindAction(ToggleLargeTextAction, ETriggerEvent::Started, this, &ALFFPlayerController::HandleToggleLargeText);
+    EnhancedInput->BindAction(TogglePreviewAction, ETriggerEvent::Started, this, &ALFFPlayerController::HandleTogglePreview);
+    EnhancedInput->BindAction(ToggleVoiceAction, ETriggerEvent::Started, this, &ALFFPlayerController::HandleToggleVoice);
+    EnhancedInput->BindAction(ToggleCrowdAction, ETriggerEvent::Started, this, &ALFFPlayerController::HandleToggleCrowd);
 }
 
 UInputAction* ALFFPlayerController::MakeAction(const TCHAR* Name)
@@ -106,6 +109,9 @@ void ALFFPlayerController::BuildInputObjects()
     ToggleSoundAction = MakeAction(TEXT("IA_LFF_ToggleSound"));
     ToggleCalmModeAction = MakeAction(TEXT("IA_LFF_ToggleCalmMode"));
     ToggleLargeTextAction = MakeAction(TEXT("IA_LFF_ToggleLargeText"));
+    TogglePreviewAction = MakeAction(TEXT("IA_LFF_TogglePreview"));
+    ToggleVoiceAction = MakeAction(TEXT("IA_LFF_ToggleVoice"));
+    ToggleCrowdAction = MakeAction(TEXT("IA_LFF_ToggleCrowd"));
 
     JourneyContext = NewObject<UInputMappingContext>(this, TEXT("IMC_LFF_Journey"));
 
@@ -142,6 +148,9 @@ void ALFFPlayerController::BuildInputObjects()
     JourneyContext->MapKey(ToggleSoundAction, EKeys::Two);
     JourneyContext->MapKey(ToggleCalmModeAction, EKeys::Three);
     JourneyContext->MapKey(ToggleLargeTextAction, EKeys::Four);
+    JourneyContext->MapKey(TogglePreviewAction, EKeys::V);
+    JourneyContext->MapKey(ToggleVoiceAction, EKeys::Five);
+    JourneyContext->MapKey(ToggleCrowdAction, EKeys::Six);
 }
 
 ULFFJourneySubsystem* ALFFPlayerController::GetJourney() const
@@ -235,5 +244,29 @@ void ALFFPlayerController::HandleToggleLargeText()
     if (ULFFJourneySubsystem* Journey = GetJourney())
     {
         Journey->ToggleLargeText();
+    }
+}
+
+void ALFFPlayerController::HandleTogglePreview()
+{
+    if (ULFFJourneySubsystem* Journey = GetJourney())
+    {
+        Journey->TogglePreview();
+    }
+}
+
+void ALFFPlayerController::HandleToggleVoice()
+{
+    if (ULFFJourneySubsystem* Journey = GetJourney())
+    {
+        Journey->ToggleVoice();
+    }
+}
+
+void ALFFPlayerController::HandleToggleCrowd()
+{
+    if (ULFFJourneySubsystem* Journey = GetJourney())
+    {
+        Journey->ToggleCrowd();
     }
 }

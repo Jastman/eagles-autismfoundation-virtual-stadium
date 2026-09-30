@@ -8,13 +8,24 @@
 
 class ALFFCameraRig;
 class ALFFCameraTarget;
+class ALFFCueActor;
 class ALFFGameMode;
 class UAudioComponent;
+class UBoxComponent;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FLFFOnJourneyChanged, const FLFFJourneySnapshot&, Snapshot);
 
+/** Why the scene cues are being re-applied. */
+enum class ELFFCueReason : uint8
+{
+    StepChanged,
+    Arrived,
+    SettingsChanged
+};
+
 /**
- * Owns the guided journey for one world: state machine, visitor settings, camera rig, labels and audio.
+ * Owns the guided journey for one world: state machine, visitor settings, camera rig (splash orbit included),
+ * labels, audio (beds, previews, voiceover), scene cues and the optional intensity previews.
  * Active only when the world's game mode is ALFFGameMode; other maps are unaffected.
  * Input and UI only call commands here and read the snapshot; they hold no journey state.
  */
@@ -31,8 +42,25 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Journey")
     void Next();
 
+    /** Previous step. On the first step, back to the splash. */
     UFUNCTION(BlueprintCallable, Category = "Journey")
     void Back();
+
+    /** A timeline mark: straight to that step. Ignored if the step doesn't exist, before Start, paused or in a modal. */
+    UFUNCTION(BlueprintCallable, Category = "Journey")
+    void JumpToStep(int32 StepIndex);
+
+    /** Voice reads each card (Title, then Body). Needs Sound on; ignored while Sound is off or Calm Mode is on. */
+    UFUNCTION(BlueprintCallable, Category = "Journey")
+    void ToggleVoice();
+
+    /** Crowd: Low (a few stand-in people) or Off. Ignored while Calm Mode is on (it hides them anyway). */
+    UFUNCTION(BlueprintCallable, Category = "Journey")
+    void ToggleCrowd();
+
+    /** "Learn More" on the last step: opens the Eagles Autism Foundation page in the browser. */
+    UFUNCTION(BlueprintCallable, Category = "Journey")
+    void OpenLearnMore();
 
     UFUNCTION(BlueprintCallable, Category = "Journey")
     void TogglePause();
@@ -40,7 +68,7 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Journey")
     void Resume();
 
-    /** Asks "Start again?" rather than restarting straight away. */
+    /** Asks "Start again?" rather than restarting straight away. From Settings, the question replaces the panel. */
     UFUNCTION(BlueprintCallable, Category = "Journey")
     void RequestRestart();
 
@@ -58,17 +86,27 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Journey")
     void ToggleSettings();
 
+    /** Ignored while Calm Mode is on (Calm Mode already means less movement). */
     UFUNCTION(BlueprintCallable, Category = "Journey")
     void ToggleReducedMotion();
 
+    /** Off mutes every sound, UI included. On plays only the low ambient bed. Ignored while Calm Mode is on. */
     UFUNCTION(BlueprintCallable, Category = "Journey")
     void ToggleSound();
 
+    /** On: less movement, sound off, crowd hidden, previews locked off, camera cuts only. */
     UFUNCTION(BlueprintCallable, Category = "Journey")
     void ToggleCalmMode();
 
+    /** "Preview this? Off / Soft" on a loud or bright step. Ignored elsewhere, while paused or in Calm Mode. */
+    UFUNCTION(BlueprintCallable, Category = "Journey")
+    void TogglePreview();
+
     UFUNCTION(BlueprintCallable, Category = "Journey")
     void ToggleLargeText();
+
+    UFUNCTION(BlueprintCallable, Category = "Journey")
+    void ToggleHighContrast();
 
     UFUNCTION(BlueprintPure, Category = "Journey")
     FLFFJourneySnapshot GetSnapshot() const { return Snapshot; }
@@ -88,9 +126,47 @@ private:
     /** Moves the camera to the current step. bForceFade is used for restart so the jump back is calm. */
     void MoveCameraToCurrentStep(bool bForceFade);
     void SnapCameraToCurrentStep();
+    /** Start: glides along the splash orbit into the first step's wide shot (or moves there like any step). */
+    void MoveCameraToFirstStep();
+    /** The splash camera: a slow orbit, or a still wide shot with less movement. bCut fades there first (restart). */
+    void EnterSplash(bool bCut);
+    void StartSplashOrbit();
+    /** The orbit through SplashOrbitTargetId around LFF_SiteRoot. False if the target or root is missing. */
+    bool GetSplashOrbit(FVector& OutCenter, float& OutRadius, float& OutHeight, FVector& OutLookAt, float& OutFov,
+        float& OutAnchorAngle, FTransform& OutWide) const;
+    /** The camera has arrived at the current step: play its arrival cues and read the card. */
+    void OnArrived();
+    void ApplyCues(ELFFCueReason Reason);
+    /** The anthem preview's cues (the eagle, fireworks) play while Soft is picked and end the preview when done. */
+    void ApplyPreviewCues();
+    void FinishPreviewCues();
+    void ScheduleVoice();
+    void StartVoice();
+    /** Stops the voice at once. bReapplyAudio restores the bed from its duck. */
+    void StopVoice(bool bReapplyAudio = true);
+    UFUNCTION()
+    void HandleVoiceFinished();
     void ApplyLabels();
+    /** Master mute, ambient bed and the Sound preview. */
     void ApplyAudio();
     void StopAudio();
+    void StopPreviewAudio();
+    /** Everything Calm Mode and the previews touch: audio, the Lights pulse and crowd actors. */
+    void ApplySensory();
+    void ApplyCrowd();
+    /**
+     * The parking lot's cars (actors tagged LFF_Exterior) are hidden while the camera is inside the stadium (the box of
+     * any actor tagged LFF_StadiumInterior), so nothing renders them from the seats and concourse. Checked 5 times a
+     * second against the live camera, so glides in and out switch them where the walls already hide the lot.
+     */
+    void UpdateExteriorVisibility();
+    /** Every step arrives with its preview Off. */
+    void ResetPreview();
+    bool IsPathBlocked(const FVector& From, const FVector& To) const;
+    ELFFIntensityPreview GetCurrentPreviewKind() const;
+
+    UFUNCTION()
+    void HandlePreviewAudioFinished();
     void Broadcast();
     bool IsModalOpen() const { return bSettingsOpen || bRestartConfirmOpen; }
 
@@ -101,6 +177,17 @@ private:
     bool bRestartConfirmOpen = false;
     bool bTargetMissing = false;
     bool bJourneyMissing = false;
+    bool bPreviewOn = false;
+    /** The camera has reached the current step (arrival cues and the voice wait for this). */
+    bool bArrived = false;
+    bool bVoicePlaying = false;
+    bool bPreviewCuesPlaying = false;
+    bool bLoggedCrowdShown = true;
+    bool bExteriorHidden = false;
+    // Last states written to the log, so each change is logged once (evidence for TEST_PLAN T2).
+    bool bLoggedSound = true;
+    bool bLoggedPulse = false;
+    bool bLoggedCalm = false;
 
     UPROPERTY(Transient)
     TObjectPtr<ALFFGameMode> GameMode;
@@ -110,4 +197,26 @@ private:
 
     UPROPERTY(Transient)
     TObjectPtr<UAudioComponent> BedAudio;
+
+    UPROPERTY(Transient)
+    TObjectPtr<UAudioComponent> PreviewAudio;
+
+    UPROPERTY(Transient)
+    TObjectPtr<UAudioComponent> VoiceAudio;
+
+    UPROPERTY(Transient)
+    TArray<TObjectPtr<ALFFCueActor>> CueActors;
+
+    UPROPERTY(Transient)
+    TArray<TObjectPtr<AActor>> ExteriorActors;
+
+    UPROPERTY(Transient)
+    TArray<TObjectPtr<UBoxComponent>> InteriorBoxes;
+
+    /** The first step listing each cue id: its gate is closed before that step and open after it. */
+    TMap<FName, int32> FirstCueIndex;
+    TArray<FLFFTimelineMark> TimelineMarks;
+    FTimerHandle VoiceTimer;
+    FTimerHandle PreviewCueTimer;
+    FTimerHandle ExteriorTimer;
 };
