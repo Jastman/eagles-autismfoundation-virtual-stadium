@@ -8,6 +8,8 @@
 class UBorder;
 class UButton;
 class UHorizontalBox;
+class URichTextBlock;
+class UVerticalBox;
 class UImage;
 class UTexture2D;
 class UScaleBox;
@@ -57,6 +59,7 @@ public:
     void HandleTimelineMark(int32 StepIndex);
 
 protected:
+    virtual void NativeOnInitialized() override;
     virtual void NativeConstruct() override;
     virtual void NativeDestruct() override;
 
@@ -229,6 +232,10 @@ protected:
     UPROPERTY(meta = (BindWidgetOptional))
     TObjectPtr<UWidget> LearnMorePanel;
 
+    /** Gap from the rail's right edge to Learn More: clears "Start Over", which is wider than "Next". */
+    UPROPERTY(EditDefaultsOnly, Category = "Finale")
+    float LearnMoreRightGap = 236.0f;
+
     /**
      * The Eagles Autism Foundation wordmark on the caption card, last step only (with Learn More). If the blueprint
      * has no widget of this name, the caption panel (the one with CaptionStack) builds it under the body text.
@@ -236,13 +243,25 @@ protected:
     UPROPERTY(meta = (BindWidgetOptional))
     TObjectPtr<UWidget> FinaleLogo;
 
-    /** Assets/Logos/Eagles-Autism-Foundation logo.png (Tools/Pipeline/prepare_logos.py: 1024 x 256 canvas, logo 737 wide). */
+    /** Assets/Logos/Eagles-Autism-Foundation logo.png (Tools/Pipeline/prepare_logos.py: 1024 x 256 canvas, logo 737 wide),
+     *  as a UI texture (no mips, never streamed, so it stays sharp). */
     UPROPERTY(EditDefaultsOnly, Category = "Finale")
-    TSoftObjectPtr<UTexture2D> FinaleLogoTexture = TSoftObjectPtr<UTexture2D>(FSoftObjectPath(TEXT("/Game/LFF/Logos/T_LFF_Logo_EAF.T_LFF_Logo_EAF")));
+    TSoftObjectPtr<UTexture2D> FinaleLogoTexture = TSoftObjectPtr<UTexture2D>(FSoftObjectPath(TEXT("/Game/LFF/UI/Icons/T_LFF_Logo_EAF_UI.T_LFF_Logo_EAF_UI")));
 
     /** On-screen size of the wordmark at 1080p (the logo's own 2.88:1). */
     UPROPERTY(EditDefaultsOnly, Category = "Finale")
     FVector2D FinaleLogoSize = FVector2D(207.0, 72.0);
+
+    /** The voice button on the caption card (top right): speaker with waves when the voice is on, crossed out when off. */
+    UPROPERTY(EditDefaultsOnly, Category = "Voice")
+    TSoftObjectPtr<UTexture2D> VoiceOnIcon = TSoftObjectPtr<UTexture2D>(FSoftObjectPath(TEXT("/Game/LFF/UI/Icons/T_LFF_Icon_VoiceOn.T_LFF_Icon_VoiceOn")));
+
+    UPROPERTY(EditDefaultsOnly, Category = "Voice")
+    TSoftObjectPtr<UTexture2D> VoiceOffIcon = TSoftObjectPtr<UTexture2D>(FSoftObjectPath(TEXT("/Game/LFF/UI/Icons/T_LFF_Icon_VoiceOff.T_LFF_Icon_VoiceOff")));
+
+    /** The word the voice is reading, on the caption card (karaoke). Calm, warm, no flashing: the colour only. */
+    UPROPERTY(EditDefaultsOnly, Category = "Voice")
+    FLinearColor KaraokeColor = FLinearColor(1.0f, 0.80f, 0.36f, 1.0f);
 
     /** Filled at runtime with one pip per step. */
     UPROPERTY(meta = (BindWidgetOptional))
@@ -275,6 +294,23 @@ protected:
 
     UPROPERTY(meta = (BindWidgetOptional))
     TObjectPtr<UButton> SettingsCloseButton;
+
+    /** Standard | Calm: the splash choice before Start and the top bar's segmented control. */
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UButton> StandardButton;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UButton> CalmButton;
+
+    /** Finale: Start Over and Learn More on the caption card, which moves to the centre on the last step. */
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UWidget> FinaleActions;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UButton> FinaleStartOverButton;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UButton> FinaleLearnMoreButton;
 
     UPROPERTY(meta = (BindWidgetOptional))
     TObjectPtr<UButton> RestartButton;
@@ -324,6 +360,15 @@ private:
     void ShowTicket(bool bShow, bool bStill);
     /** Builds FinaleLogo on the caption card when the blueprint doesn't have one. */
     void BuildFinaleLogo();
+    /** The caption card's voice button, at the end of its header row. */
+    void BuildVoiceButton();
+    /** Rich-text copies of the card's title and body (the text blocks stay as the source, collapsed), for the highlight. */
+    void BuildKaraokeText();
+    URichTextBlock* MakeKaraokeCopy(UTextBlock* Source, const TCHAR* Name);
+    void ApplyKaraoke();
+    void HandleVoiceWord(int32 WordIndex);
+    UFUNCTION()
+    void HandleVoiceIconClicked();
     void TickTicket();
 
     UFUNCTION()
@@ -360,6 +405,10 @@ private:
     void HandleCrowdClicked();
     UFUNCTION()
     void HandleLearnMoreClicked();
+    UFUNCTION()
+    void HandleStandardClicked();
+    UFUNCTION()
+    void HandleCalmClicked();
 
     UPROPERTY(Transient)
     TArray<TObjectPtr<UBorder>> SurfaceBorders;
@@ -372,6 +421,24 @@ private:
     TArray<TObjectPtr<USizeBox>> Pips;
 
     FTimerHandle FadeTimer;
+
+    UPROPERTY(Transient)
+    TObjectPtr<UButton> VoiceIconButton;
+
+    UPROPERTY(Transient)
+    TObjectPtr<UImage> VoiceIconImage;
+
+    UPROPERTY(Transient)
+    TObjectPtr<URichTextBlock> TitleRich;
+
+    UPROPERTY(Transient)
+    TObjectPtr<URichTextBlock> BodyRich;
+
+    FString KaraokeTitle;
+    FString KaraokeBody;
+    int32 KaraokeWord = INDEX_NONE;
+    int32 KaraokeShown = INDEX_NONE - 1;
+    FDelegateHandle VoiceWordHandle;
     double FadeStartSeconds = 0.0;
 
     /** One per mark, in order: the step it jumps to, its button and label. */

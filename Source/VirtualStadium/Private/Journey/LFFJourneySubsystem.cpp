@@ -1,7 +1,9 @@
 #include "Journey/LFFJourneySubsystem.h"
 
+#include "Camera/LFFCameraPath.h"
 #include "Camera/LFFCameraRig.h"
 #include "Camera/LFFCameraTarget.h"
+#include "Algo/BinarySearch.h"
 #include "AudioDevice.h"
 #include "Components/AudioComponent.h"
 #include "Components/BoxComponent.h"
@@ -16,9 +18,14 @@
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundBase.h"
+#include "Sound/SoundWave.h"
+#include "HAL/IConsoleManager.h"
+#include "UnrealClient.h"
 #include "TimerManager.h"
 #include "VirtualStadium.h"
 #include "World/LFFCueActor.h"
+#include "World/LFFFireworksActor.h"
+#include "MassSpawner.h"
 
 #define LOCTEXT_NAMESPACE "LFFJourney"
 
@@ -337,8 +344,9 @@ void ULFFJourneySubsystem::TogglePause()
         Rig->SetTransitionPaused(true);
     }
 
-    // "Nothing will move until you resume": a running preview and the voice stop too.
+    // "Nothing will move until you resume": a running preview, the anthem flight and the voice stop too.
     StopVoice();
+    StopAnthemSequence(true);
     ResetPreview();
     Broadcast();
 }
@@ -512,6 +520,30 @@ void ULFFJourneySubsystem::ToggleCalmMode()
     Broadcast();
 }
 
+void ULFFJourneySubsystem::SetExperienceMode(const bool bCalm)
+{
+    if (!bCalm)
+    {
+        // Standard is the whole day, whatever was toggled off in Settings before.
+        Settings.bSoundEnabled = true;
+        Settings.bVoiceEnabled = true;
+        Settings.bReducedMotion = false;
+        Settings.bCrowdEnabled = true;
+    }
+    if (Settings.bCalmMode != bCalm)
+    {
+        ToggleCalmMode();
+        return;
+    }
+    ApplySensory();
+    ApplyCues(ELFFCueReason::SettingsChanged);
+    if (Machine.HasStarted() && !bCalm)
+    {
+        ScheduleVoice();
+    }
+    Broadcast();
+}
+
 void ULFFJourneySubsystem::JumpToStep(const int32 StepIndex)
 {
     if (IsModalOpen())
@@ -547,6 +579,28 @@ void ULFFJourneySubsystem::ToggleVoice()
         StopVoice();
     }
     Broadcast();
+}
+
+void ULFFJourneySubsystem::ToggleVoiceFromCard()
+{
+    if (Settings.bCalmMode)
+    {
+        return;
+    }
+    if (Settings.IsVoiceEffective())
+    {
+        ToggleVoice();
+        return;
+    }
+    // Voice needs Sound: the card's button turns both on.
+    if (!Settings.IsSoundEffective())
+    {
+        ToggleSound();
+    }
+    if (!Settings.bVoiceEnabled)
+    {
+        ToggleVoice();
+    }
 }
 
 void ULFFJourneySubsystem::ToggleCrowd()
@@ -639,8 +693,9 @@ void ULFFJourneySubsystem::MoveCameraToCurrentStep(const bool bForceFade)
     ALFFCameraTarget* Target = Step != nullptr ? FindTarget(Step->CameraTargetId) : nullptr;
     bTargetMissing = Target == nullptr;
 
-    // A new step silences the old one at once: no voice overlaps the next card.
+    // A new step silences the old one at once: no voice overlaps the next card, no eagle flight carries on.
     StopVoice();
+    StopAnthemSequence(false);
     bArrived = false;
     ResetPreview();
     ApplyLabels();
@@ -664,6 +719,19 @@ void ULFFJourneySubsystem::MoveCameraToCurrentStep(const bool bForceFade)
     }
 
     const FTransform TargetTransform = Target->GetCameraTransform();
+
+    // An authored route replaces the straight move where one exists (outside the bowl to the concourse, down the
+    // concourse into the sensory room). Calm Mode still cuts and less movement still fades.
+    const ALFFCameraPath* Path = bForceFade ? nullptr : FindPath(Step->CameraTargetId);
+    if (Path != nullptr && !Settings.bCalmMode && !Settings.IsReducedMotionEffective())
+    {
+        UE_LOG(LogVirtualStadium, Log, TEXT("Step %s: route %s to %s (%d points, %.1f s%s)."), *Step->StepId.ToString(), *Path->GetName(),
+            *Step->CameraTargetId.ToString(), Path->Waypoints.Num(), Path->TravelSeconds, Path->bCutAtEnd ? TEXT(", fade and cut at the end") : TEXT(""));
+        Rig->BeginPathTransition(Path->Waypoints, TargetTransform, Target->FieldOfView, Path->TravelSeconds, Path->bCutAtEnd,
+            GameMode->ReducedMotionFadeSeconds, GameMode->FadeColor, Machine.GetTransitionId());
+        return;
+    }
+
     const bool bPathBlocked = Step->TransitionProfile == ELFFTransitionProfile::Ease
         && IsPathBlocked(Rig->GetActorLocation(), TargetTransform.GetLocation());
     if (bPathBlocked)
@@ -761,6 +829,7 @@ bool ULFFJourneySubsystem::GetSplashOrbit(FVector& OutCenter, float& OutRadius, 
 void ULFFJourneySubsystem::EnterSplash(const bool bCut)
 {
     StopVoice();
+    StopAnthemSequence(false);
     if (Rig == nullptr || GameMode == nullptr)
     {
         return;
@@ -829,11 +898,23 @@ void ULFFJourneySubsystem::OnArrived()
 {
     bArrived = true;
     ApplyCues(ELFFCueReason::Arrived);
+
+    // The anthem plays by itself in Standard; the Soft button only replays it. Calm Mode skips it.
+    const FLFFJourneyStep* Step = Machine.GetCurrentStep();
+    if (Step != nullptr && Step->IntensityPreview == ELFFIntensityPreview::Anthem && !Settings.bCalmMode)
+    {
+        StartAnthemSequence();
+    }
     ScheduleVoice();
 }
 
 void ULFFJourneySubsystem::ApplyCues(const ELFFCueReason Reason)
 {
+    if (Reason == ELFFCueReason::SettingsChanged && (Settings.bCalmMode || Settings.IsReducedMotionEffective()))
+    {
+        StopAnthemSequence(true);
+    }
+
     const bool bInstant = Settings.IsReducedMotionEffective();
     const bool bStarted = Machine.HasStarted();
     const int32 Index = Machine.GetIndex();
@@ -843,6 +924,12 @@ void ULFFJourneySubsystem::ApplyCues(const ELFFCueReason Reason)
     for (ALFFCueActor* Actor : CueActors)
     {
         if (!IsValid(Actor))
+        {
+            continue;
+        }
+
+        // People with no cue (the line, the staff) only stand; leave their visibility to the crowd settings.
+        if (Actor->CueId.IsNone())
         {
             continue;
         }
@@ -859,6 +946,12 @@ void ULFFJourneySubsystem::ApplyCues(const ELFFCueReason Reason)
 
         const int32* First = FirstCueIndex.Find(Actor->CueId);
         const ELFFCueState State = LFFJourneyRules::ResolveCueState(bStarted, Index, First != nullptr ? *First : INDEX_NONE);
+        // Calm Mode means no spectacle at all: not even shown already done.
+        if (Actor->bSpectacle && Settings.bCalmMode)
+        {
+            Actor->ApplyState(ELFFCueState::Before);
+            continue;
+        }
         switch (Reason)
         {
         case ELFFCueReason::StepChanged:
@@ -877,7 +970,8 @@ void ULFFJourneySubsystem::ApplyCues(const ELFFCueReason Reason)
             }
             break;
         case ELFFCueReason::SettingsChanged:
-            if (State == ELFFCueState::Play && bInstant)
+            // Spectacle comes back (already done) when Calm Mode is turned off on its step.
+            if (State == ELFFCueState::Play && (bInstant || (Actor->bSpectacle && !Actor->IsPlaying())))
             {
                 Actor->ApplyState(ELFFCueState::After);
             }
@@ -905,33 +999,18 @@ void ULFFJourneySubsystem::ApplyPreviewCues()
     }
 
     bPreviewCuesPlaying = bWant;
-    const FLFFJourneyStep* Step = Machine.GetCurrentStep();
-    float Longest = 0.0f;
-    int32 Count = 0;
-    for (ALFFCueActor* Actor : CueActors)
+    // Soft replays the same sequence the step plays by itself.
+    const float Longest = bWant ? StartAnthemSequence() : 0.0f;
+    if (!bWant)
     {
-        if (!IsValid(Actor) || Actor->Trigger != ELFFCueTrigger::Preview || Step == nullptr || !Step->SceneCues.Contains(Actor->CueId))
-        {
-            continue;
-        }
-
-        if (bWant)
-        {
-            Actor->Play(false);
-            Longest = FMath::Max(Longest, Actor->GetTotalSeconds());
-            ++Count;
-        }
-        else
-        {
-            Actor->ApplyState(ELFFCueState::Before);
-        }
+        StopAnthemSequence(true);
     }
 
     FTimerManager& Timers = GetWorld()->GetTimerManager();
     Timers.ClearTimer(PreviewCueTimer);
     if (bWant)
     {
-        UE_LOG(LogVirtualStadium, Log, TEXT("Anthem preview playing: %d actors, %.1f s, one pass."), Count, Longest);
+        UE_LOG(LogVirtualStadium, Log, TEXT("Anthem preview playing: %.1f s, one pass."), Longest);
         Timers.SetTimer(PreviewCueTimer, FTimerDelegate::CreateUObject(this, &ULFFJourneySubsystem::FinishPreviewCues), FMath::Max(Longest, 0.5f) + 0.2f, false);
     }
     else
@@ -950,6 +1029,176 @@ void ULFFJourneySubsystem::FinishPreviewCues()
     }
     ApplySensory();
     Broadcast();
+}
+
+const ALFFCameraPath* ULFFJourneySubsystem::FindPath(const FName ToTargetId) const
+{
+    if (Rig == nullptr || ToTargetId.IsNone())
+    {
+        return nullptr;
+    }
+
+    for (TActorIterator<ALFFCameraPath> It(GetWorld()); It; ++It)
+    {
+        const ALFFCameraPath* Path = *It;
+        if (Path->ToTargetId != ToTargetId || Path->Waypoints.IsEmpty())
+        {
+            continue;
+        }
+
+        if (Path->FromTargetId.IsNone())
+        {
+            return Path;
+        }
+
+        // Only from where it was authored to start: going back, or jumping in, moves the usual way.
+        const ALFFCameraTarget* From = FindTarget(Path->FromTargetId);
+        if (From != nullptr && FVector::Dist(From->GetCameraTransform().GetLocation(), Rig->GetActorLocation()) < 100.0f)
+        {
+            return Path;
+        }
+    }
+    return nullptr;
+}
+
+float ULFFJourneySubsystem::StartAnthemSequence()
+{
+    StopAnthemSequence(false);
+    const FLFFJourneyStep* Step = Machine.GetCurrentStep();
+    if (Step == nullptr || GameMode == nullptr || Settings.bCalmMode)
+    {
+        return 0.0f;
+    }
+
+    ALFFCueActor* Eagle = nullptr;
+    float Fireworks = 0.0f;
+    for (ALFFCueActor* Actor : CueActors)
+    {
+        if (!IsValid(Actor) || Actor->Trigger != ELFFCueTrigger::Preview || !Step->SceneCues.Contains(Actor->CueId))
+        {
+            continue;
+        }
+
+        if (Actor->IsA<ALFFFireworksActor>())
+        {
+            Fireworks = FMath::Max(Fireworks, Actor->GetTotalSeconds());
+        }
+        else if (Eagle == nullptr)
+        {
+            Eagle = Actor;
+        }
+    }
+
+    bAnthemSequence = true;
+    AnthemEagle = Eagle;
+    const float Flight = Eagle != nullptr ? Eagle->GetTotalSeconds() : 0.0f;
+    const bool bFollow = Eagle != nullptr && Rig != nullptr && !Settings.IsReducedMotionEffective();
+    if (Eagle != nullptr)
+    {
+        Eagle->Play(false);
+    }
+
+    FTimerManager& Timers = GetWorld()->GetTimerManager();
+    if (bFollow)
+    {
+        const float JoinAt = Eagle->PlayDelaySeconds + GameMode->AnthemFollowStart * Eagle->PlaySeconds;
+        // Leave the bird a moment before it is gone, so the camera turns home with it still in frame.
+        AnthemFlightLeft = FMath::Max(Flight - JoinAt - 0.6f, 0.5f);
+        Timers.SetTimer(AnthemTimer, this, &ULFFJourneySubsystem::JoinAnthemEagle, FMath::Max(JoinAt, 0.1f), false);
+    }
+    else
+    {
+        Timers.SetTimer(AnthemTimer, this, &ULFFJourneySubsystem::PlayAnthemFireworks, FMath::Max(Flight, 0.1f), false);
+    }
+
+    const float Total = Flight + (bFollow ? GameMode->AnthemReturnSeconds - 0.6f : 0.0f) + Fireworks;
+    UE_LOG(LogVirtualStadium, Log, TEXT("Anthem: eagle %s (%.1f s), then fireworks; about %.1f s."),
+        bFollow ? TEXT("with the camera close beside it") : TEXT("seen from the seat"), Flight, Total);
+    return Total;
+}
+
+void ULFFJourneySubsystem::JoinAnthemEagle()
+{
+    ALFFCueActor* Eagle = AnthemEagle.Get();
+    if (!bAnthemSequence || Eagle == nullptr || Rig == nullptr || GameMode == nullptr)
+    {
+        return;
+    }
+
+    Rig->StartFollow(Eagle, GameMode->AnthemFollowOffset, GameMode->AnthemFollowFieldOfView);
+    GetWorld()->GetTimerManager().SetTimer(AnthemTimer, this, &ULFFJourneySubsystem::ReturnFromAnthemEagle, AnthemFlightLeft, false);
+}
+
+void ULFFJourneySubsystem::ReturnFromAnthemEagle()
+{
+    if (!bAnthemSequence || Rig == nullptr || GameMode == nullptr)
+    {
+        return;
+    }
+
+    Rig->StopFollow();
+    const FLFFJourneyStep* Step = Machine.GetCurrentStep();
+    if (const ALFFCameraTarget* Target = Step != nullptr ? FindTarget(Step->CameraTargetId) : nullptr)
+    {
+        Rig->EaseQuietly(Target->GetCameraTransform(), Target->FieldOfView, GameMode->AnthemReturnSeconds);
+    }
+    GetWorld()->GetTimerManager().SetTimer(AnthemTimer, this, &ULFFJourneySubsystem::PlayAnthemFireworks, GameMode->AnthemReturnSeconds, false);
+}
+
+void ULFFJourneySubsystem::PlayAnthemFireworks()
+{
+    const FLFFJourneyStep* Step = Machine.GetCurrentStep();
+    if (!bAnthemSequence || Step == nullptr)
+    {
+        return;
+    }
+
+    float Longest = 0.0f;
+    for (ALFFCueActor* Actor : CueActors)
+    {
+        if (IsValid(Actor) && Actor->IsA<ALFFFireworksActor>() && Actor->Trigger == ELFFCueTrigger::Preview && Step->SceneCues.Contains(Actor->CueId))
+        {
+            Actor->Play(false);
+            Longest = FMath::Max(Longest, Actor->GetTotalSeconds());
+        }
+    }
+
+    GetWorld()->GetTimerManager().SetTimer(AnthemTimer, FTimerDelegate::CreateWeakLambda(this, [this]()
+    {
+        bAnthemSequence = false;
+        AnthemEagle.Reset();
+    }), FMath::Max(Longest, 0.1f) + 0.2f, false);
+}
+
+void ULFFJourneySubsystem::StopAnthemSequence(const bool bRestoreCamera)
+{
+    if (!bAnthemSequence)
+    {
+        return;
+    }
+
+    bAnthemSequence = false;
+    AnthemEagle.Reset();
+    GetWorld()->GetTimerManager().ClearTimer(AnthemTimer);
+
+    const FLFFJourneyStep* Step = Machine.GetCurrentStep();
+    for (ALFFCueActor* Actor : CueActors)
+    {
+        if (IsValid(Actor) && Actor->Trigger == ELFFCueTrigger::Preview && Step != nullptr && Step->SceneCues.Contains(Actor->CueId))
+        {
+            Actor->ApplyState(ELFFCueState::Before);
+        }
+    }
+
+    if (Rig != nullptr)
+    {
+        Rig->StopFollow();
+        if (bRestoreCamera)
+        {
+            // A cut, not a move: this only happens when the visitor asked for less (Calm, less movement, pause).
+            SnapCameraToCurrentStep();
+        }
+    }
 }
 
 void ULFFJourneySubsystem::ScheduleVoice()
@@ -988,6 +1237,20 @@ void ULFFJourneySubsystem::StartVoice()
     }
 
     VoiceAudio->OnAudioFinished.AddDynamic(this, &ULFFJourneySubsystem::HandleVoiceFinished);
+    // The word cues drive the card's highlight; the engine's own subtitle line stays off screen.
+    VoiceAudio->bSuppressSubtitles = true;
+    VoiceWordTimes.Reset();
+    if (const USoundWave* Wave = Cast<USoundWave>(Line))
+    {
+        for (const FSubtitleCue& Cue : Wave->Subtitles)
+        {
+            VoiceWordTimes.Add(Cue.Time);
+        }
+    }
+    if (VoiceWordTimes.Num() > 0)
+    {
+        VoiceAudio->OnAudioPlaybackPercentNative.AddUObject(this, &ULFFJourneySubsystem::HandleVoicePlaybackPercent);
+    }
     VoiceAudio->Play();
     bVoicePlaying = true;
     UE_LOG(LogVirtualStadium, Log, TEXT("Step %s: voice playing %s (%.1f s) at volume %.2f; bed ducked %.0f dB."),
@@ -1006,11 +1269,13 @@ void ULFFJourneySubsystem::StopVoice(const bool bReapplyAudio)
     if (IsValid(VoiceAudio))
     {
         VoiceAudio->OnAudioFinished.RemoveDynamic(this, &ULFFJourneySubsystem::HandleVoiceFinished);
+        VoiceAudio->OnAudioPlaybackPercentNative.RemoveAll(this);
         // Immediately, not a fade: the next card must never be read over the last one.
         VoiceAudio->Stop();
         UE_LOG(LogVirtualStadium, Log, TEXT("Voice stopped."));
     }
     VoiceAudio = nullptr;
+    SetVoiceWord(INDEX_NONE);
 
     if (bVoicePlaying)
     {
@@ -1022,9 +1287,31 @@ void ULFFJourneySubsystem::StopVoice(const bool bReapplyAudio)
     }
 }
 
+void ULFFJourneySubsystem::HandleVoicePlaybackPercent(const UAudioComponent* Component, const USoundWave* Wave, const float Percent)
+{
+    if (Wave == nullptr || Component != VoiceAudio)
+    {
+        return;
+    }
+    const float Seconds = Percent * Wave->Duration;
+    // The last word that has started; before the first one, nothing is lit.
+    const int32 Index = Algo::UpperBound(VoiceWordTimes, Seconds) - 1;
+    SetVoiceWord(Index >= 0 ? Index : INDEX_NONE);
+}
+
+void ULFFJourneySubsystem::SetVoiceWord(const int32 Index)
+{
+    if (Index != VoiceWordIndex)
+    {
+        VoiceWordIndex = Index;
+        OnVoiceWord.Broadcast(VoiceWordIndex);
+    }
+}
+
 void ULFFJourneySubsystem::HandleVoiceFinished()
 {
     UE_LOG(LogVirtualStadium, Log, TEXT("Voice finished."));
+    SetVoiceWord(INDEX_NONE);
     VoiceAudio = nullptr;
     bVoicePlaying = false;
     ApplyAudio();
@@ -1105,8 +1392,11 @@ void ULFFJourneySubsystem::ApplySensory()
 
     if (Rig != nullptr && GameMode != nullptr)
     {
-        const bool bPulse = bPreviewOn && GetCurrentPreviewKind() == ELFFIntensityPreview::Lights
-            && LFFJourneyRules::CanPlayPreview(ELFFIntensityPreview::Lights, Settings);
+        // Standard brightens the bright-lights step by itself (the same slow sine, never a flash). Calm stays flat.
+        const FLFFJourneyStep* LightsStep = Machine.GetCurrentStep();
+        const bool bAutoBrighten = LightsStep != nullptr && LightsStep->StepId == FName(TEXT("bright-lights")) && !Settings.bCalmMode;
+        const bool bPulse = bAutoBrighten || (bPreviewOn && GetCurrentPreviewKind() == ELFFIntensityPreview::Lights
+            && LFFJourneyRules::CanPlayPreview(ELFFIntensityPreview::Lights, Settings));
         if (bPulse != bLoggedPulse)
         {
             UE_LOG(LogVirtualStadium, Log, TEXT("Lights preview %s (%.1f s cycle, up to +%.1f stops)."),
@@ -1127,8 +1417,15 @@ void ULFFJourneySubsystem::ApplyCrowd()
         {
             It->SetActorHiddenInGame(!bShown);
             ++Count;
+            // The bowl crowd is Mass entities, not actors: despawn it for Crowd Off or Calm Mode, spawn it back after.
+            if (AMassSpawner* Spawner = Cast<AMassSpawner>(*It); Spawner != nullptr && bShown != bCrowdSpawnersShown)
+            {
+                bShown ? Spawner->DoSpawning() : Spawner->DoDespawning();
+            }
         }
     }
+
+    bCrowdSpawnersShown = bShown;
 
     if (bShown != bLoggedCrowdShown)
     {
@@ -1185,6 +1482,78 @@ void ULFFJourneySubsystem::UpdateExteriorVisibility()
     UE_LOG(LogVirtualStadium, Log, TEXT("Camera %s the stadium: %d exterior actors (parking lot) %s."), bInside ? TEXT("inside") : TEXT("outside"),
         ExteriorActors.Num(), bInside ? TEXT("hidden") : TEXT("shown"));
 }
+
+#if !UE_BUILD_SHIPPING
+namespace
+{
+    constexpr float ShotDelaySeconds = 9.0f;
+    FAutoConsoleCommandWithWorldAndArgs GLFFShotsCommand(
+        TEXT("LFF.Shots"),
+        TEXT("LFF.Shots <step> <step> ... [quit]: start the journey, visit those steps (1-based), screenshot each (dev only)."),
+        FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
+        {
+            if (ULFFJourneySubsystem* Journey = World != nullptr ? World->GetSubsystem<ULFFJourneySubsystem>() : nullptr)
+            {
+                Journey->StartShots(Args);
+            }
+        }));
+}
+
+void ULFFJourneySubsystem::StartShots(const TArray<FString>& Args)
+{
+    ShotSteps.Reset();
+    bShotsQuit = false;
+    for (const FString& Arg : Args)
+    {
+        if (Arg.Equals(TEXT("quit"), ESearchCase::IgnoreCase))
+        {
+            bShotsQuit = true;
+        }
+        else if (Arg.IsNumeric())
+        {
+            ShotSteps.Add(FCString::Atoi(*Arg));
+        }
+    }
+    // Give the journey (and the tiles) time to come up: -ExecCmds can run before the first tick.
+    bShotTaken = true;
+    GetWorld()->GetTimerManager().SetTimer(ShotTimer, FTimerDelegate::CreateWeakLambda(this, [this]()
+    {
+        if (!Machine.HasStarted())
+        {
+            Next();
+        }
+        GetWorld()->GetTimerManager().SetTimer(ShotTimer, FTimerDelegate::CreateUObject(this, &ULFFJourneySubsystem::NextShot), ShotDelaySeconds, false);
+    }), 12.0f, false);
+    UE_LOG(LogVirtualStadium, Log, TEXT("Shots: %d steps."), ShotSteps.Num());
+}
+
+void ULFFJourneySubsystem::NextShot()
+{
+    if (!bShotTaken)
+    {
+        const int32 Step = Machine.GetIndex() + 1;
+        const FString Name = FString::Printf(TEXT("LFF_step_%02d"), Step);
+        FScreenshotRequest::RequestScreenshot(Name, true, false);
+        UE_LOG(LogVirtualStadium, Log, TEXT("Shots: step %d (%s) captured as %s."), Step, *Snapshot.Title.ToString(), *Name);
+        bShotTaken = true;
+        GetWorld()->GetTimerManager().SetTimer(ShotTimer, FTimerDelegate::CreateUObject(this, &ULFFJourneySubsystem::NextShot), 1.0f, false);
+        return;
+    }
+    if (ShotSteps.Num() == 0)
+    {
+        UE_LOG(LogVirtualStadium, Log, TEXT("Shots: DONE."));
+        if (bShotsQuit)
+        {
+            FPlatformMisc::RequestExit(false, TEXT("LFF.Shots"));
+        }
+        return;
+    }
+    JumpToStep(ShotSteps[0] - 1);
+    ShotSteps.RemoveAt(0);
+    bShotTaken = false;
+    GetWorld()->GetTimerManager().SetTimer(ShotTimer, FTimerDelegate::CreateUObject(this, &ULFFJourneySubsystem::NextShot), ShotDelaySeconds, false);
+}
+#endif
 
 void ULFFJourneySubsystem::ResetPreview()
 {

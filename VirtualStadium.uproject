@@ -38,6 +38,18 @@
 		{
 			"Name": "MetaHumanCrowdContent",
 			"Enabled": true
+		},
+		{
+			"Name": "MassGameplay",
+			"Enabled": true
+		},
+		{
+			"Name": "ChaosClothAsset",
+			"Enabled": true
+		},
+		{
+			"Name": "VibeUE",
+			"Enabled": true
 		}
 	]
 }

@@ -2,6 +2,7 @@
 
 #include "Camera/CameraComponent.h"
 #include "Camera/PlayerCameraManager.h"
+#include "Components/SplineComponent.h"
 #include "Engine/World.h"
 #include "Journey/LFFJourneySubsystem.h"
 #include "Kismet/GameplayStatics.h"
@@ -25,6 +26,8 @@ void ALFFCameraRig::Tick(const float DeltaSeconds)
 
     TickLightPulse(DeltaSeconds);
     TickOrbit(DeltaSeconds);
+    TickPath(DeltaSeconds);
+    TickFollow(DeltaSeconds);
 
     if (!bEasing || bEasePaused)
     {
@@ -142,6 +145,168 @@ void ALFFCameraRig::SnapTo(const FTransform& TargetTransform, const float Target
     {
         Camera->SetFieldOfView(TargetFieldOfView);
     }
+}
+
+void ALFFCameraRig::BeginPathTransition(
+    const TArray<FVector>& Points,
+    const FTransform& TargetTransform,
+    const float TargetFieldOfView,
+    const float Seconds,
+    const bool bCutAtEnd,
+    const float FadeSeconds,
+    const FLinearColor& FadeColor,
+    const uint32 TransitionId)
+{
+    StopActiveTransition();
+    ActiveTransitionId = TransitionId;
+    ClearFade(FadeSeconds, FadeColor);
+
+    if (PathSpline == nullptr)
+    {
+        PathSpline = NewObject<USplineComponent>(this, TEXT("PathSpline"));
+        PathSpline->SetupAttachment(GetRootComponent());
+        PathSpline->SetUsingAbsoluteLocation(true);
+        PathSpline->SetUsingAbsoluteRotation(true);
+        PathSpline->SetUsingAbsoluteScale(true);
+        PathSpline->RegisterComponent();
+    }
+
+    TArray<FVector> Route;
+    Route.Add(GetActorLocation());
+    Route.Append(Points);
+    if (!bCutAtEnd)
+    {
+        Route.Add(TargetTransform.GetLocation());
+    }
+    PathSpline->SetSplinePoints(Route, ESplineCoordinateSpace::World, true);
+
+    StartTransform = GetActorTransform();
+    PathEndTransform = TargetTransform;
+    PathEndFieldOfView = TargetFieldOfView;
+    bPathCutAtEnd = bCutAtEnd;
+    PathFadeSeconds = FadeSeconds;
+    PathFadeColor = FadeColor;
+    StartFieldOfView = GetCameraComponent() != nullptr ? GetCameraComponent()->FieldOfView : TargetFieldOfView;
+    EndFieldOfView = bCutAtEnd ? StartFieldOfView : TargetFieldOfView;
+    Elapsed = 0.0f;
+    Duration = FMath::Max(Seconds, 1.0f);
+    bPathing = true;
+    UpdateTickEnabled();
+}
+
+void ALFFCameraRig::TickPath(const float DeltaSeconds)
+{
+    if (!bPathing || bEasePaused || PathSpline == nullptr)
+    {
+        return;
+    }
+
+    Elapsed += DeltaSeconds;
+    const float Alpha = FMath::Clamp(Elapsed / Duration, 0.0f, 1.0f);
+    // A slow start and a slow finish, constant in between: no lurch at either end.
+    const float Eased = FMath::InterpEaseInOut(0.0f, 1.0f, Alpha, 2.0f);
+    const float Length = PathSpline->GetSplineLength();
+    const float Distance = Eased * Length;
+    const FVector Location = PathSpline->GetLocationAtDistanceAlongSpline(Distance, ESplineCoordinateSpace::World);
+
+    // Look a few metres ahead along the route, level-ish; blend in from the start pose and out to the end pose.
+    const FVector Ahead = PathSpline->GetLocationAtDistanceAlongSpline(FMath::Min(Distance + 600.0f, Length), ESplineCoordinateSpace::World);
+    FRotator Along = (Ahead - Location).IsNearlyZero() ? GetActorRotation() : (Ahead - Location).Rotation();
+    Along.Pitch = FMath::Clamp(Along.Pitch, -15.0f, 10.0f);
+    FQuat Rotation = Along.Quaternion();
+    Rotation = FQuat::Slerp(StartTransform.GetRotation(), Rotation, FMath::SmoothStep(0.0f, 0.2f, Alpha));
+    if (!bPathCutAtEnd)
+    {
+        Rotation = FQuat::Slerp(Rotation, PathEndTransform.GetRotation(), FMath::SmoothStep(0.7f, 1.0f, Alpha));
+    }
+    FRotator Final = Rotation.Rotator();
+    Final.Roll = 0.0f;
+    SetActorLocationAndRotation(Location, Final);
+
+    if (UCameraComponent* Camera = GetCameraComponent())
+    {
+        Camera->SetFieldOfView(FMath::Lerp(StartFieldOfView, EndFieldOfView, Eased));
+    }
+
+    if (Alpha < 1.0f)
+    {
+        return;
+    }
+
+    bPathing = false;
+    UpdateTickEnabled();
+    if (bPathCutAtEnd)
+    {
+        // The last stretch is behind a wall: the same calm fade and cut as less movement.
+        BeginTransition(PathEndTransform, PathEndFieldOfView, ELFFTransitionProfile::ReducedMotion, 0.0f, PathFadeSeconds, PathFadeColor,
+            ActiveTransitionId);
+        return;
+    }
+
+    SnapTo(PathEndTransform, PathEndFieldOfView);
+    FinishTransition(ActiveTransitionId);
+}
+
+void ALFFCameraRig::StartFollow(AActor* Target, const FVector& Offset, const float FieldOfView)
+{
+    StopActiveTransition();
+    FollowTarget = Target;
+    FollowOffset = Offset;
+    FollowFieldOfView = FieldOfView;
+    bFollowing = Target != nullptr;
+    UpdateTickEnabled();
+}
+
+void ALFFCameraRig::StopFollow()
+{
+    bFollowing = false;
+    FollowTarget.Reset();
+    UpdateTickEnabled();
+}
+
+void ALFFCameraRig::TickFollow(const float DeltaSeconds)
+{
+    if (!bFollowing)
+    {
+        return;
+    }
+
+    const AActor* Target = FollowTarget.Get();
+    if (Target == nullptr)
+    {
+        StopFollow();
+        return;
+    }
+
+    // Soft lag on both position and aim: the camera drifts after the bird, never snaps to it.
+    const FVector Focus = Target->GetActorLocation();
+    const FVector Desired = Focus + Target->GetActorQuat().RotateVector(FollowOffset);
+    // Capped a little above the eagle's own speed, so joining it is a glide rather than a lunge.
+    const FVector Current = GetActorLocation();
+    const FVector Step = (FMath::VInterpTo(Current, Desired, DeltaSeconds, 1.2f) - Current).GetClampedToMaxSize(FollowMaxSpeed * DeltaSeconds);
+    const FVector Location = Current + Step;
+    FRotator Aim = FMath::RInterpTo(GetActorRotation(), (Focus - Location).Rotation(), DeltaSeconds, 2.0f);
+    Aim.Roll = 0.0f;
+    SetActorLocationAndRotation(Location, Aim);
+
+    if (UCameraComponent* Camera = GetCameraComponent())
+    {
+        Camera->SetFieldOfView(FMath::FInterpTo(Camera->FieldOfView, FollowFieldOfView, DeltaSeconds, 1.0f));
+    }
+}
+
+void ALFFCameraRig::EaseQuietly(const FTransform& TargetTransform, const float TargetFieldOfView, const float Seconds)
+{
+    StopActiveTransition();
+    ActiveTransitionId = 0;
+    StartTransform = GetActorTransform();
+    EndTransform = TargetTransform;
+    StartFieldOfView = GetCameraComponent() != nullptr ? GetCameraComponent()->FieldOfView : TargetFieldOfView;
+    EndFieldOfView = TargetFieldOfView;
+    Elapsed = 0.0f;
+    Duration = FMath::Max(Seconds, 0.5f);
+    bEasing = true;
+    UpdateTickEnabled();
 }
 
 void ALFFCameraRig::SetTransitionPaused(const bool bPaused)
@@ -290,7 +455,7 @@ void ALFFCameraRig::TickLightPulse(const float DeltaSeconds)
 
 void ALFFCameraRig::UpdateTickEnabled()
 {
-    SetActorTickEnabled(bEasing || bOrbiting || bPulseOn || PulseStops > 0.0f);
+    SetActorTickEnabled(bEasing || bOrbiting || bPathing || bFollowing || bPulseOn || PulseStops > 0.0f);
 }
 
 void ALFFCameraRig::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -305,6 +470,9 @@ void ALFFCameraRig::StopActiveTransition()
     bEasePaused = false;
     bOrbiting = false;
     bOrbitEasing = false;
+    bPathing = false;
+    bFollowing = false;
+    FollowTarget.Reset();
     UpdateTickEnabled();
 
     if (UWorld* World = GetWorld())
@@ -329,6 +497,12 @@ void ALFFCameraRig::FinishTransition(const uint32 TransitionId)
 
     bEasing = false;
     UpdateTickEnabled();
+
+    // A quiet ease (id 0) belongs to no journey move.
+    if (TransitionId == 0)
+    {
+        return;
+    }
 
     if (UWorld* World = GetWorld())
     {

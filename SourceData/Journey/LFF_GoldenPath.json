@@ -73,7 +73,9 @@
     "LabelsToShow": [
       "LBL_Security"
     ],
-    "SceneCues": [],
+    "SceneCues": [
+      "SecurityWalk"
+    ],
     "IntensityPreview": "None",
     "AudioBed": "",
     "VoiceWave": "/Game/LFF/Audio/VO/VO_05_Security.VO_05_Security",
@@ -247,11 +249,13 @@
     "VerificationSource": "",
     "ClockText": "11:50 AM, 12:00 PM, 12:15 PM",
     "TimelineLabel": "11:50 · 12:00 · 12:15\nFlares",
-    "CameraTargetId": "CT_InnerGate",
+    "CameraTargetId": "CT_GateFlares",
     "TransitionProfile": "Ease",
     "TransitionSeconds": 0,
     "LabelsToShow": [],
-    "SceneCues": [],
+    "SceneCues": [
+      "GateFlareBursts"
+    ],
     "IntensityPreview": "Lights",
     "AudioBed": "",
     "VoiceWave": "/Game/LFF/Audio/VO/VO_14_Flares.VO_14_Flares",
@@ -271,7 +275,9 @@
     "LabelsToShow": [
       "LBL_Concourse"
     ],
-    "SceneCues": [],
+    "SceneCues": [
+      "ConcourseWalk"
+    ],
     "IntensityPreview": "None",
     "AudioBed": "",
     "VoiceWave": "/Game/LFF/Audio/VO/VO_15_WalkToSeats.VO_15_WalkToSeats",
@@ -351,7 +357,7 @@
     ],
     "SceneCues": [],
     "IntensityPreview": "None",
-    "AudioBed": "/Game/LFF/Audio/SW_LFF_CheerBed.SW_LFF_CheerBed",
+    "AudioBed": "/Game/Crowd_Cheering/WAV/WAV_Crowd_Cheering_Ambience_and_cheering.WAV_Crowd_Cheering_Ambience_and_cheering",
     "VoiceWave": "/Game/LFF/Audio/VO/VO_19_Kickoff.VO_19_Kickoff",
     "bShowTicketPhone": false
   },
@@ -384,7 +390,7 @@
     "ClockText": "",
     "TimelineLabel": "",
     "CameraTargetId": "CT_SensoryRoom",
-    "TransitionProfile": "Ease",
+    "TransitionProfile": "ReducedMotion",
     "TransitionSeconds": 0,
     "LabelsToShow": [
       "LBL_SensoryRoom"
@@ -438,7 +444,7 @@
   {
     "Name": "finale",
     "Title": "Have fun and Go Eagles!",
-    "Body": "This preview is an illustration. It is not directions for the real stadium.",
+    "Body": "",
     "DisclaimerLevel": "Illustrative",
     "VerificationSource": "",
     "ClockText": "",

@@ -16,7 +16,11 @@ public class VirtualStadium : ModuleRules
                 "EnhancedInput",
                 "Slate",
                 "SlateCore",
-                "UMG"
+                "UMG",
+                "MassEntity",
+                "MassSpawner",
+                "Json",
+                "ChaosClothAssetEngine"
             }
         );
     }

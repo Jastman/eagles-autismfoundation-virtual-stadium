@@ -31,6 +31,31 @@ public:
 
     void SnapTo(const FTransform& TargetTransform, float TargetFieldOfView);
 
+    /**
+     * Follows Points (world space) from the current pose, eased in and out over Seconds, looking along the route.
+     * Ends on TargetTransform, or with bCutAtEnd fades and cuts to it from the last point. Reports like an Ease.
+     */
+    void BeginPathTransition(
+        const TArray<FVector>& Points,
+        const FTransform& TargetTransform,
+        float TargetFieldOfView,
+        float Seconds,
+        bool bCutAtEnd,
+        float FadeSeconds,
+        const FLinearColor& FadeColor,
+        uint32 TransitionId);
+
+    /**
+     * Keeps the camera close beside Target (Offset in the target's own frame), lagging softly behind it and looking
+     * at it. Runs until StopFollow or any new transition. Reports nothing.
+     */
+    void StartFollow(AActor* Target, const FVector& Offset, float FieldOfView);
+
+    void StopFollow();
+
+    /** An Ease back to a pose that reports nothing (the journey is already at its step). */
+    void EaseQuietly(const FTransform& TargetTransform, float TargetFieldOfView, float Seconds);
+
     /** Freezes an Ease move in place. Fades are short and are allowed to finish. */
     void SetTransitionPaused(bool bPaused);
 
@@ -71,6 +96,8 @@ private:
     void ClearFade(float Seconds, const FLinearColor& Color);
     void TickLightPulse(float DeltaSeconds);
     void TickOrbit(float DeltaSeconds);
+    void TickPath(float DeltaSeconds);
+    void TickFollow(float DeltaSeconds);
     void ApplyOrbitAngle(float AngleDegrees);
     void UpdateTickEnabled();
 
@@ -102,6 +129,22 @@ private:
     float PulsePeakStops = 0.0f;
     float PulseStops = 0.0f;
     static constexpr float PulseRampSeconds = 0.8f;
+
+    /** The live route of a path transition, world space (absolute, so it doesn't ride along with the camera). */
+    UPROPERTY(Transient)
+    TObjectPtr<class USplineComponent> PathSpline;
+    bool bPathing = false;
+    bool bPathCutAtEnd = false;
+    FTransform PathEndTransform = FTransform::Identity;
+    float PathEndFieldOfView = 70.0f;
+    float PathFadeSeconds = 0.35f;
+    FLinearColor PathFadeColor = FLinearColor::Black;
+
+    TWeakObjectPtr<AActor> FollowTarget;
+    FVector FollowOffset = FVector::ZeroVector;
+    float FollowFieldOfView = 60.0f;
+    bool bFollowing = false;
+    static constexpr float FollowMaxSpeed = 1400.0f;
 
     FTimerHandle FadeOutTimer;
     FTimerHandle FadeInTimer;

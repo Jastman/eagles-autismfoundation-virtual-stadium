@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-10-01 (session 5: lot grid, MetaHuman crowd, voice on by default, karaoke)
+- **Lot on its own grid** (`Tools/Pipeline/plan_lot.py`, `Tools/Editor/session5_assets.py`): the model's lot is laid out 16.5 deg off the stadium frame (measured from its walkway islands and edges), so the bays now follow it: 2.7 m stalls, 7.2 m aisles, cross aisles. 811 instanced City Sample cars sit square in their stalls on 1,437 painted lines (`SI_LotPaint`, `M_LFF_LotPaint`). The Pepsi Plaza entry keeps 10 m clear and its five cameras' views; no car touches the line or security.
+- **Parking step faces the stadium:** `CT_Parking` stands in an aisle looking south down the rows, the ten hero cars either side and the arriving car pulling into the empty bay on the right; the stadium fills the background.
+- **MetaHuman Crowd Sample crowd** (Mass): `ALFFStadiumCrowdSpawner` + `ULFFSeatSpawnDataGenerator` place the sample's people at the stadium's own seats: 56,707 seats read from the model's seat parts (`Tools/Pipeline/extract_seats.py`, `Content/LFF/Crowd/seats.json`), 70% occupied (39,695 people) across every section, lower to upper deck, each facing the field; the seats around the camera seat are left empty. `DA_LFF_StadiumCrowd` is the sample's base config without walking, steering and avoidance, instanced skinned meshes at every LOD out to 600 m. Crowd Off and Calm Mode despawn it.
+- **The queue is full:** 64 MetaHumans in the three stanchion lanes and a tail beyond them (`SI_QueueCrowd`, `queue.json`); the six primitive queue figures are hidden.
+- **Sound and Voice on by default.** Each card has a voice icon button (top right, speaker / speaker crossed out, 64 px target); it turns Sound on with the voice if needed. Calm Mode still silences both.
+- **Karaoke:** while the voice reads, the card highlights the word being spoken (warm gold, colour only). Word timings are aligned locally from the script and each wav's pauses (`Tools/Audio/make_vo_words.py`) and stored as the voice SoundWaves' subtitle cues (suppressed on screen); the card's title and body are rich text.
+- **Finale card:** the wordmark is a UI texture (sharp), under the body text; Learn More no longer overlaps Start Over.
+- **No engine debug text on screen** in play (texture pool, shadow cache); texture streaming pool 4 GB.
+- Dev: `LFF.Shots <steps> [quit]` screenshots journey steps offscreen (not in Shipping).
+
 ## 2026-09-30 (session 4 finish pass: `Tools/Editor/finish_pass.py`)
 - **No editor icons in any view:** the billboard on every plain actor, the "Tt" sprite on every TextRenderActor and the camera targets' arrows are hidden (they were already hidden in game; now also in the editor viewport and captures).
 - **Ticket:** the phone's header reads "Eagles vs. Carolina Panthers / Sun, October 18 · 1:00 PM" (was "Eagles vs. Lions"), set in the same face on the same flat bar; seat 111 / 10 / 8 as before. 30 frames re-imported.

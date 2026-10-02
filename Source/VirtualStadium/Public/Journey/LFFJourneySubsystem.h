@@ -6,6 +6,7 @@
 #include "Journey/LFFJourneyTypes.h"
 #include "LFFJourneySubsystem.generated.h"
 
+class ALFFCameraPath;
 class ALFFCameraRig;
 class ALFFCameraTarget;
 class ALFFCueActor;
@@ -14,6 +15,8 @@ class UAudioComponent;
 class UBoxComponent;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FLFFOnJourneyChanged, const FLFFJourneySnapshot&, Snapshot);
+/** The word of the card (title, then body, split at spaces) the voice is reading, or INDEX_NONE when it isn't. */
+DECLARE_MULTICAST_DELEGATE_OneParam(FLFFOnVoiceWord, int32);
 
 /** Why the scene cues are being re-applied. */
 enum class ELFFCueReason : uint8
@@ -53,6 +56,9 @@ public:
     /** Voice reads each card (Title, then Body). Needs Sound on; ignored while Sound is off or Calm Mode is on. */
     UFUNCTION(BlueprintCallable, Category = "Journey")
     void ToggleVoice();
+    /** The voice button on each card: Voice off, or Voice on (turning Sound on with it if needed). Nothing in Calm Mode. */
+    void ToggleVoiceFromCard();
+    int32 GetVoiceWordIndex() const { return VoiceWordIndex; }
 
     /** Crowd: Low (a few stand-in people) or Off. Ignored while Calm Mode is on (it hides them anyway). */
     UFUNCTION(BlueprintCallable, Category = "Journey")
@@ -98,6 +104,9 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Journey")
     void ToggleCalmMode();
 
+    /** Standard | Calm (splash choice, top bar). Standard turns the full day on: sound, voice, movement, crowd. */
+    void SetExperienceMode(bool bCalm);
+
     /** "Preview this? Off / Soft" on a loud or bright step. Ignored elsewhere, while paused or in Calm Mode. */
     UFUNCTION(BlueprintCallable, Category = "Journey")
     void TogglePreview();
@@ -113,6 +122,15 @@ public:
 
     UPROPERTY(BlueprintAssignable, Category = "Journey")
     FLFFOnJourneyChanged OnJourneyChanged;
+
+    /** Karaoke: the card highlights this word while the voice reads it (word timings: the voice SoundWave's subtitle cues). */
+    FLFFOnVoiceWord OnVoiceWord;
+
+#if !UE_BUILD_SHIPPING
+    /** Dev only (console LFF.Shots 1 2 18 [quit]): starts the journey, visits those steps (1-based) and saves a
+     *  screenshot of each, HUD included, ShotDelaySeconds after the jump. For offscreen checks of the scene. */
+    void StartShots(const TArray<FString>& Args);
+#endif
 
     /** Called by ALFFCameraRig. Stale ids are ignored by the state machine. */
     void HandleRigTransitionFinished(uint32 TransitionId);
@@ -140,12 +158,29 @@ private:
     /** The anthem preview's cues (the eagle, fireworks) play while Soft is picked and end the preview when done. */
     void ApplyPreviewCues();
     void FinishPreviewCues();
+
+    /** An authored route to ToTargetId that starts where the camera is now (its From target), if any. */
+    const ALFFCameraPath* FindPath(FName ToTargetId) const;
+
+    /**
+     * Anthem, Standard: the eagle flies and the camera joins it close beside, then eases back to the seat and the
+     * gold and white fireworks burst above the rim. Less movement keeps the camera at the seat. Calm Mode: none of it.
+     * Returns the whole sequence's length, s.
+     */
+    float StartAnthemSequence();
+    void JoinAnthemEagle();
+    void ReturnFromAnthemEagle();
+    void PlayAnthemFireworks();
+    /** Stops the sequence; bRestoreCamera cuts back to the step's pose (Calm Mode or pause turned on mid-flight). */
+    void StopAnthemSequence(bool bRestoreCamera);
     void ScheduleVoice();
     void StartVoice();
     /** Stops the voice at once. bReapplyAudio restores the bed from its duck. */
     void StopVoice(bool bReapplyAudio = true);
     UFUNCTION()
     void HandleVoiceFinished();
+    void HandleVoicePlaybackPercent(const UAudioComponent* Component, const USoundWave* Wave, float Percent);
+    void SetVoiceWord(int32 Index);
     void ApplyLabels();
     /** Master mute, ambient bed and the Sound preview. */
     void ApplyAudio();
@@ -181,9 +216,18 @@ private:
     /** The camera has reached the current step (arrival cues and the voice wait for this). */
     bool bArrived = false;
     bool bVoicePlaying = false;
+    /** Start time of each card word in the current voice line (Tools/Audio/make_vo_words.py). */
+    TArray<float> VoiceWordTimes;
+    int32 VoiceWordIndex = INDEX_NONE;
     bool bPreviewCuesPlaying = false;
+    bool bAnthemSequence = false;
+    TWeakObjectPtr<ALFFCueActor> AnthemEagle;
+    float AnthemFlightLeft = 0.0f;
+    FTimerHandle AnthemTimer;
     bool bLoggedCrowdShown = true;
     bool bExteriorHidden = false;
+    /** The crowd spawners auto-spawn on BeginPlay, so they start shown. */
+    bool bCrowdSpawnersShown = true;
     // Last states written to the log, so each change is logged once (evidence for TEST_PLAN T2).
     bool bLoggedSound = true;
     bool bLoggedPulse = false;
@@ -219,4 +263,11 @@ private:
     FTimerHandle VoiceTimer;
     FTimerHandle PreviewCueTimer;
     FTimerHandle ExteriorTimer;
+#if !UE_BUILD_SHIPPING
+    void NextShot();
+    TArray<int32> ShotSteps;
+    bool bShotsQuit = false;
+    bool bShotTaken = false;
+    FTimerHandle ShotTimer;
+#endif
 };

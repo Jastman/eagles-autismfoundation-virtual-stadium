@@ -21,6 +21,9 @@ class VIRTUALSTADIUM_API ALFFGameMode : public AGameModeBase
 public:
     ALFFGameMode();
 
+    virtual void StartPlay() override;
+    virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
     /** Cooked via DirectoriesToAlwaysCook=/Game/LFF/Data (DefaultGame.ini). */
     UPROPERTY(EditDefaultsOnly, Category = "Journey")
     TSoftObjectPtr<UDataTable> JourneyTable;
@@ -96,6 +99,21 @@ public:
     /** Peak exposure lift of the Lights preview, in stops. The pulse is a smooth sine, never a step. */
     UPROPERTY(EditDefaultsOnly, Category = "Preview", meta = (ClampMin = "0.0", ClampMax = "1.5"))
     float LightPulseStops = 0.9f;
+
+    /** Anthem, Standard: where the camera rides beside the eagle, in the bird's own frame (cm; X ahead, Y right). */
+    UPROPERTY(EditDefaultsOnly, Category = "Anthem")
+    FVector AnthemFollowOffset = FVector(200.0f, 700.0f, -50.0f);
+
+    UPROPERTY(EditDefaultsOnly, Category = "Anthem", meta = (ClampMin = "30.0", ClampMax = "90.0"))
+    float AnthemFollowFieldOfView = 55.0f;
+
+    /** How far into the flight the camera leaves the seat to join the eagle (fraction of the flight). */
+    UPROPERTY(EditDefaultsOnly, Category = "Anthem", meta = (ClampMin = "0.0", ClampMax = "0.8"))
+    float AnthemFollowStart = 0.3f;
+
+    /** The slow ease from the eagle back to the seat before the fireworks. */
+    UPROPERTY(EditDefaultsOnly, Category = "Anthem", meta = (ClampMin = "1.0", ClampMax = "6.0"))
+    float AnthemReturnSeconds = 3.5f;
 
     /** Voiceover level. Kept a little under the bed level; the bed ducks under it while it speaks. */
     UPROPERTY(EditDefaultsOnly, Category = "Voice", meta = (ClampMin = "0.0", ClampMax = "1.0"))

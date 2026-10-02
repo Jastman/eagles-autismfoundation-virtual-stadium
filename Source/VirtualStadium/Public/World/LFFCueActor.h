@@ -5,6 +5,9 @@
 #include "Journey/LFFJourneyTypes.h"
 #include "LFFCueActor.generated.h"
 
+class UAnimationAsset;
+class USkeletalMeshComponent;
+
 /** What starts a cue: the camera arriving at its step, or the visitor picking "Soft" on its step's preview. */
 UENUM(BlueprintType)
 enum class ELFFCueTrigger : uint8
@@ -61,6 +64,18 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Cue")
     bool bHiddenAfter = false;
 
+    /** People: looped on this actor's skeletal meshes while the move runs (a walk). */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Cue")
+    TObjectPtr<UAnimationAsset> MovingAnimation;
+
+    /** People: looped while standing, before and after the move or through its delay (an idle). */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Cue")
+    TObjectPtr<UAnimationAsset> StillAnimation;
+
+    /** Spectacle (the gate flares): never shown in Calm Mode, rather than shown at its end pose. Use with bHiddenBefore. */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Cue")
+    bool bSpectacle = false;
+
     /** Before: start pose. After: end pose. Play: start pose, waiting for Play(). Stops any move in progress. */
     void ApplyState(ELFFCueState State);
 
@@ -77,6 +92,8 @@ protected:
     virtual void ApplyAlpha(float Alpha, float ElapsedSeconds);
     virtual void OnPlayStarted() {}
     virtual void OnStopped() {}
+    /** The one mesh the animations play on (a person's body; the rest follow its pose). Null: every skeletal mesh. */
+    virtual USkeletalMeshComponent* GetAnimatedMesh() const { return nullptr; }
 
     void SetCueHidden(bool bHidden);
 
@@ -86,9 +103,14 @@ protected:
 private:
     void CacheRestPose();
     void Finish();
+    /** Loops Animation on every skeletal mesh of this actor (no-op without one). */
+    void PlayLoop(UAnimationAsset* Animation);
+    /** Single-node loop on one mesh, warning in the log (with both skeletons) if the clip doesn't take. */
+    void PlayLoopOn(USkeletalMeshComponent* Mesh, UAnimationAsset* Animation);
 
     FTransform RestRelative = FTransform::Identity;
     bool bHasRest = false;
     bool bPlaying = false;
+    bool bMovingAnimationOn = false;
     float Elapsed = 0.0f;
 };

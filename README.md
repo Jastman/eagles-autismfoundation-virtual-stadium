@@ -55,7 +55,7 @@ Early prototype in development for the Eagles Autism Foundation partnership.
   - a game mode and a player controller (Enhanced Input built in code);
   - one HUD widget base class that always shows the disclaimer.
 - Headless automation tests: `LFF.Journey.*`.
-- Four illustrative steps in `SourceData/Journey/LFF_GoldenPath.json`: arrival, gate, concourse, and an example seat (Section 111, Row 10, Seat 8).
+- Sixteen illustrative steps in `SourceData/Journey/LFF_GoldenPath.json`, following the Eagles Autism Foundation visual schedule: arriving, parking, the line, security, clear bags, the mobile ticket, the plaza, Popcorn for the People, the Sensory Activation Vehicle, walking to the seat, loud sounds and bright lights (optional soft previews), Guest Services, the sensory room, food and staff. Simple stand-in props mark each stop.
 - Cesium for Unreal v2.29.1 with Google Photorealistic 3D Tiles for the context.
 - Project docs in `Docs/`: ledger, ADRs, setup, test plan, accessibility rules, wording and known limitations.
 

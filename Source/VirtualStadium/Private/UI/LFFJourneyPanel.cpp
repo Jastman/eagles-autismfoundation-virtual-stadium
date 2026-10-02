@@ -6,6 +6,9 @@
 #include "Components/HorizontalBox.h"
 #include "Components/HorizontalBoxSlot.h"
 #include "Components/Image.h"
+#include "Components/RichTextBlock.h"
+#include "Components/OverlaySlot.h"
+#include "Engine/DataTable.h"
 #include "Components/ScaleBox.h"
 #include "Components/SizeBox.h"
 #include "Components/TextBlock.h"
@@ -152,7 +155,169 @@ void ULFFJourneyPanel::NativeConstruct()
 
     BindButtons();
     CollectSurfaces();
+    if (TitleRich != nullptr)
+    {
+        if (ULFFJourneySubsystem* Journey = GetJourney())
+        {
+            VoiceWordHandle = Journey->OnVoiceWord.AddUObject(this, &ULFFJourneyPanel::HandleVoiceWord);
+        }
+    }
+}
+
+void ULFFJourneyPanel::NativeOnInitialized()
+{
+    Super::NativeOnInitialized();
+
+    // Before the Slate widgets exist: a panel inserted into a built box is drawn last, whatever its index.
     BuildFinaleLogo();
+    BuildVoiceButton();
+    BuildKaraokeText();
+    if (LearnMorePanel != nullptr)
+    {
+        if (UOverlaySlot* Slot = Cast<UOverlaySlot>(LearnMorePanel->Slot))
+        {
+            Slot->SetPadding(FMargin(0.0f, 0.0f, LearnMoreRightGap, 0.0f));
+        }
+    }
+}
+
+void ULFFJourneyPanel::BuildVoiceButton()
+{
+    UHorizontalBox* Header = Cast<UHorizontalBox>(GetWidgetFromName(TEXT("CaptionHeader")));
+    if (Header == nullptr || WidgetTree == nullptr || VoiceIconButton != nullptr)
+    {
+        return;
+    }
+
+    // The project's minimum hit target (64 px at 1080p) around a 34 px icon.
+    USizeBox* Box = WidgetTree->ConstructWidget<USizeBox>(USizeBox::StaticClass(), TEXT("VoiceIconSize"));
+    Box->SetWidthOverride(64.0f);
+    Box->SetHeightOverride(64.0f);
+    UButton* Button = WidgetTree->ConstructWidget<UButton>(UButton::StaticClass(), TEXT("VoiceIconButton"));
+    PRAGMA_DISABLE_DEPRECATION_WARNINGS
+    Button->IsFocusable = false;
+    PRAGMA_ENABLE_DEPRECATION_WARNINGS
+    if (PreviewButton != nullptr)
+    {
+        // The same rounded secondary style as the card's other button.
+        Button->SetStyle(PreviewButton->GetStyle());
+        Button->SetBackgroundColor(PreviewButton->GetBackgroundColor());
+    }
+    Button->SetToolTipText(LOCTEXT("VoiceIconTip", "Voice on or off (key 5)"));
+    Box->SetContent(Button);
+    UImage* Icon = WidgetTree->ConstructWidget<UImage>(UImage::StaticClass(), TEXT("VoiceIconImage"));
+    Icon->SetDesiredSizeOverride(FVector2D(34.0, 34.0));
+    Button->SetContent(Icon);
+    if (UHorizontalBoxSlot* Slot = Header->AddChildToHorizontalBox(Box))
+    {
+        Slot->SetVerticalAlignment(VAlign_Center);
+        Slot->SetPadding(FMargin(12.0f, 0.0f, 0.0f, 0.0f));
+    }
+    Button->OnClicked.AddUniqueDynamic(this, &ULFFJourneyPanel::HandleVoiceIconClicked);
+    VoiceIconButton = Button;
+    VoiceIconImage = Icon;
+}
+
+void ULFFJourneyPanel::HandleVoiceIconClicked()
+{
+    if (ULFFJourneySubsystem* Journey = GetJourney()) { Journey->ToggleVoiceFromCard(); }
+    FSlateApplication::Get().SetAllUserFocusToGameViewport();
+}
+
+URichTextBlock* ULFFJourneyPanel::MakeKaraokeCopy(UTextBlock* Source, const TCHAR* Name)
+{
+    UVerticalBox* Stack = Source != nullptr ? Cast<UVerticalBox>(Source->GetParent()) : nullptr;
+    if (Stack == nullptr)
+    {
+        return nullptr;
+    }
+
+    // Two styles: the card's own text, and the same with the highlight colour.
+    UDataTable* Styles = NewObject<UDataTable>(this);
+    Styles->RowStruct = FRichTextStyleRow::StaticStruct();
+    FRichTextStyleRow Row;
+    Row.TextStyle.SetFont(Source->GetFont());
+    Row.TextStyle.SetColorAndOpacity(Source->GetColorAndOpacity());
+    Styles->AddRow(TEXT("Default"), Row);
+    Row.TextStyle.SetColorAndOpacity(FSlateColor(KaraokeColor));
+    Styles->AddRow(TEXT("Word"), Row);
+
+    URichTextBlock* Rich = WidgetTree->ConstructWidget<URichTextBlock>(URichTextBlock::StaticClass(), Name);
+    Rich->SetTextStyleSet(Styles);
+    Rich->SetAutoWrapText(false);
+    if (const FFloatProperty* Wrap = FindFProperty<FFloatProperty>(UTextLayoutWidget::StaticClass(), TEXT("WrapTextAt")))
+    {
+        Rich->SetWrapTextAt(Wrap->GetPropertyValue_InContainer(Source));
+    }
+    UVerticalBoxSlot* SourceSlot = Cast<UVerticalBoxSlot>(Source->Slot);
+    if (UVerticalBoxSlot* Slot = Cast<UVerticalBoxSlot>(Stack->InsertChildAt(Stack->GetChildIndex(Source) + 1, Rich)))
+    {
+        if (SourceSlot != nullptr)
+        {
+            Slot->SetPadding(SourceSlot->GetPadding());
+            Slot->SetHorizontalAlignment(SourceSlot->GetHorizontalAlignment());
+        }
+    }
+    Source->SetVisibility(ESlateVisibility::Collapsed);
+    return Rich;
+}
+
+void ULFFJourneyPanel::BuildKaraokeText()
+{
+    // Only the caption card (the panel with CaptionStack) reads aloud; the splash keeps its plain text.
+    if (TitleRich != nullptr || WidgetTree == nullptr || GetWidgetFromName(TEXT("CaptionStack")) == nullptr)
+    {
+        return;
+    }
+    TitleRich = MakeKaraokeCopy(TitleText.Get(), TEXT("TitleRich"));
+    BodyRich = MakeKaraokeCopy(BodyText.Get(), TEXT("BodyRich"));
+}
+
+namespace
+{
+    /** The card text as rich text, word Highlight (in this text) in the Word style. Words are split at spaces, as the
+     *  voice timings are (Tools/Audio/make_vo_words.py). */
+    FString KaraokeMarkup(const FString& Text, const int32 Highlight, int32& OutWords)
+    {
+        TArray<FString> Words;
+        Text.ParseIntoArrayWS(Words);
+        OutWords = Words.Num();
+        FString Out;
+        for (int32 I = 0; I < Words.Num(); ++I)
+        {
+            FString Word = Words[I].Replace(TEXT("&"), TEXT("&amp;")).Replace(TEXT("<"), TEXT("&lt;")).Replace(TEXT(">"), TEXT("&gt;"))
+                .Replace(TEXT("\""), TEXT("&quot;"));
+            if (I > 0)
+            {
+                Out += TEXT(" ");
+            }
+            Out += I == Highlight ? FString::Printf(TEXT("<Word>%s</>"), *Word) : Word;
+        }
+        return Out;
+    }
+}
+
+void ULFFJourneyPanel::ApplyKaraoke()
+{
+    if (TitleRich == nullptr || KaraokeShown == KaraokeWord)
+    {
+        return;
+    }
+    KaraokeShown = KaraokeWord;
+    int32 TitleWords = 0, BodyWords = 0;
+    // Title first (to count its words), then the body carries on from there.
+    const FString Title = KaraokeMarkup(KaraokeTitle, KaraokeWord, TitleWords);
+    TitleRich->SetText(FText::FromString(Title));
+    if (BodyRich != nullptr)
+    {
+        BodyRich->SetText(FText::FromString(KaraokeMarkup(KaraokeBody, KaraokeWord == INDEX_NONE ? INDEX_NONE : KaraokeWord - TitleWords, BodyWords)));
+    }
+}
+
+void ULFFJourneyPanel::HandleVoiceWord(const int32 WordIndex)
+{
+    KaraokeWord = WordIndex;
+    ApplyKaraoke();
 }
 
 void ULFFJourneyPanel::BuildFinaleLogo()
@@ -185,7 +350,7 @@ void ULFFJourneyPanel::BuildFinaleLogo()
 
     if (UVerticalBoxSlot* Slot = Cast<UVerticalBoxSlot>(Stack->InsertChildAt(Stack->GetChildIndex(BodyText) + 1, Plate)))
     {
-        Slot->SetHorizontalAlignment(HAlign_Left);
+        Slot->SetHorizontalAlignment(HAlign_Center);
         Slot->SetPadding(FMargin(0.0f, 14.0f, 0.0f, 0.0f));
     }
     Plate->SetVisibility(ESlateVisibility::Collapsed);
@@ -194,6 +359,15 @@ void ULFFJourneyPanel::BuildFinaleLogo()
 
 void ULFFJourneyPanel::NativeDestruct()
 {
+    if (VoiceWordHandle.IsValid())
+    {
+        if (ULFFJourneySubsystem* Journey = GetJourney())
+        {
+            Journey->OnVoiceWord.Remove(VoiceWordHandle);
+        }
+        VoiceWordHandle.Reset();
+    }
+
     if (UWorld* World = GetWorld())
     {
         World->GetTimerManager().ClearTimer(FadeTimer);
@@ -209,6 +383,30 @@ void ULFFJourneyPanel::ApplySnapshot(const FLFFJourneySnapshot& Snapshot)
 
     ApplyText(TitleText.Get(), Snapshot.Title);
     ApplyText(BodyText.Get(), Snapshot.Body);
+    if (TitleRich != nullptr)
+    {
+        const FString Title = Snapshot.Title.ToString(), Body = Snapshot.Body.ToString();
+        if (Title != KaraokeTitle || Body != KaraokeBody)
+        {
+            KaraokeTitle = Title;
+            KaraokeBody = Body;
+            KaraokeShown = INDEX_NONE - 1;
+        }
+        const ULFFJourneySubsystem* Journey = GetJourney();
+        KaraokeWord = Snapshot.bVoicePlaying && Journey != nullptr ? Journey->GetVoiceWordIndex() : INDEX_NONE;
+        ApplyKaraoke();
+    }
+    if (VoiceIconImage != nullptr)
+    {
+        const bool bVoiceOn = Snapshot.Settings.IsVoiceEffective();
+        if (UTexture2D* Icon = (bVoiceOn ? VoiceOnIcon : VoiceOffIcon).LoadSynchronous())
+        {
+            VoiceIconImage->SetBrushFromTexture(Icon);
+            VoiceIconImage->SetDesiredSizeOverride(FVector2D(34.0, 34.0));
+        }
+        VoiceIconButton->SetToolTipText(bVoiceOn ? LOCTEXT("VoiceIconOn", "Voice is on. Turn it off (key 5)")
+                                                 : LOCTEXT("VoiceIconOff", "Voice is off. Turn it on (key 5)"));
+    }
     ApplyText(ProgressText.Get(), Snapshot.ProgressText);
     ApplyText(StepNumberText.Get(), StepNumber(Snapshot));
     ApplyText(DisclaimerText.Get(), Snapshot.DisclaimerText);
@@ -261,9 +459,31 @@ void ULFFJourneyPanel::ApplySnapshot(const FLFFJourneySnapshot& Snapshot)
     Enable(SoundButton.Get(), !Snapshot.Settings.bCalmMode);
     Enable(ReducedMotionButton.Get(), !Snapshot.Settings.bCalmMode);
     Enable(VoiceButton.Get(), Snapshot.Settings.IsSoundEffective());
+    Enable(VoiceIconButton.Get(), !Snapshot.Settings.bCalmMode && !bModal);
     Enable(CrowdButton.Get(), !Snapshot.Settings.bCalmMode);
     Enable(LearnMoreButton.Get(), Snapshot.bAtEnd && !bModal);
-    ShowGroup(LearnMorePanel.Get(), Snapshot.bStarted && Snapshot.bAtEnd);
+    // Learn More now lives on the finale card (FinaleActions), so the rail keeps only Start Over.
+    ShowGroup(LearnMorePanel.Get(), false);
+    // Standard | Calm: the chosen side at full strength, the other dimmed (the label says which is which too).
+    if (StandardButton != nullptr) { StandardButton->SetRenderOpacity(Snapshot.Settings.bCalmMode ? 0.6f : 1.0f); }
+    if (CalmButton != nullptr) { CalmButton->SetRenderOpacity(Snapshot.Settings.bCalmMode ? 1.0f : 0.6f); }
+    Enable(StandardButton.Get(), !bModal);
+    Enable(CalmButton.Get(), !bModal);
+    // Finale: the caption card moves to the centre of the screen with Start Over and Learn More on it.
+    if (FinaleActions != nullptr && TextScale != nullptr)
+    {
+        const bool bFinale = Snapshot.bStarted && Snapshot.bAtEnd;
+        ShowGroup(FinaleActions.Get(), bFinale);
+        Enable(FinaleStartOverButton.Get(), bFinale && !bModal);
+        Enable(FinaleLearnMoreButton.Get(), bFinale && !bModal);
+        if (UOverlaySlot* CardSlot = Cast<UOverlaySlot>(TextScale->Slot))
+        {
+            // Otherwise lower left, above the timeline (build_wbp_lff_ui.py: CAPTION_BOTTOM).
+            CardSlot->SetHorizontalAlignment(bFinale ? HAlign_Center : HAlign_Left);
+            CardSlot->SetVerticalAlignment(bFinale ? VAlign_Center : VAlign_Bottom);
+            CardSlot->SetPadding(bFinale ? FMargin(0.0f) : FMargin(48.0f, 0.0f, 0.0f, 240.0f));
+        }
+    }
     ShowGroup(FinaleLogo.Get(), Snapshot.bStarted && Snapshot.bAtEnd);
     Enable(PreviewButton.Get(), Snapshot.bShowPreviewControls && !Snapshot.bPaused && !bModal
         && (Snapshot.bPreviewAvailable || Snapshot.bPreviewOn));
@@ -648,6 +868,10 @@ void ULFFJourneyPanel::BindButtons()
     if (VoiceButton != nullptr) { VoiceButton->OnClicked.AddUniqueDynamic(this, &ULFFJourneyPanel::HandleVoiceClicked); }
     if (CrowdButton != nullptr) { CrowdButton->OnClicked.AddUniqueDynamic(this, &ULFFJourneyPanel::HandleCrowdClicked); }
     if (LearnMoreButton != nullptr) { LearnMoreButton->OnClicked.AddUniqueDynamic(this, &ULFFJourneyPanel::HandleLearnMoreClicked); }
+    if (StandardButton != nullptr) { StandardButton->OnClicked.AddUniqueDynamic(this, &ULFFJourneyPanel::HandleStandardClicked); }
+    if (CalmButton != nullptr) { CalmButton->OnClicked.AddUniqueDynamic(this, &ULFFJourneyPanel::HandleCalmClicked); }
+    if (FinaleStartOverButton != nullptr) { FinaleStartOverButton->OnClicked.AddUniqueDynamic(this, &ULFFJourneyPanel::HandleNextClicked); }
+    if (FinaleLearnMoreButton != nullptr) { FinaleLearnMoreButton->OnClicked.AddUniqueDynamic(this, &ULFFJourneyPanel::HandleLearnMoreClicked); }
 }
 
 void ULFFJourneyPanel::ReturnFocusToGame() const
@@ -753,6 +977,18 @@ void ULFFJourneyPanel::HandleVoiceClicked()
 void ULFFJourneyPanel::HandleCrowdClicked()
 {
     if (ULFFJourneySubsystem* Journey = GetJourney()) { Journey->ToggleCrowd(); }
+    ReturnFocusToGame();
+}
+
+void ULFFJourneyPanel::HandleStandardClicked()
+{
+    if (ULFFJourneySubsystem* Journey = GetJourney()) { Journey->SetExperienceMode(false); }
+    ReturnFocusToGame();
+}
+
+void ULFFJourneyPanel::HandleCalmClicked()
+{
+    if (ULFFJourneySubsystem* Journey = GetJourney()) { Journey->SetExperienceMode(true); }
     ReturnFocusToGame();
 }
 

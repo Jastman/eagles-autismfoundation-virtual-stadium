@@ -164,14 +164,14 @@ def build_level():
     # Step 1: exterior arrival, north plaza (Illustrative).
     ext_cam, ext_look = (-6000, -25000, 1800), (0, 0, 1500)
     target("CT_ExteriorArrival", ext_cam, ext_look, root)
-    text("LBL_Plaza", "Plaza (illustration)", (-4500, -19500, 900), ext_cam, 350, root, "LFF_SiteRoot/LFF_Labels",
+    text("LBL_Plaza", "Plaza", (-4500, -19500, 900), ext_cam, 350, root, "LFF_SiteRoot/LFF_Labels",
          ("LFF_Label", "LBL_Plaza"))
 
     # Step 2: gate entry, 35 m outside the north headhouse facade (about 135 m north of midfield; plaza
     # about +0.7 m), standing eye height (Illustrative; not a real gate name).
     gate_cam, gate_look = (-1500, -17000, 260), (0, -13500, 600)
     target("CT_GateEntry", gate_cam, gate_look, root)
-    text("LBL_Gate", "Gate (illustration)", (0, -14200, 600), gate_cam, 200, root, "LFF_SiteRoot/LFF_Labels",
+    text("LBL_Gate", "Gate", (0, -14200, 600), gate_cam, 200, root, "LFF_SiteRoot/LFF_Labels",
          ("LFF_Label", "LBL_Gate"))
 
     # Step 3: the model's open-air perimeter concourse at plaza level on the west side (ADR-0004). Probed in the
@@ -181,11 +181,11 @@ def build_level():
     floor_z = 158
     conc_cam, conc_look = (-7800, 800, floor_z + 165), (-7800, -3000, floor_z + 150)
     target("CT_InteriorConcourse", conc_cam, conc_look, root)
-    text("LBL_Concourse", "Concourse (illustration)", (-7800, -200, floor_z + 390), conc_cam, 60, root, lbl,
+    text("LBL_Concourse", "Concourse", (-7800, -200, floor_z + 390), conc_cam, 60, root, lbl,
          ("LFF_Label", "LBL_Concourse"))
-    text("LBL_Restroom", "Restrooms (example)", (-7240, -400, floor_z + 230), (-8000, -400, floor_z + 230),
+    text("LBL_Restroom", "Restrooms", (-7240, -400, floor_z + 230), (-8000, -400, floor_z + 230),
          50, root, lbl, ("LFF_Label", "LBL_Restroom"))
-    text("LBL_Food", "Food (example)", (-7262, -1200, floor_z + 230), (-8000, -1200, floor_z + 230),
+    text("LBL_Food", "Food", (-7262, -1200, floor_z + 230), (-8000, -1200, floor_z + 230),
          50, root, lbl, ("LFF_Label", "LBL_Food"))
 
     # Step 4: example seat, about row 10 of the west lower bowl on the halfway line, looking at midfield.
@@ -195,7 +195,7 @@ def build_level():
     target("CT_SeatFieldView", seat_cam, seat_look, root)
     # 3 m ahead and about 0.9 m below eye level, so the sign sits in the lower third and doesn't cover the pitch
     # (seat ramp there is about 3.1 m, so the sign clears it). "Example ticket" covers the illustration notice.
-    text("LBL_Section", "Section 111, Row 10 (example ticket)", (-4750, 0, 430), seat_cam, 12, root, lbl,
+    text("LBL_Section", "Section 111, Row 10", (-4750, 0, 430), seat_cam, 12, root, lbl,
          ("LFF_Label", "LBL_Section"))
 
     # Align the whole site frame with the real field. Children follow; the anchor updates to the new pose.

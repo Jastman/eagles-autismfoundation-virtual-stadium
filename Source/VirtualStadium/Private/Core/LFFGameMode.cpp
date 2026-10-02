@@ -13,6 +13,11 @@ ALFFGameMode::ALFFGameMode()
 
     JourneyTable = TSoftObjectPtr<UDataTable>(FSoftObjectPath(TEXT("/Game/LFF/Data/DT_LFF_GoldenPath.DT_LFF_GoldenPath")));
 
+    // Sound and the voiceover start on (project owner, session 5); each card's voice button and Settings turn them off,
+    // and Calm Mode still silences both.
+    DefaultVisitorSettings.bSoundEnabled = true;
+    DefaultVisitorSettings.bVoiceEnabled = true;
+
     // Placeholder copy. Final wording is approved by the project owner with the Eagles Autism Foundation (LEDGER F24).
     // The splash shows "Welcome to" above the title; the disclaimer sits under the Start button.
     IntroTitle = LOCTEXT("IntroTitle", "Lincoln Financial Field");
@@ -56,6 +61,20 @@ FText ALFFGameMode::GetDisclaimerLine(const ELFFDisclaimerLevel Level) const
     default:
         return DisclaimerLineIllustrative;
     }
+}
+
+void ALFFGameMode::StartPlay()
+{
+    // No engine debug text over the picture (texture pool, shadow cache warnings): visitors see only the HUD.
+    GAreScreenMessagesEnabled = false;
+    Super::StartPlay();
+}
+
+void ALFFGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+    // The editor shares this global with PIE.
+    GAreScreenMessagesEnabled = true;
+    Super::EndPlay(EndPlayReason);
 }
 
 #undef LOCTEXT_NAMESPACE
