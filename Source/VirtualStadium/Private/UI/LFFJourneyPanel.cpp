@@ -40,6 +40,8 @@ namespace
     constexpr float MarkMinHeight = 64.0f;
     constexpr float MarkGap = 6.0f;
     constexpr int32 MarkFontSize = 18;
+    // Chapter chips: one width for all, wide enough for "Breaks and help" at 20 px bold plus the chip's padding.
+    constexpr float ChapterChipWidth = 214.0f;
 
     FSlateBrush Pill(const FLinearColor& Fill, const FLinearColor& Outline, const float OutlineWidth)
     {
@@ -65,6 +67,27 @@ namespace
         Style.SetDisabled(Pill(Clear, Clear, 0.0f));
         Style.SetNormalPadding(FMargin(10.0f, 4.0f));
         Style.SetPressedPadding(FMargin(10.0f, 5.0f, 10.0f, 3.0f));
+        return Style;
+    }
+
+    /** A chapter chip: the current one is a raised light chip; the others are clear, with an outline on hover. */
+    FButtonStyle ChapterStyle(const bool bCurrent, const FLinearColor& CurrentFill, const FLinearColor& Outline)
+    {
+        const FLinearColor Clear(0.0f, 0.0f, 0.0f, 0.0f);
+        auto Chip = [](const FLinearColor& Fill, const FLinearColor& Line, const float Width)
+        {
+            FSlateBrush Brush = Pill(Fill, Line, Width);
+            Brush.OutlineSettings.CornerRadii = FVector4(18.0f, 18.0f, 18.0f, 18.0f);
+            return Brush;
+        };
+        const FLinearColor HoverFill(Outline.R, Outline.G, Outline.B, 0.08f);
+        FButtonStyle Style;
+        Style.SetNormal(bCurrent ? Chip(CurrentFill, CurrentFill, 1.0f) : Chip(Clear, Clear, 0.0f));
+        Style.SetHovered(bCurrent ? Chip(CurrentFill, Outline, 2.0f) : Chip(HoverFill, Outline, 2.0f));
+        Style.SetPressed(bCurrent ? Chip(CurrentFill, Outline, 2.0f) : Chip(FLinearColor(Outline.R, Outline.G, Outline.B, 0.16f), Outline, 2.0f));
+        Style.SetDisabled(bCurrent ? Chip(CurrentFill, CurrentFill, 1.0f) : Chip(Clear, Clear, 0.0f));
+        Style.SetNormalPadding(FMargin(18.0f, 8.0f));
+        Style.SetPressedPadding(FMargin(18.0f, 9.0f, 18.0f, 7.0f));
         return Style;
     }
 
@@ -183,7 +206,11 @@ void ULFFJourneyPanel::NativeOnInitialized()
 
 void ULFFJourneyPanel::BuildVoiceButton()
 {
-    UHorizontalBox* Header = Cast<UHorizontalBox>(GetWidgetFromName(TEXT("CaptionHeader")));
+    UHorizontalBox* Header = Cast<UHorizontalBox>(GetWidgetFromName(TEXT("VoiceSlot")));
+    if (Header == nullptr)
+    {
+        Header = Cast<UHorizontalBox>(GetWidgetFromName(TEXT("CaptionHeader")));
+    }
     if (Header == nullptr || WidgetTree == nullptr || VoiceIconButton != nullptr)
     {
         return;
@@ -193,15 +220,19 @@ void ULFFJourneyPanel::BuildVoiceButton()
     USizeBox* Box = WidgetTree->ConstructWidget<USizeBox>(USizeBox::StaticClass(), TEXT("VoiceIconSize"));
     Box->SetMinDesiredWidth(64.0f);
     Box->SetMinDesiredHeight(64.0f);
+    if (USizeBox* TemplateBox = Cast<USizeBox>(GetWidgetFromName(TEXT("SettingsButtonSize"))))
+    {
+        Box->SetMinDesiredHeight(FMath::Max(64.0f, TemplateBox->GetMinDesiredHeight()));
+    }
     UButton* Button = WidgetTree->ConstructWidget<UButton>(UButton::StaticClass(), TEXT("VoiceIconButton"));
     PRAGMA_DISABLE_DEPRECATION_WARNINGS
     Button->IsFocusable = false;
     PRAGMA_ENABLE_DEPRECATION_WARNINGS
-    if (PreviewButton != nullptr)
+    // The same look as its neighbour: Settings in the header, else the card's Preview button.
+    if (UButton* Template = SettingsButton != nullptr ? SettingsButton.Get() : PreviewButton.Get())
     {
-        // The same rounded secondary style as the card's other button.
-        Button->SetStyle(PreviewButton->GetStyle());
-        Button->SetBackgroundColor(PreviewButton->GetBackgroundColor());
+        Button->SetStyle(Template->GetStyle());
+        Button->SetBackgroundColor(Template->GetBackgroundColor());
     }
     Button->SetToolTipText(LOCTEXT("VoiceIconTip", "Voice on or off (key 5)"));
     Box->SetContent(Button);
@@ -210,15 +241,21 @@ void ULFFJourneyPanel::BuildVoiceButton()
     UImage* Icon = WidgetTree->ConstructWidget<UImage>(UImage::StaticClass(), TEXT("VoiceIconImage"));
     Icon->SetDesiredSizeOverride(FVector2D(28.0, 28.0));
     UTextBlock* Label = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("VoiceIconLabel"));
-    if (StepNumberText != nullptr)
+    // The neighbouring button's label font and colour (the icon textures are white).
+    UTextBlock* LabelTemplate = Cast<UTextBlock>(GetWidgetFromName(TEXT("SettingsLabel")));
+    if (LabelTemplate == nullptr)
     {
-        // The card's eyebrow font without its letter spacing, in the card's main text colour (the icon textures are white).
-        FSlateFontInfo Font = StepNumberText->GetFont();
-        Font.Size = 18;
+        LabelTemplate = StepNumberText.Get();
+    }
+    if (LabelTemplate != nullptr)
+    {
+        FSlateFontInfo Font = LabelTemplate->GetFont();
         Font.LetterSpacing = 0;
         Label->SetFont(Font);
     }
-    const FSlateColor IconInk = TitleText != nullptr ? TitleText->GetColorAndOpacity() : FSlateColor(FLinearColor::White);
+    const FSlateColor IconInk = LabelTemplate != nullptr && LabelTemplate == GetWidgetFromName(TEXT("SettingsLabel"))
+        ? LabelTemplate->GetColorAndOpacity()
+        : (TitleText != nullptr ? TitleText->GetColorAndOpacity() : FSlateColor(FLinearColor::White));
     Label->SetColorAndOpacity(IconInk);
     Icon->SetColorAndOpacity(IconInk.GetSpecifiedColor());
     Label->SetText(LOCTEXT("VoiceLabelOff", "Voice: Off"));
@@ -233,10 +270,13 @@ void ULFFJourneyPanel::BuildVoiceButton()
     }
     Button->SetContent(Content);
     VoiceIconLabel = Label;
-    if (UHorizontalBoxSlot* Slot = Header->AddChildToHorizontalBox(Box))
+    // In the header cluster it goes first (left of Settings); on the old caption header, last.
+    const bool bInCluster = Header->GetFName() == TEXT("VoiceSlot");
+    UHorizontalBoxSlot* Slot = bInCluster ? Cast<UHorizontalBoxSlot>(Header->InsertChildAt(0, Box)) : Header->AddChildToHorizontalBox(Box);
+    if (Slot != nullptr)
     {
         Slot->SetVerticalAlignment(VAlign_Center);
-        Slot->SetPadding(FMargin(12.0f, 0.0f, 0.0f, 0.0f));
+        Slot->SetPadding(bInCluster ? FMargin(0.0f, 0.0f, 12.0f, 0.0f) : FMargin(12.0f, 0.0f, 0.0f, 0.0f));
     }
     Button->OnClicked.AddUniqueDynamic(this, &ULFFJourneyPanel::HandleVoiceIconClicked);
     VoiceIconButton = Button;
@@ -263,6 +303,8 @@ URichTextBlock* ULFFJourneyPanel::MakeKaraokeCopy(UTextBlock* Source, const TCHA
     FRichTextStyleRow Row;
     Row.TextStyle.SetFont(Source->GetFont());
     Row.TextStyle.SetColorAndOpacity(Source->GetColorAndOpacity());
+    Row.TextStyle.SetShadowOffset(Source->GetShadowOffset());
+    Row.TextStyle.SetShadowColorAndOpacity(Source->GetShadowColorAndOpacity());
     Styles->AddRow(TEXT("Default"), Row);
 
     URichTextBlock* Rich = WidgetTree->ConstructWidget<URichTextBlock>(URichTextBlock::StaticClass(), Name);
@@ -440,7 +482,7 @@ void ULFFJourneyPanel::ApplySnapshot(const FLFFJourneySnapshot& Snapshot)
                                                  : LOCTEXT("VoiceIconOff", "Voice is off. Turn it on (key 5)"));
     }
     ApplyText(ProgressText.Get(), Snapshot.ProgressText);
-    ApplyText(StepNumberText.Get(), StepNumber(Snapshot));
+    ApplyText(StepNumberText.Get(), Chapters.Num() > 0 ? ChapterEyebrow(Snapshot) : StepNumber(Snapshot));
     ApplyText(DisclaimerText.Get(), Snapshot.DisclaimerText);
     ApplyText(DisclaimerLineText.Get(), Snapshot.DisclaimerLine);
     ApplyText(DisclaimerChipText.Get(), ChipText(Snapshot.DisclaimerLevel));
@@ -522,7 +564,7 @@ void ULFFJourneyPanel::ApplySnapshot(const FLFFJourneySnapshot& Snapshot)
             // Otherwise lower left, above the timeline (build_wbp_lff_ui.py: CAPTION_BOTTOM).
             CardSlot->SetHorizontalAlignment(bFinale ? HAlign_Center : HAlign_Left);
             CardSlot->SetVerticalAlignment(bFinale ? VAlign_Center : VAlign_Bottom);
-            CardSlot->SetPadding(bFinale ? FMargin(0.0f) : FMargin(48.0f, 0.0f, 0.0f, 296.0f));
+            CardSlot->SetPadding(bFinale ? FMargin(0.0f) : CaptionRestPadding);
         }
     }
     ShowGroup(FinaleLogo.Get(), Snapshot.bStarted && Snapshot.bAtEnd);
@@ -549,6 +591,14 @@ void ULFFJourneyPanel::ApplySnapshot(const FLFFJourneySnapshot& Snapshot)
         {
             Enable(Mark, Snapshot.bStarted && !bModal && !Snapshot.bPaused);
         }
+    }
+    if (ChapterMarks != nullptr)
+    {
+        if (ChapterButtons.Num() != Chapters.Num())
+        {
+            RebuildChapters();
+        }
+        ApplyChapters(Snapshot);
     }
     bTimelineAvailable = Snapshot.bStarted && Snapshot.TimelineMarks.Num() > 0;
     bModalOrPaused = bModal || Snapshot.bPaused;
@@ -588,21 +638,8 @@ void ULFFJourneyPanel::ApplySnapshot(const FLFFJourneySnapshot& Snapshot)
 
     OnSnapshotChanged(Snapshot);
 
-    // Enforced after the Blueprint event: styling can't hide the badge or the location disclaimer.
-    if (PrototypeBadgeText != nullptr)
-    {
-        ShowGroup(PrototypeBadgeText.Get(), true);
-    }
-    if (Snapshot.bStarted)
-    {
-        ShowGroup(DisclaimerChip.Get(), true);
-        ShowGroup(DisclaimerChipText.Get(), true);
-    }
-    if (Snapshot.bShowDisclaimer)
-    {
-        ShowGroup(DisclaimerText.Get(), true);
-    }
-    // The badge line is for journey steps; the splash shows the full sentence instead.
+    // Disclaimer copy (badge, line, chip, sentence) is no longer part of the HUD (2026-10-02, the user's call). A blueprint
+    // that still has those widgets gets them filled above, shown only on journey steps where the data asks for them.
     ShowGroup(DisclaimerLineText.Get(), Snapshot.bStarted && Snapshot.bShowDisclaimer);
     ShowGroup(DisclaimerPill.Get(), Snapshot.bStarted && Snapshot.bShowDisclaimer);
 }
@@ -815,6 +852,160 @@ void ULFFJourneyPanel::ApplyTimeline(const int32 CurrentIndex)
         if (UTextBlock* Label = MarkLabels[Index].Get())
         {
             Label->SetColorAndOpacity(FSlateColor(bCurrent ? TimelineCurrentText : TimelineOtherText));
+        }
+    }
+}
+
+int32 ULFFJourneyPanel::ChapterOf(const int32 StepIndex) const
+{
+    int32 Found = INDEX_NONE;
+    for (int32 Index = 0; Index < Chapters.Num(); ++Index)
+    {
+        if (StepIndex >= Chapters[Index].FirstStep)
+        {
+            Found = Index;
+        }
+    }
+    return Found;
+}
+
+FText ULFFJourneyPanel::ChapterEyebrow(const FLFFJourneySnapshot& Snapshot) const
+{
+    if (Snapshot.bStarted && Snapshot.bAtEnd)
+    {
+        // The last step closes the day rather than belonging to a chapter.
+        return LOCTEXT("ChapterFinale", "Enjoy the game");
+    }
+    const int32 Chapter = ChapterOf(Snapshot.StepIndex);
+    if (Chapter == INDEX_NONE)
+    {
+        return StepNumber(Snapshot);
+    }
+    // "02 / Gates open", then the example clock when the step has one.
+    FNumberFormattingOptions TwoDigits;
+    TwoDigits.MinimumIntegralDigits = 2;
+    const FText Heading = FText::Format(LOCTEXT("ChapterEyebrow", "{0} / {1}"), FText::AsNumber(Chapter + 1, &TwoDigits), Chapters[Chapter].Name);
+    return Snapshot.ClockText.IsEmpty() ? Heading : FText::Format(LOCTEXT("ChapterEyebrowClock", "{0}  ·  {1}"), Heading, Snapshot.ClockText);
+}
+
+void ULFFJourneyPanel::RebuildChapters()
+{
+    ChapterMarks->ClearChildren();
+    ChapterButtons.Reset();
+    ChapterNumbers.Reset();
+    ChapterNames.Reset();
+    ChapterProgress.Reset();
+    ChapterHandlers.Reset();
+    if (WidgetTree == nullptr)
+    {
+        return;
+    }
+
+    const UObject* ChipFont = LoadObject<UObject>(nullptr, UIFontPath);
+    if (ChipFont == nullptr)
+    {
+        ChipFont = LoadObject<UObject>(nullptr, TEXT("/Engine/EngineFonts/Roboto.Roboto"));
+    }
+    auto MakeLine = [this, ChipFont](UVerticalBox* Stack, const int32 Size, const TCHAR* Face)
+    {
+        UTextBlock* Line = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass());
+        if (ChipFont != nullptr)
+        {
+            Line->SetFont(FSlateFontInfo(ChipFont, Size, Face));
+        }
+        Stack->AddChildToVerticalBox(Line);
+        return Line;
+    };
+
+    for (int32 Index = 0; Index < Chapters.Num(); ++Index)
+    {
+        // Every chip is the same width, so the bar never changes shape from step to step.
+        USizeBox* Box = WidgetTree->ConstructWidget<USizeBox>(USizeBox::StaticClass());
+        Box->SetWidthOverride(ChapterChipWidth);
+        Box->SetMinDesiredHeight(MarkMinHeight);
+        UButton* Button = WidgetTree->ConstructWidget<UButton>(UButton::StaticClass());
+        PRAGMA_DISABLE_DEPRECATION_WARNINGS
+        Button->IsFocusable = false;
+        PRAGMA_ENABLE_DEPRECATION_WARNINGS
+        Button->SetStyle(ChapterStyle(false, ChapterCurrentFill, ChapterText));
+        Box->SetContent(Button);
+
+        // Three lines: the number, the name, and where you are in it ("2 of 4", "Done", "4 steps").
+        UVerticalBox* Stack = WidgetTree->ConstructWidget<UVerticalBox>(UVerticalBox::StaticClass());
+        UTextBlock* Number = MakeLine(Stack, 18, TEXT("Bold"));
+        FNumberFormattingOptions TwoDigits;
+        TwoDigits.MinimumIntegralDigits = 2;
+        Number->SetText(FText::AsNumber(Index + 1, &TwoDigits));
+        UTextBlock* Name = MakeLine(Stack, 20, TEXT("Bold"));
+        Name->SetText(Chapters[Index].Name);
+        UTextBlock* Progress = MakeLine(Stack, 18, TEXT("Regular"));
+        Button->SetContent(Stack);
+
+        ULFFTimelineMarkHandler* Handler = NewObject<ULFFTimelineMarkHandler>(this);
+        Handler->StepIndex = Chapters[Index].FirstStep;
+        Handler->Panel = this;
+        Button->OnClicked.AddDynamic(Handler, &ULFFTimelineMarkHandler::HandleClicked);
+
+        if (UHorizontalBoxSlot* ChipSlot = ChapterMarks->AddChildToHorizontalBox(Box))
+        {
+            ChipSlot->SetVerticalAlignment(VAlign_Fill);
+            ChipSlot->SetPadding(FMargin(Index == 0 ? 0.0f : MarkGap, 0.0f, 0.0f, 0.0f));
+        }
+        ChapterButtons.Add(Button);
+        ChapterNumbers.Add(Number);
+        ChapterNames.Add(Name);
+        ChapterProgress.Add(Progress);
+        ChapterHandlers.Add(Handler);
+    }
+}
+
+void ULFFJourneyPanel::ApplyChapters(const FLFFJourneySnapshot& Snapshot)
+{
+    const int32 Current = Snapshot.bStarted ? ChapterOf(Snapshot.StepIndex) : INDEX_NONE;
+    const bool bModal = Snapshot.bSettingsOpen || Snapshot.bRestartConfirmOpen || Snapshot.bPaused;
+    for (int32 Index = 0; Index < ChapterButtons.Num(); ++Index)
+    {
+        const int32 First = Chapters[Index].FirstStep;
+        const int32 End = Index + 1 < Chapters.Num() ? Chapters[Index + 1].FirstStep : Snapshot.StepCount;
+        const int32 Count = FMath::Max(End - First, 1);
+        const bool bCurrent = Index == Current;
+        const bool bDone = Current != INDEX_NONE && Index < Current;
+
+        if (UButton* Button = ChapterButtons[Index].Get())
+        {
+            Button->SetStyle(ChapterStyle(bCurrent, ChapterCurrentFill, ChapterText));
+            Enable(Button, Snapshot.bStarted && !bModal);
+            Button->SetToolTipText(FText::Format(LOCTEXT("ChapterTip", "Go to {0}"), Chapters[Index].Name));
+        }
+        // Where you are in the chapter, in words: never colour or position alone.
+        FText Progress;
+        if (bCurrent)
+        {
+            Progress = FText::Format(LOCTEXT("ChapterHere", "{0} of {1}"), FText::AsNumber(Snapshot.StepIndex - First + 1), FText::AsNumber(Count));
+        }
+        else if (bDone)
+        {
+            Progress = LOCTEXT("ChapterDone", "Done");
+        }
+        else
+        {
+            Progress = Count == 1 ? LOCTEXT("ChapterOneStep", "1 step") : FText::Format(LOCTEXT("ChapterSteps", "{0} steps"), FText::AsNumber(Count));
+        }
+        ApplyText(ChapterProgress[Index].Get(), Progress);
+
+        const FSlateColor Main(bCurrent ? ChapterCurrentText : ChapterText);
+        const FSlateColor Quiet(bCurrent ? ChapterCurrentText : ChapterMutedText);
+        if (UTextBlock* Number = ChapterNumbers[Index].Get())
+        {
+            Number->SetColorAndOpacity(bCurrent ? Main : FSlateColor(ChapterAccent));
+        }
+        if (UTextBlock* Name = ChapterNames[Index].Get())
+        {
+            Name->SetColorAndOpacity(Main);
+        }
+        if (UTextBlock* Line = ChapterProgress[Index].Get())
+        {
+            Line->SetColorAndOpacity(Quiet);
         }
     }
 }

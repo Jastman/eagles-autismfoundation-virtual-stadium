@@ -135,6 +135,8 @@
 
 ## 7. Disclaimers
 
+> **Superseded on screen, 2026-10-02 (the user's decision).** The HUD no longer shows any disclaimer copy: no "Illustration" / "Approximate" / "Verified" chip, no "Not directions for the real stadium" line, no splash sentence, no prototype badge. The `DisclaimerLevel` data stays in the journey JSON and snapshot, so it can come back without a schema change. The rules below describe the earlier design.
+
 ### DisclaimerLevel and visual treatment
 Add a `DisclaimerLevel` enum field to `FStadiumScheduleStop`:
 ```

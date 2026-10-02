@@ -204,8 +204,6 @@ void ULFFHUDWidget::NativeConstruct()
 {
     Super::NativeConstruct();
 
-    ValidateContract();
-
     // Start hidden so the first snapshot fades in only what the current screen needs.
     for (ULFFJourneyPanel* Panel : { Splash.Get(), TopChrome.Get(), StepCaption.Get(), BottomRail.Get(), Settings.Get() })
     {
@@ -285,25 +283,6 @@ bool ULFFHUDWidget::ShowPanel(ULFFJourneyPanel* Panel, const bool bShown, const 
     }
 
     return false;
-}
-
-void ULFFHUDWidget::ValidateContract() const
-{
-    const TPair<const ULFFJourneyPanel*, const TCHAR*> Required[] = {
-        { TopChrome.Get(), TEXT("PrototypeBadgeText") },
-        { TopChrome.Get(), TEXT("DisclaimerLineText") },
-        { StepCaption.Get(), TEXT("DisclaimerChipText") },
-        { Splash.Get(), TEXT("DisclaimerText") },
-    };
-
-    for (const TPair<const ULFFJourneyPanel*, const TCHAR*>& Entry : Required)
-    {
-        if (Entry.Key != nullptr && Entry.Key->GetWidgetFromName(Entry.Value) == nullptr)
-        {
-            UE_LOG(LogVirtualStadium, Error, TEXT("%s has no %s. The prototype badge or disclaimer cannot be shown; do not ship this build."),
-                *Entry.Key->GetClass()->GetName(), Entry.Value);
-        }
-    }
 }
 
 ULFFJourneySubsystem* ULFFHUDWidget::GetJourney() const

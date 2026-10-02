@@ -95,6 +95,8 @@ namespace
                     .Text(RunInfo.Content)
                     .Font(DefaultTextStyle.Font)
                     .ColorAndOpacity(DefaultTextStyle.ColorAndOpacity)
+                    .ShadowOffset(DefaultTextStyle.ShadowOffset)
+                    .ShadowColorAndOpacity(DefaultTextStyle.ShadowColorAndOpacity)
                 ];
         }
 

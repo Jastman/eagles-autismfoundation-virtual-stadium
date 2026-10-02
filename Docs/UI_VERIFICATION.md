@@ -78,3 +78,19 @@ Scope: the full redesign in `Docs/UI_DESIGN.md`. Checked in PIE through VibeUE: 
    - touch;
    - mouse hover after keyboard use (the ring stays where the keyboard left it until Esc or until the button goes away).
 4. **Tooling:** two keys injected in the same frame register as one, so the scripted Tab runs used one key per call. Esc in PIE still ends the session.
+
+# Verification after the "Chapters" reimagining (2026-10-02, evening)
+
+Checked in PIE through VibeUE (1400×798 viewport): splash, journey steps in chapters 2 and 4, Settings sheet, finale; Tab / Enter as before.
+
+| Check | Result |
+|---|---|
+| Disclaimer copy | None on any screen checked. |
+| Caption on the scene | Text sits on the full-strength part of the soft field (13.6:1 body); the field's edge feathers into the scene. |
+| Chapter bar | Six equal chips; current chip light with "N of M", done chips "Done", later chips "N steps". Back and Next at the ends. |
+| Settings sheet | Seven rows with number keycaps, Start again with its R keycap; the scene stays visible on the left. |
+| Finale | Centred caption, eyebrow "Enjoy the game", wordmark, Start Over and Learn More. |
+
+Fixed during the pass: chapter chips too narrow for "Getting there" and "Breaks and help" (184 → 214 px); the field hugged the text so the last line sat on its thin edge (feather widened to 132 px, text inset 104–120 px); the finale's eyebrow named a chapter.
+
+Still open: chapter chips are clickable but not yet checked with the focus ring end to end; Large text scales the caption field with its padding (it gets big); not tested at a real 1080p / 4K window, on Windows, with a controller or touch.

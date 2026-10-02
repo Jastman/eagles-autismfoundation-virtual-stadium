@@ -20,6 +20,22 @@ class ULFFJourneySubsystem;
 
 class ULFFJourneyPanel;
 
+/** One chapter of the day in the chapter bar: a short name and the first step (0-based) that belongs to it. */
+USTRUCT(BlueprintType)
+struct VIRTUALSTADIUM_API FLFFChapter
+{
+    GENERATED_BODY()
+
+    FLFFChapter() = default;
+    FLFFChapter(const FText& InName, const int32 InFirstStep) : Name(InName), FirstStep(InFirstStep) {}
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Chapter")
+    FText Name;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Chapter", meta = (ClampMin = "0"))
+    int32 FirstStep = 0;
+};
+
 /** Routes one timeline mark's click to its step (dynamic delegates can't carry the index themselves). */
 UCLASS()
 class VIRTUALSTADIUM_API ULFFTimelineMarkHandler : public UObject
@@ -76,6 +92,40 @@ protected:
     /** The caption card on step 1 only, so it stays clear of the stadium in the wide aerial (on top of Large text). */
     UPROPERTY(EditDefaultsOnly, Category = "Style", meta = (ClampMin = "0.8", ClampMax = "1.0"))
     float FirstStepCardScale = 0.9f;
+
+    /**
+     * The day in chapters, in order (SourceData/Journey/LFF_GoldenPath.json, 23 steps). A chapter runs until the next one's
+     * FirstStep. The chapter bar shows one chip per chapter, the caption eyebrow names the chapter ("02 / Gates open").
+     */
+    UPROPERTY(EditDefaultsOnly, Category = "Chapters")
+    TArray<FLFFChapter> Chapters = {
+        { NSLOCTEXT("LFFHUD", "ChapterGettingThere", "Getting there"), 0 },
+        { NSLOCTEXT("LFFHUD", "ChapterGatesOpen", "Gates open"), 4 },
+        { NSLOCTEXT("LFFHUD", "ChapterPlaza", "The plaza"), 7 },
+        { NSLOCTEXT("LFFHUD", "ChapterToMySeat", "To my seat"), 10 },
+        { NSLOCTEXT("LFFHUD", "ChapterTheGame", "The game"), 14 },
+        { NSLOCTEXT("LFFHUD", "ChapterBreaksHelp", "Breaks and help"), 18 },
+    };
+
+    /** Where the caption sits on journey steps (lower left, above the chapter bar). The finale centres it. */
+    UPROPERTY(EditDefaultsOnly, Category = "Style")
+    FMargin CaptionRestPadding = FMargin(8.0f, 0.0f, 0.0f, 96.0f);
+
+    /** Chapter chips: the current one is a light raised chip with dark text; the others sit on the bar in light text. */
+    UPROPERTY(EditDefaultsOnly, Category = "Chapters")
+    FLinearColor ChapterCurrentFill = FLinearColor(0.905f, 0.888f, 0.838f, 1.0f);
+
+    UPROPERTY(EditDefaultsOnly, Category = "Chapters")
+    FLinearColor ChapterCurrentText = FLinearColor(0.0018f, 0.0242f, 0.0296f, 1.0f);
+
+    UPROPERTY(EditDefaultsOnly, Category = "Chapters")
+    FLinearColor ChapterText = FLinearColor(0.905f, 0.888f, 0.838f, 1.0f);
+
+    UPROPERTY(EditDefaultsOnly, Category = "Chapters")
+    FLinearColor ChapterMutedText = FLinearColor(0.479f, 0.558f, 0.565f, 1.0f);
+
+    UPROPERTY(EditDefaultsOnly, Category = "Chapters")
+    FLinearColor ChapterAccent = FLinearColor(0.141f, 0.514f, 0.021f, 1.0f);
 
     UPROPERTY(EditDefaultsOnly, Category = "Style")
     FLinearColor HighContrastSurfaceColor = FLinearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -220,6 +270,10 @@ protected:
     /** Filled at runtime with one clickable mark per timed step. */
     UPROPERTY(meta = (BindWidgetOptional))
     TObjectPtr<UHorizontalBox> TimelineMarks;
+
+    /** Filled at runtime with one chip per chapter (Chapters); a click jumps to the chapter's first step. */
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UHorizontalBox> ChapterMarks;
 
     /** The phone that rises on the ticket step; TicketImage shows the ticket frames. */
     UPROPERTY(meta = (BindWidgetOptional))
@@ -410,6 +464,12 @@ private:
     void ApplyPips(int32 CurrentIndex);
     void TickFade();
     void RebuildTimeline(const TArray<FLFFTimelineMark>& Marks);
+    void RebuildChapters();
+    void ApplyChapters(const FLFFJourneySnapshot& Snapshot);
+    /** The chapter a step belongs to (INDEX_NONE before the first). */
+    int32 ChapterOf(int32 StepIndex) const;
+    /** "02 / Gates open · 10:00 AM" (the caption eyebrow). */
+    FText ChapterEyebrow(const FLFFJourneySnapshot& Snapshot) const;
     void ApplyTimeline(int32 CurrentIndex);
     /** Shows or hides the ticket phone. Still: no rise and a still frame (less movement, Calm Mode). */
     void ShowTicket(bool bShow, bool bStill);
@@ -507,6 +567,22 @@ private:
 
     UPROPERTY(Transient)
     TArray<TObjectPtr<ULFFTimelineMarkHandler>> MarkHandlers;
+
+    /** One per chapter chip: its button, its three lines (number, name, progress) and its click handler. */
+    UPROPERTY(Transient)
+    TArray<TObjectPtr<UButton>> ChapterButtons;
+
+    UPROPERTY(Transient)
+    TArray<TObjectPtr<UTextBlock>> ChapterNumbers;
+
+    UPROPERTY(Transient)
+    TArray<TObjectPtr<UTextBlock>> ChapterNames;
+
+    UPROPERTY(Transient)
+    TArray<TObjectPtr<UTextBlock>> ChapterProgress;
+
+    UPROPERTY(Transient)
+    TArray<TObjectPtr<ULFFTimelineMarkHandler>> ChapterHandlers;
 
     UPROPERTY(Transient)
     TArray<TObjectPtr<UTexture2D>> TicketFrames;

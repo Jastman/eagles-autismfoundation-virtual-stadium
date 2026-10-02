@@ -95,9 +95,6 @@ private:
     /** Returns true if the panel went from hidden to shown. */
     static bool ShowPanel(ULFFJourneyPanel* Panel, bool bShown, bool bInstant);
 
-    /** Logs an error if a panel is missing the badge or disclaimer widgets the disclaimer rule needs. */
-    void ValidateContract() const;
-
     TWeakObjectPtr<ULFFJourneySubsystem> BoundJourney;
     int32 LastStepIndex = INDEX_NONE;
 };

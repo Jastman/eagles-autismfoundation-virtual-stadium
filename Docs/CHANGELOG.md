@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-10-02 (UI reimagined: "Chapters", `Docs/UI_DESIGN.md`)
+- **Structure, not just skin**, after the reference pieces (Aegean, Stillwater, sael.net):
+  - No cards: the step is a caption on the scene, on a soft feathered field (`T_LFF_Fog`).
+  - **Chapter bar**: Back, six chapters (Getting there … Breaks and help) with "2 of 4" / "Done" / "4 steps", Next. Click a chapter to go to it. Replaces the pips and the day-timeline drawer.
+  - Header: wordmark left, Voice and Settings as a labelled cluster right.
+  - Keycap hints in the credits band; Settings rows show their number keys.
+  - Splash as a title screen with the stadium beside it; Settings as a right-hand sheet; Paused / Start again? as centred soft fields.
+- **No disclaimer copy** in the UI: the Illustration / Approximate / Verified chip, the status line, the splash sentence and the HUD's contract check are gone (data kept).
+- `Tools/Pipeline/prepare_ui_fog.py` and `Tools/Editor/import_ui_fog.py` make the soft backgrounds.
+
+
 ## 2026-10-02 (UI redesign: "Night field", `Docs/UI_DESIGN.md`)
 - **New look:**
   - Opaque deep midnight-green cards with warm off-white text, and one kelly-green action per screen.
