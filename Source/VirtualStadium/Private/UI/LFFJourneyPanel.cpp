@@ -20,6 +20,7 @@
 #include "Framework/Application/SlateApplication.h"
 #include "HAL/PlatformTime.h"
 #include "Journey/LFFJourneySubsystem.h"
+#include "UI/LFFKaraokeDecorator.h"
 #include "Misc/Paths.h"
 #include "Styling/SlateTypes.h"
 #include "TimerManager.h"
@@ -29,10 +30,10 @@
 namespace
 {
     const TCHAR* SurfacePrefix = TEXT("Surface");
-    // Sixteen steps fit in a small rail card.
-    constexpr float PipSize = 10.0f;
-    constexpr float CurrentPipWidth = 26.0f;
-    constexpr float PipGap = 7.0f;
+    // One pip per step (23 fit in about 420 px); the current one is a longer pill, so position never rests on colour.
+    constexpr float PipSize = 12.0f;
+    constexpr float CurrentPipWidth = 34.0f;
+    constexpr float PipGap = 5.0f;
     constexpr float HighContrastScrimAlpha = 0.85f;
     // Timeline marks keep the project's 64 px minimum hit target.
     constexpr float MarkMinWidth = 128.0f;
@@ -92,13 +93,12 @@ namespace
         }
     }
 
-    FText OnOff(const FText& Label, const bool bOn)
+    FText OnOffWord(const bool bOn)
     {
-        return FText::Format(
-            LOCTEXT("OnOffFormat", "{0}: {1}"),
-            Label,
-            bOn ? LOCTEXT("On", "On") : LOCTEXT("Off", "Off"));
+        return bOn ? LOCTEXT("On", "On") : LOCTEXT("Off", "Off");
     }
+
+    const TCHAR* UIFontPath = TEXT("/Game/LFF/UI/Fonts/F_LFF_Atkinson.F_LFF_Atkinson");
 
     FText PreviewNote(const FLFFJourneySnapshot& Snapshot)
     {
@@ -209,16 +209,18 @@ void ULFFJourneyPanel::BuildVoiceButton()
     UHorizontalBox* Content = WidgetTree->ConstructWidget<UHorizontalBox>(UHorizontalBox::StaticClass(), TEXT("VoiceIconContent"));
     UImage* Icon = WidgetTree->ConstructWidget<UImage>(UImage::StaticClass(), TEXT("VoiceIconImage"));
     Icon->SetDesiredSizeOverride(FVector2D(28.0, 28.0));
-    // The icon textures are white; ink them so they read on the light button.
-    Icon->SetColorAndOpacity(FLinearColor(0.0033f, 0.0122f, 0.0137f, 1.0f));
     UTextBlock* Label = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("VoiceIconLabel"));
     if (StepNumberText != nullptr)
     {
+        // The card's eyebrow font without its letter spacing, in the card's main text colour (the icon textures are white).
         FSlateFontInfo Font = StepNumberText->GetFont();
         Font.Size = 18;
+        Font.LetterSpacing = 0;
         Label->SetFont(Font);
-        Label->SetColorAndOpacity(StepNumberText->GetColorAndOpacity());
     }
+    const FSlateColor IconInk = TitleText != nullptr ? TitleText->GetColorAndOpacity() : FSlateColor(FLinearColor::White);
+    Label->SetColorAndOpacity(IconInk);
+    Icon->SetColorAndOpacity(IconInk.GetSpecifiedColor());
     Label->SetText(LOCTEXT("VoiceLabelOff", "Voice: Off"));
     if (UHorizontalBoxSlot* IconSlot = Content->AddChildToHorizontalBox(Icon))
     {
@@ -255,22 +257,23 @@ URichTextBlock* ULFFJourneyPanel::MakeKaraokeCopy(UTextBlock* Source, const TCHA
         return nullptr;
     }
 
-    // Two styles: the card's own text, and the same with the highlight colour.
+    // One style, the card's own text. The spoken word is <w>…</> and ULFFKaraokeDecorator draws its highlight and underline.
     UDataTable* Styles = NewObject<UDataTable>(this);
     Styles->RowStruct = FRichTextStyleRow::StaticStruct();
     FRichTextStyleRow Row;
     Row.TextStyle.SetFont(Source->GetFont());
     Row.TextStyle.SetColorAndOpacity(Source->GetColorAndOpacity());
     Styles->AddRow(TEXT("Default"), Row);
-    Row.TextStyle.SetColorAndOpacity(FSlateColor(KaraokeColor));
-    Styles->AddRow(TEXT("Word"), Row);
 
     URichTextBlock* Rich = WidgetTree->ConstructWidget<URichTextBlock>(URichTextBlock::StaticClass(), Name);
     Rich->SetTextStyleSet(Styles);
+    Rich->SetDecorators({ ULFFKaraokeDecorator::StaticClass() });
     Rich->SetAutoWrapText(false);
-    if (const FFloatProperty* Wrap = FindFProperty<FFloatProperty>(UTextLayoutWidget::StaticClass(), TEXT("WrapTextAt")))
+    Rich->SetWrapTextAt(Source->GetWrapTextAt());
+    // Same line spacing as the source, so the card doesn't change height when the copy takes over.
+    if (const FFloatProperty* LineHeight = FindFProperty<FFloatProperty>(UTextLayoutWidget::StaticClass(), TEXT("LineHeightPercentage")))
     {
-        Rich->SetWrapTextAt(Wrap->GetPropertyValue_InContainer(Source));
+        Rich->SetLineHeightPercentage(LineHeight->GetPropertyValue_InContainer(Source));
     }
     UVerticalBoxSlot* SourceSlot = Cast<UVerticalBoxSlot>(Source->Slot);
     if (UVerticalBoxSlot* Slot = Cast<UVerticalBoxSlot>(Stack->InsertChildAt(Stack->GetChildIndex(Source) + 1, Rich)))
@@ -298,7 +301,7 @@ void ULFFJourneyPanel::BuildKaraokeText()
 
 namespace
 {
-    /** The card text as rich text, word Highlight (in this text) in the Word style. Words are split at spaces, as the
+    /** The card text as rich text, word Highlight (in this text) marked <w> for the karaoke decorator. Words are split at spaces, as the
      *  voice timings are (Tools/Audio/make_vo_words.py). */
     FString KaraokeMarkup(const FString& Text, const int32 Highlight, int32& OutWords)
     {
@@ -314,7 +317,7 @@ namespace
             {
                 Out += TEXT(" ");
             }
-            Out += I == Highlight ? FString::Printf(TEXT("<Word>%s</>"), *Word) : Word;
+            Out += I == Highlight ? FString::Printf(TEXT("<w>%s</>"), *Word) : Word;
         }
         return Out;
     }
@@ -334,6 +337,8 @@ void ULFFJourneyPanel::ApplyKaraoke()
     if (BodyRich != nullptr)
     {
         BodyRich->SetText(FText::FromString(KaraokeMarkup(KaraokeBody, KaraokeWord == INDEX_NONE ? INDEX_NONE : KaraokeWord - TitleWords, BodyWords)));
+        // A step with no body (the finale) must not keep an empty line under its title.
+        BodyRich->SetVisibility(KaraokeBody.IsEmpty() ? ESlateVisibility::Collapsed : ESlateVisibility::SelfHitTestInvisible);
     }
 }
 
@@ -451,15 +456,15 @@ void ULFFJourneyPanel::ApplySnapshot(const FLFFJourneySnapshot& Snapshot)
     ApplyText(NextLabel.Get(), LOCTEXT("Next", "Next"));
     ApplyText(PauseLabel.Get(), Snapshot.bPaused ? LOCTEXT("Resume", "Resume") : LOCTEXT("Pause", "Pause"));
     // Labels show what is actually happening: Calm Mode reads as Sound off and Less movement on.
-    ApplyText(SoundLabel.Get(), OnOff(LOCTEXT("Sound", "Sound"), Snapshot.Settings.IsSoundEffective()));
-    ApplyText(ReducedMotionLabel.Get(), OnOff(LOCTEXT("LessMovement", "Less movement"), Snapshot.Settings.IsReducedMotionEffective()));
-    ApplyText(CalmModeLabel.Get(), OnOff(LOCTEXT("CalmMode", "Calm Mode"), Snapshot.Settings.bCalmMode));
-    ApplyText(LargeTextLabel.Get(), OnOff(LOCTEXT("LargeText", "Large text"), Snapshot.Settings.bLargeText));
-    ApplyText(HighContrastLabel.Get(), OnOff(LOCTEXT("HighContrast", "High contrast"), Snapshot.Settings.bHighContrast));
+    ApplyToggleText(SoundLabel.Get(), LOCTEXT("Sound", "Sound"), OnOffWord(Snapshot.Settings.IsSoundEffective()));
+    ApplyToggleText(ReducedMotionLabel.Get(), LOCTEXT("LessMovement", "Less movement"), OnOffWord(Snapshot.Settings.IsReducedMotionEffective()));
+    ApplyToggleText(CalmModeLabel.Get(), LOCTEXT("CalmMode", "Calm Mode"), OnOffWord(Snapshot.Settings.bCalmMode));
+    ApplyToggleText(LargeTextLabel.Get(), LOCTEXT("LargeText", "Large text"), OnOffWord(Snapshot.Settings.bLargeText));
+    ApplyToggleText(HighContrastLabel.Get(), LOCTEXT("HighContrast", "High contrast"), OnOffWord(Snapshot.Settings.bHighContrast));
     // Voice reads as Off whenever it can't be heard (Sound off, Calm Mode).
-    ApplyText(VoiceLabel.Get(), OnOff(LOCTEXT("Voice", "Voice"), Snapshot.Settings.IsVoiceEffective()));
-    ApplyText(CrowdLabel.Get(), FText::Format(LOCTEXT("CrowdFormat", "Crowd: {0}"),
-        Snapshot.Settings.IsCrowdShown() ? LOCTEXT("CrowdLow", "Low") : LOCTEXT("CrowdOff", "Off")));
+    ApplyToggleText(VoiceLabel.Get(), LOCTEXT("Voice", "Voice"), OnOffWord(Snapshot.Settings.IsVoiceEffective()));
+    ApplyToggleText(CrowdLabel.Get(), LOCTEXT("Crowd", "Crowd"),
+        Snapshot.Settings.IsCrowdShown() ? LOCTEXT("CrowdLow", "Low") : LOCTEXT("CrowdOff", "Off"));
     ApplyText(TimelineNoteText.Get(), LOCTEXT("TimelineNote", "Approximate times\nExample 1:00 PM game"));
     ApplyText(PreviewLabel.Get(), Snapshot.bPreviewOn ? LOCTEXT("PreviewSoft", "Preview this? Soft") : LOCTEXT("PreviewOff", "Preview this? Off"));
     ApplyText(PreviewNoteText.Get(), PreviewNote(Snapshot));
@@ -750,7 +755,11 @@ void ULFFJourneyPanel::RebuildTimeline(const TArray<FLFFTimelineMark>& Marks)
         return;
     }
 
-    const UObject* Roboto = LoadObject<UObject>(nullptr, TEXT("/Engine/EngineFonts/Roboto.Roboto"));
+    const UObject* MarkFont = LoadObject<UObject>(nullptr, UIFontPath);
+    if (MarkFont == nullptr)
+    {
+        MarkFont = LoadObject<UObject>(nullptr, TEXT("/Engine/EngineFonts/Roboto.Roboto"));
+    }
     for (int32 Index = 0; Index < Marks.Num(); ++Index)
     {
         USizeBox* Box = WidgetTree->ConstructWidget<USizeBox>(USizeBox::StaticClass());
@@ -769,9 +778,9 @@ void ULFFJourneyPanel::RebuildTimeline(const TArray<FLFFTimelineMark>& Marks)
         UTextBlock* Label = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass());
         Label->SetText(Marks[Index].Label);
         Label->SetJustification(ETextJustify::Center);
-        if (Roboto != nullptr)
+        if (MarkFont != nullptr)
         {
-            Label->SetFont(FSlateFontInfo(Roboto, MarkFontSize, TEXT("Bold")));
+            Label->SetFont(FSlateFontInfo(MarkFont, MarkFontSize, TEXT("Bold")));
         }
         Button->SetContent(Label);
 
@@ -1064,15 +1073,16 @@ void ULFFJourneyPanel::ApplyModeButton(UButton* Button, UTextBlock* Label, const
     }
     const FButtonStyle& BaseStyle = ToggleBaseStyles.FindOrAdd(Button, Button->GetStyle());
 
-    // Chosen: brand fill, accent outline, bold bright text. Not chosen: the plain secondary look with muted text.
+    // Chosen or On: a light fill with an accent outline and dark text. Off: the plain secondary look.
     FButtonStyle Style = BaseStyle;
     if (bSelected)
     {
-        // Every state keeps the brand fill under the white text: hovering or pressing a chosen button, or a chosen button that
-        // Calm Mode has locked, must never fall back to the pale secondary fill.
-        const FLinearColor Hover(ModeSelectedFill.R, ModeSelectedFill.G * 1.35f + 0.01f, ModeSelectedFill.B * 1.3f + 0.01f, 1.0f);
-        const FLinearColor Pressed(ModeSelectedFill.R, ModeSelectedFill.G * 0.55f, ModeSelectedFill.B * 0.55f, 1.0f);
-        const FLinearColor Locked(ModeSelectedFill.R, ModeSelectedFill.G, ModeSelectedFill.B, 0.7f);
+        // Every state keeps the light fill under the dark text: hovering or pressing a chosen button, or a chosen button that
+        // Calm Mode has locked, must never fall back to the dark secondary fill.
+        const FLinearColor Hover = FMath::Lerp(ModeSelectedFill, FLinearColor::Black, 0.06f);
+        const FLinearColor Pressed = FMath::Lerp(ModeSelectedFill, FLinearColor::Black, 0.14f);
+        // Opaque: Slate already dims a disabled button's text, so a see-through fill would take the contrast down twice.
+        const FLinearColor Locked = FMath::Lerp(ModeSelectedFill, FLinearColor::Black, 0.04f);
         Style.Normal.TintColor = FSlateColor(ModeSelectedFill);
         Style.Normal.OutlineSettings.Color = FSlateColor(ModeSelectedOutline);
         Style.Normal.OutlineSettings.Width = 3.0f;
@@ -1087,13 +1097,55 @@ void ULFFJourneyPanel::ApplyModeButton(UButton* Button, UTextBlock* Label, const
     Button->SetStyle(Style);
     Button->SetRenderOpacity(1.0f);
 
+    // The name, its state word and any description line inside the button all take the state's text colour.
+    const FSlateColor TextColor(bSelected ? ModeSelectedText : ModeMutedText);
+    if (WidgetTree != nullptr)
+    {
+        WidgetTree->ForWidgetAndChildren(Button, [&TextColor](UWidget* Child)
+        {
+            if (UTextBlock* Text = Cast<UTextBlock>(Child))
+            {
+                Text->SetColorAndOpacity(TextColor);
+            }
+        });
+    }
     if (Label != nullptr)
     {
-        FSlateFontInfo Font = Label->GetFont();
-        Font.TypefaceFontName = bSelected ? FName(TEXT("Bold")) : FName(TEXT("Regular"));
-        Label->SetFont(Font);
-        Label->SetColorAndOpacity(FSlateColor(bSelected ? ModeSelectedText : ModeMutedText));
+        Label->SetColorAndOpacity(TextColor);
     }
+    // The state word is bold when On, so the state never rests on colour alone.
+    if (UTextBlock* State = Label != nullptr ? FindStateText(Label) : nullptr)
+    {
+        FSlateFontInfo Font = State->GetFont();
+        Font.TypefaceFontName = bSelected ? FName(TEXT("Bold")) : FName(TEXT("Regular"));
+        State->SetFont(Font);
+    }
+}
+
+UTextBlock* ULFFJourneyPanel::FindStateText(const UTextBlock* Label) const
+{
+    // CalmModeLabel -> CalmModeState: the On / Off word at the end of the row.
+    FString Name = Label->GetName();
+    if (!Name.RemoveFromEnd(TEXT("Label")))
+    {
+        return nullptr;
+    }
+    return Cast<UTextBlock>(GetWidgetFromName(FName(*(Name + TEXT("State")))));
+}
+
+void ULFFJourneyPanel::ApplyToggleText(UTextBlock* Label, const FText& Name, const FText& State)
+{
+    if (Label == nullptr)
+    {
+        return;
+    }
+    if (UTextBlock* StateText = FindStateText(Label))
+    {
+        Label->SetText(Name);
+        StateText->SetText(State);
+        return;
+    }
+    Label->SetText(FText::Format(LOCTEXT("ToggleFormat", "{0}: {1}"), Name, State));
 }
 
 void ULFFJourneyPanel::ApplyTimelineDrawer()

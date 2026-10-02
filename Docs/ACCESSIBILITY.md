@@ -23,6 +23,13 @@
 - Tab order: intro → disclaimer → first control → viewport → next/back buttons → settings button → pause button.
 - Visible focus indicator: 2–3 px contrast-minimum border or ring (WCAG AA, 3:1 at minimum).
 
+#### As built (2026-10-02, `ULFFHUDWidget`)
+- HUD buttons still never take Slate focus (the viewport keeps the arrow keys and Space), so the HUD runs its own focus ring.
+- **Tab / Shift+Tab** (D-pad Down / Up on a controller) move the ring through the buttons on screen; it wraps at the ends. **Enter** (A) presses the ringed button; with no ring, Enter keeps its old meaning (Start, Yes). **Esc** drops the ring.
+- Order: the card in front (splash or caption card), then the dock (Back, timeline, Next, the timeline marks when open), then Settings in the header. A modal card (Settings, Paused, Start again?) keeps the ring inside itself.
+- The ring is a 4 px warm off-white line inside a 2 px dark halo, 4 px clear of the button, following its shape. It reads on the dark cards and on a bright sky (3:1 or better against both). It isn't kelly green, which already means "On" and "spoken".
+- Disabled buttons and buttons that are hidden or collapsed are skipped. If the ringed button goes away (new step, card closed), the ring goes too.
+
 ---
 
 ## 2. Typography and Contrast

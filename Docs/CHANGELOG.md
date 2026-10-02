@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-10-02 (UI redesign: "Night field", `Docs/UI_DESIGN.md`)
+- **New look:**
+  - Opaque deep midnight-green cards with warm off-white text, and one kelly-green action per screen.
+  - Atkinson Hyperlegible throughout (SIL OFL, `SourceData/UI/Fonts`).
+  - The scene stays first: logo and disclaimer top left, Settings top right, the caption card lower left, one dock bottom centre.
+- **Splash:** left-aligned card. Standard and Calm are two cards, each with its own description.
+- **Dock:** "Step N of 23" over one pip per step (replaces the bar).
+- **Settings:** toggle rows with the name on the left and On / Off on the right; the On state is a light row with a kelly outline. The keyboard legend adds Tab and Enter.
+- **Karaoke:** the spoken word gets a soft highlight and a solid underline (`ULFFKaraokeDecorator`), no longer colour alone. No reflow.
+- **Keyboard focus ring:** Tab / Shift+Tab (D-pad Down / Up) move a two-tone ring through the buttons on screen, Enter presses it, and a modal keeps it inside. `ULFFHUDWidget`, `ALFFPlayerController`.
+- **High contrast** turns cards black (was white). A disabled primary button keeps a readable label. A step with no body leaves no blank line on the card.
+
 ## 2026-10-01 (session 5: lot grid, MetaHuman crowd, voice on by default, karaoke)
 - **Lot on its own grid** (`Tools/Pipeline/plan_lot.py`, `Tools/Editor/session5_assets.py`): the model's lot is laid out 16.5 deg off the stadium frame (measured from its walkway islands and edges), so the bays now follow it: 2.7 m stalls, 7.2 m aisles, cross aisles. 811 instanced City Sample cars sit square in their stalls on 1,437 painted lines (`SI_LotPaint`, `M_LFF_LotPaint`). The Pepsi Plaza entry keeps 10 m clear and its five cameras' views; no car touches the line or security.
 - **Parking step faces the stadium:** `CT_Parking` stands in an aisle looking south down the rows, the ten hero cars either side and the arriving car pulling into the empty bay on the right; the stadium fills the background.

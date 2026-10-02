@@ -110,9 +110,9 @@ Esc also ends PIE in the editor. That's expected there; test Cancel in a package
 | Instance | Widget | On screen | Contents |
 |---|---|---|---|
 | `TopChrome` | `WBP_LFF_TopChrome` | Always | Prototype badge (top left) with `DisclaimerLineText` under it on journey steps. Top bar (top right): `StepControls` (Step X of Y, Pause, Sound), shown after Start, then Settings. |
-| `Splash` | `WBP_LFF_Splash` | Before Start | Centre-low card: "Welcome to", title, body, **Start Your Day**, the disclaimer sentence. |
+| `Splash` | `WBP_LFF_Splash` | Before Start | Centred, left-aligned card: eyebrow, title, body, the Standard / Calm cards (`StandardButton`/`StandardLabel`/`StandardNote`, same for Calm), **Start your day**, the disclaimer sentence. |
 | `StepCaption` | `WBP_LFF_StepCaption` | After Start | Small lower-left card (about 450 px wide at 1080p), above the timeline: step number and clock, disclaimer chip (Verified / Approximate / Illustration), title, body, and `PreviewRow` on intensity steps. `TicketPhone` (right of centre) on the ticket step. |
-| `BottomRail` | `WBP_LFF_BottomRail` | After Start | `TimelinePanel` (the thin timeline above the rail), then Back, progress pips, Next (reads "Start Over" on the last step) and `LearnMorePanel` on the last step. |
+| `BottomRail` | `WBP_LFF_BottomRail` | After Start | One dock: Back, `ProgressText` over `ProgressPips` (one pip per step), the day-timeline button, Next. `TimelinePanel` is a drawer above the dock, closed by default. Start Over and Learn More are on the finale card. |
 | `Settings` | `WBP_LFF_Settings` | Settings, Paused or "Start again?" open | Scrim over the world, then one card: Settings (toggles, key legend, Start again), Paused, or the restart question. |
 
 The five panels share the parent `LFFJourneyPanel`. Every name below is optional; a panel fills in the ones it contains.
@@ -120,13 +120,14 @@ The five panels share the parent `LFFJourneyPanel`. Every name below is optional
 - **Text:** `TitleText`, `BodyText`, `ProgressText` ("Step 2 of 16"), `StepNumberText` ("Step 2"), `DisclaimerText` (full sentence), `DisclaimerLineText` (the short line), `PreviewLabel`, `PreviewNoteText`, `DisclaimerChipText` (one word), `PrototypeBadgeText`, `TargetMissingText`, `NextLabel`, `PauseLabel`, `SoundLabel`, `ReducedMotionLabel`, `CalmModeLabel`, `LargeTextLabel`, `HighContrastLabel`.
 - **Groups:** `StepControls`, `DisclaimerChip`, `SettingsPanel`, `PausePanel`, `RestartConfirmPanel` (only one modal card shows at a time), `PreviewRow`, `Scrim` (a `Border`; it blocks clicks), `ProgressPips` (a `HorizontalBox`; C++ adds one pip per step), `TextScale` (a `ScaleBox` set to User Specified).
 - **Buttons:** `StartButton`, `NextButton`, `BackButton`, `PauseButton`, `ResumeButton`, `SoundButton`, `SettingsButton`, `SettingsCloseButton`, `RestartButton`, `RestartYesButton`, `RestartNoButton`, `ReducedMotionButton`, `CalmModeButton`, `LargeTextButton`, `HighContrastButton`, `PreviewButton`.
-- **Naming conventions C++ reads:** a `Border` whose name starts with `Surface` turns opaque in High contrast.
+- **Naming conventions C++ reads:** a `Border` whose name starts with `Surface` turns black in High contrast. A Settings toggle row can split its label: `CalmModeLabel` holds the name and a text block named the same but ending `State` (`CalmModeState`) holds On / Off; without one, the label reads "Calm Mode: On". Every text block inside a toggle or the Standard / Calm cards takes the chosen / not-chosen text colour.
+- **Built at runtime, not in the blueprint:** the caption's voice button (`VoiceIconButton`), the karaoke rich-text copies of the title and body (`TitleRich`, `BodyRich`, marked up `<w>word</>` for `ULFFKaraokeDecorator`), the finale wordmark (`FinaleLogo`), one pip per step in `ProgressPips`, one mark per timed step in `TimelineMarks`, and the HUD's keyboard focus ring (`FocusRing`, last child of `RootOverlay`).
 - **Disclaimer rule.** C++ always shows `PrototypeBadgeText`, shows `DisclaimerChip` on every step, shows `DisclaimerText` whenever the level isn't Verified, and shows `DisclaimerLineText` ("Illustration. Not directions for the real stadium.") on every non-Verified step. `LFFHUDWidget` logs an error if `TopChrome` has no `PrototypeBadgeText` or `DisclaimerLineText`, `StepCaption` has no `DisclaimerChipText` or `Splash` has no `DisclaimerText`.
 
-Layout rules (from `ACCESSIBILITY.md` and LEDGER D26):
-- One primary (midnight green) action per screen: Start Your Day, Next, Resume, or "Yes, start again". Everything else is a dark secondary button.
-- **The stadium is the product.** The chrome stays small: the caption card is about 450 × 180–240 px at 1080p (under a quarter of the lower-left), the top bar and badge are about 64 px tall.
-- Hit targets at 1080p: 64 px everywhere (the project minimum), Start 72 px. Buttons never move between steps; they're disabled rather than hidden.
-- Buttons show words only. The keyboard legend lives in Settings.
-- Bone-white text on dark frosted glass (a background blur under a tint at 86% opacity). Contrast is above 7:1. Sizes follow ACCESSIBILITY.md at 1080p: caption title 30, body 22, controls 20–24, badge and disclaimer line 16.
+Layout rules (from `ACCESSIBILITY.md`, LEDGER D26 and `Docs/UI_DESIGN.md`, which has the full token table):
+- One primary (kelly green) action per screen: Start your day, Next, Resume, "Yes, start again" or Learn More. Everything else is a dark secondary button.
+- **The stadium is the product.** The chrome keeps to the corners and one dock: logo chip and disclaimer pill top left, Settings top right, the caption card lower left, the dock bottom centre.
+- Hit targets at 1080p: 64 px everywhere (the project minimum), Start 76 px. Buttons never move between steps; they're disabled rather than hidden, and a disabled button keeps its outline and its label.
+- Buttons show words (Settings and Voice add an icon, never an icon alone). The keyboard legend lives in Settings.
+- Warm off-white text on opaque deep midnight-green cards (`#072A2F`), Atkinson Hyperlegible throughout. Body 13.6:1, secondary text 8.7:1. Sizes at 1080p: headline 52, caption title 38, body 24, controls 22, labels 18 (the floor).
 - Leave the bottom 72 px clear for the Cesium and Google credits.

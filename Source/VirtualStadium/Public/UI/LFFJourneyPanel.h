@@ -78,7 +78,7 @@ protected:
     float FirstStepCardScale = 0.9f;
 
     UPROPERTY(EditDefaultsOnly, Category = "Style")
-    FLinearColor HighContrastSurfaceColor = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    FLinearColor HighContrastSurfaceColor = FLinearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
     UPROPERTY(EditDefaultsOnly, Category = "Style")
     FLinearColor PipCurrentColor = FLinearColor(0.888f, 0.847f, 0.777f, 1.0f);
@@ -89,15 +89,15 @@ protected:
     UPROPERTY(EditDefaultsOnly, Category = "Style")
     FLinearColor PipUpcomingColor = FLinearColor(0.35f, 0.35f, 0.35f, 0.6f);
 
-    /** The current step's timeline mark: bone pill, midnight text. Every other mark is muted text only. */
+    /** The current step's timeline mark: kelly pill, dark text. Every other mark is light text with a faint outline. */
     UPROPERTY(EditDefaultsOnly, Category = "Style")
-    FLinearColor TimelineCurrentFill = FLinearColor(0.0f, 0.0723f, 0.0887f, 1.0f);
+    FLinearColor TimelineCurrentFill = FLinearColor(0.141f, 0.514f, 0.021f, 1.0f);
 
     UPROPERTY(EditDefaultsOnly, Category = "Style")
-    FLinearColor TimelineCurrentText = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    FLinearColor TimelineCurrentText = FLinearColor(0.0018f, 0.0242f, 0.0296f, 1.0f);
 
     UPROPERTY(EditDefaultsOnly, Category = "Style")
-    FLinearColor TimelineOtherText = FLinearColor(0.0497f, 0.0823f, 0.0887f, 1.0f);
+    FLinearColor TimelineOtherText = FLinearColor(0.905f, 0.888f, 0.838f, 1.0f);
 
     /** Ticket frames: /Game/LFF/UI/Ticket/T_LFF_Ticket_00 ... (Tools/Pipeline/prepare_ticket.py). */
     UPROPERTY(EditDefaultsOnly, Category = "Ticket")
@@ -259,9 +259,7 @@ protected:
     UPROPERTY(EditDefaultsOnly, Category = "Voice")
     TSoftObjectPtr<UTexture2D> VoiceOffIcon = TSoftObjectPtr<UTexture2D>(FSoftObjectPath(TEXT("/Game/LFF/UI/Icons/T_LFF_Icon_VoiceOff.T_LFF_Icon_VoiceOff")));
 
-    /** The word the voice is reading, on the caption card (karaoke). Calm, warm, no flashing: the colour only. */
-    UPROPERTY(EditDefaultsOnly, Category = "Voice")
-    FLinearColor KaraokeColor = FLinearColor(0.028f, 0.205f, 0.006f, 1.0f);
+    // The word the voice is reading is marked by ULFFKaraokeDecorator (highlight and underline, never colour alone).
 
     /** Filled at runtime with one pip per step. */
     UPROPERTY(meta = (BindWidgetOptional))
@@ -370,24 +368,28 @@ protected:
     UPROPERTY(meta = (BindWidgetOptional))
     TObjectPtr<UTextBlock> CalmLabel;
 
-    /** The chosen side of Standard | Calm: brand fill and an accent outline, so it never relies on dimming. */
+    /** The chosen side of Standard | Calm and every toggle that is On: a light fill, an accent outline and dark text. */
     UPROPERTY(EditDefaultsOnly, Category = "Style")
-    FLinearColor ModeSelectedFill = FLinearColor(0.0f, 0.0723f, 0.0887f, 1.0f);
+    FLinearColor ModeSelectedFill = FLinearColor(0.905f, 0.888f, 0.838f, 1.0f);
 
     UPROPERTY(EditDefaultsOnly, Category = "Style")
     FLinearColor ModeSelectedOutline = FLinearColor(0.141f, 0.514f, 0.021f, 1.0f);
 
     UPROPERTY(EditDefaultsOnly, Category = "Style")
-    FLinearColor ModeMutedText = FLinearColor(0.0497f, 0.0823f, 0.0887f, 1.0f);
+    FLinearColor ModeMutedText = FLinearColor(0.905f, 0.888f, 0.838f, 1.0f);
 
     UPROPERTY(EditDefaultsOnly, Category = "Style")
-    FLinearColor ModeSelectedText = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    FLinearColor ModeSelectedText = FLinearColor(0.0018f, 0.0242f, 0.0296f, 1.0f);
 
 private:
     UFUNCTION()
     void HandleTimelineToggleClicked();
     /** Selected or On: brand fill, accent outline and white text. Off: the plain secondary look. Used by every toggle. */
     void ApplyModeButton(UButton* Button, UTextBlock* Label, bool bSelected);
+    /** The row's On / Off word (a text block named like the label, ending State instead of Label), if the row has one. */
+    UTextBlock* FindStateText(const UTextBlock* Label) const;
+    /** "Calm Mode" and "On" in their own blocks when the row has a state word, else "Calm Mode: On" in the label. */
+    void ApplyToggleText(UTextBlock* Label, const FText& Name, const FText& State);
     void ApplyTimelineDrawer();
 
     /** Each toggle's own look, remembered the first time it is touched. */

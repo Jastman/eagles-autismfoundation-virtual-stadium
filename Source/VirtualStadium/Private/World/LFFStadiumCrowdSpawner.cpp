@@ -17,7 +17,7 @@
 
 namespace
 {
-    const FName SiteRootTag(TEXT("LFF_SiteRoot"));
+    const FName CrowdSiteRootTag(TEXT("LFF_SiteRoot"));
 }
 
 ULFFSeatSpawnDataGenerator::ULFFSeatSpawnDataGenerator()
@@ -83,7 +83,7 @@ void ULFFSeatSpawnDataGenerator::CollectStandPoints(UWorld* World, TArray<FTrans
     FTransform Site = FTransform::Identity;
     for (TActorIterator<AActor> It(World); It; ++It)
     {
-        if (It->ActorHasTag(SiteRootTag))
+        if (It->ActorHasTag(CrowdSiteRootTag))
         {
             Site = It->GetActorTransform();
             break;

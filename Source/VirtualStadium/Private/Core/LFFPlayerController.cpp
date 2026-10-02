@@ -83,6 +83,8 @@ void ALFFPlayerController::SetupInputComponent()
     EnhancedInput->BindAction(TogglePreviewAction, ETriggerEvent::Started, this, &ALFFPlayerController::HandleTogglePreview);
     EnhancedInput->BindAction(ToggleVoiceAction, ETriggerEvent::Started, this, &ALFFPlayerController::HandleToggleVoice);
     EnhancedInput->BindAction(ToggleCrowdAction, ETriggerEvent::Started, this, &ALFFPlayerController::HandleToggleCrowd);
+    EnhancedInput->BindAction(FocusNextAction, ETriggerEvent::Started, this, &ALFFPlayerController::HandleFocusNext);
+    EnhancedInput->BindAction(FocusPreviousAction, ETriggerEvent::Started, this, &ALFFPlayerController::HandleFocusPrevious);
 }
 
 UInputAction* ALFFPlayerController::MakeAction(const TCHAR* Name)
@@ -112,6 +114,8 @@ void ALFFPlayerController::BuildInputObjects()
     TogglePreviewAction = MakeAction(TEXT("IA_LFF_TogglePreview"));
     ToggleVoiceAction = MakeAction(TEXT("IA_LFF_ToggleVoice"));
     ToggleCrowdAction = MakeAction(TEXT("IA_LFF_ToggleCrowd"));
+    FocusNextAction = MakeAction(TEXT("IA_LFF_FocusNext"));
+    FocusPreviousAction = MakeAction(TEXT("IA_LFF_FocusPrevious"));
 
     JourneyContext = NewObject<UInputMappingContext>(this, TEXT("IMC_LFF_Journey"));
 
@@ -151,6 +155,11 @@ void ALFFPlayerController::BuildInputObjects()
     JourneyContext->MapKey(TogglePreviewAction, EKeys::V);
     JourneyContext->MapKey(ToggleVoiceAction, EKeys::Five);
     JourneyContext->MapKey(ToggleCrowdAction, EKeys::Six);
+
+    // Tab goes forward (Shift+Tab back, checked in the handler); D-pad Up and Down, since Left and Right are Back and Next.
+    JourneyContext->MapKey(FocusNextAction, EKeys::Tab);
+    JourneyContext->MapKey(FocusNextAction, EKeys::Gamepad_DPad_Down);
+    JourneyContext->MapKey(FocusPreviousAction, EKeys::Gamepad_DPad_Up);
 }
 
 ULFFJourneySubsystem* ALFFPlayerController::GetJourney() const
@@ -201,6 +210,11 @@ void ALFFPlayerController::HandleRestart()
 
 void ALFFPlayerController::HandleConfirm()
 {
+    // Enter presses the button in the focus ring, if there is one.
+    if (HUDWidget != nullptr && HUDWidget->ActivateFocus())
+    {
+        return;
+    }
     if (ULFFJourneySubsystem* Journey = GetJourney())
     {
         Journey->Confirm();
@@ -209,6 +223,10 @@ void ALFFPlayerController::HandleConfirm()
 
 void ALFFPlayerController::HandleCancel()
 {
+    if (HUDWidget != nullptr)
+    {
+        HUDWidget->ClearFocus();
+    }
     if (ULFFJourneySubsystem* Journey = GetJourney())
     {
         Journey->Cancel();
@@ -268,5 +286,22 @@ void ALFFPlayerController::HandleToggleCrowd()
     if (ULFFJourneySubsystem* Journey = GetJourney())
     {
         Journey->ToggleCrowd();
+    }
+}
+
+void ALFFPlayerController::HandleFocusNext()
+{
+    if (HUDWidget != nullptr)
+    {
+        const bool bShift = IsInputKeyDown(EKeys::LeftShift) || IsInputKeyDown(EKeys::RightShift);
+        HUDWidget->MoveFocus(bShift ? -1 : 1);
+    }
+}
+
+void ALFFPlayerController::HandleFocusPrevious()
+{
+    if (HUDWidget != nullptr)
+    {
+        HUDWidget->MoveFocus(-1);
     }
 }

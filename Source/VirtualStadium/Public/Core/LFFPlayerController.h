@@ -49,6 +49,9 @@ private:
     void HandleTogglePreview();
     void HandleToggleVoice();
     void HandleToggleCrowd();
+    /** Tab (Shift+Tab goes back) and D-pad Down / Up: the HUD's focus ring (ULFFHUDWidget::MoveFocus). */
+    void HandleFocusNext();
+    void HandleFocusPrevious();
 
     UPROPERTY(Transient)
     TObjectPtr<UInputMappingContext> JourneyContext;
@@ -94,6 +97,12 @@ private:
 
     UPROPERTY(Transient)
     TObjectPtr<UInputAction> ToggleCrowdAction;
+
+    UPROPERTY(Transient)
+    TObjectPtr<UInputAction> FocusNextAction;
+
+    UPROPERTY(Transient)
+    TObjectPtr<UInputAction> FocusPreviousAction;
 
     UPROPERTY(Transient)
     TObjectPtr<ULFFHUDWidget> HUDWidget;

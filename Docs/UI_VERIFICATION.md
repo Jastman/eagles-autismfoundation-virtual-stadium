@@ -43,3 +43,38 @@ Scope: the HUD after the paper-light overhaul (`Docs/UI_AUDIT.md`). Checked in t
 ## Tooling notes
 - PIE ignores a first mouse click until the pointer has moved over the target, so a hover is needed before each click when driving it with a desktop-click tool.
 - Esc ends the PIE session. Use S to close Settings.
+
+# Verification after the "Night field" redesign (2026-10-02, later the same day)
+
+Scope: the full redesign in `Docs/UI_DESIGN.md`. Checked in PIE through VibeUE: game-viewport captures, keys sent with `InputService.inject_key`, and the journey subsystem driven from Python to reach the intensity steps, High contrast, Large text and the finale. The PIE viewport was 1280×730, then 1400×798 (UMG scale about 0.68–0.74). Contrast is computed from the tokens.
+
+## Passed
+| Check | Result |
+|---|---|
+| Body, secondary, kelly-as-text, text on kelly | 13.6:1, 8.7:1, 6.5:1, 6.5:1 |
+| Karaoke word (INK on the highlight over the card) | 7.4:1, and the underline is 6.5:1 against the card. Marked by highlight and underline, not colour alone. Line width unchanged as the marker moves. |
+| Focus ring | Tab lands on the card's first button and moves Voice → Back → timeline → Next. Enter pressed the ringed timeline button and the ringed Calm Mode row. In Settings the first Tab lands on Close and the ring stays inside the card. The ring follows pill and rounded-row shapes. |
+| Settings rows | Name left, On / Off right. On rows are light with a kelly outline. Calm Mode locks Sound, Voice, Crowd and Less movement. |
+| High contrast | Cards go black, text stays off-white. |
+| Large text | The caption card scales, nothing overlaps. |
+| Intensity step | The Preview row and its note fit inside the card. |
+| Finale | The card is centred with the wordmark, Start Over and Learn More. No empty body line. |
+| Disabled primary (Next on the last step, or while paused) | The label stays readable on a grey-light fill. |
+
+## Bugs found and fixed in this pass
+1. **Disabled Next lost its label.** The dark label sat on the dark disabled fill. Primary buttons now have their own grey-light disabled fill.
+2. **Finale card kept an empty body line** above the wordmark. The karaoke body copy now collapses when the body is empty.
+3. **Splash eyebrow repeated the body text.** It now reads "Your game day guide".
+4. **Locked On rows (under Calm Mode) were see-through.** Their fill is now opaque, so the dimming happens only once.
+5. **Unity-build name clash** (`SiteRootTag` in the subsystem and the crowd spawner) broke a full module compile. The crowd spawner's copy is now `CrowdSiteRootTag`.
+
+## Still open
+1. **Large text** still scales only the splash and caption cards (finding 2 above).
+2. **Locked rows** still get Slate's disabled dimming on their text. The word On / Off and the hint line still say what the state is.
+3. **Not tested:**
+   - a real 1920×1080 or 4K window;
+   - Windows;
+   - a controller (D-pad Up / Down for focus);
+   - touch;
+   - mouse hover after keyboard use (the ring stays where the keyboard left it until Esc or until the button goes away).
+4. **Tooling:** two keys injected in the same frame register as one, so the scripted Tab runs used one key per call. Esc in PIE still ends the session.
