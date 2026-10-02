@@ -209,6 +209,8 @@ void ULFFJourneyPanel::BuildVoiceButton()
     UHorizontalBox* Content = WidgetTree->ConstructWidget<UHorizontalBox>(UHorizontalBox::StaticClass(), TEXT("VoiceIconContent"));
     UImage* Icon = WidgetTree->ConstructWidget<UImage>(UImage::StaticClass(), TEXT("VoiceIconImage"));
     Icon->SetDesiredSizeOverride(FVector2D(28.0, 28.0));
+    // The icon textures are white; ink them so they read on the light button.
+    Icon->SetColorAndOpacity(FLinearColor(0.0033f, 0.0122f, 0.0137f, 1.0f));
     UTextBlock* Label = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("VoiceIconLabel"));
     if (StepNumberText != nullptr)
     {
@@ -354,7 +356,7 @@ void ULFFJourneyPanel::BuildFinaleLogo()
     UBorder* Plate = WidgetTree->ConstructWidget<UBorder>(UBorder::StaticClass(), TEXT("FinaleLogo"));
     FSlateBrush PlateBrush;
     PlateBrush.DrawAs = ESlateBrushDrawType::RoundedBox;
-    PlateBrush.TintColor = FSlateColor(FLinearColor(0.86f, 0.84f, 0.79f, 1.0f));
+    PlateBrush.TintColor = FSlateColor(FLinearColor::White);
     PlateBrush.OutlineSettings.RoundingType = ESlateBrushRoundingType::FixedRadius;
     PlateBrush.OutlineSettings.CornerRadii = FVector4(10.0f, 10.0f, 10.0f, 10.0f);
     Plate->SetBrush(PlateBrush);
@@ -445,7 +447,8 @@ void ULFFJourneyPanel::ApplySnapshot(const FLFFJourneySnapshot& Snapshot)
         ShowGroup(TargetMissingText.Get(), Snapshot.bStarted && Snapshot.bTargetMissing);
     }
 
-    ApplyText(NextLabel.Get(), Snapshot.bAtEnd ? LOCTEXT("StartOver", "Start Over") : LOCTEXT("Next", "Next"));
+    // The dock's Next stays "Next" (and rests on the last step): Start Over and Learn More are on the finale card.
+    ApplyText(NextLabel.Get(), LOCTEXT("Next", "Next"));
     ApplyText(PauseLabel.Get(), Snapshot.bPaused ? LOCTEXT("Resume", "Resume") : LOCTEXT("Pause", "Pause"));
     // Labels show what is actually happening: Calm Mode reads as Sound off and Less movement on.
     ApplyText(SoundLabel.Get(), OnOff(LOCTEXT("Sound", "Sound"), Snapshot.Settings.IsSoundEffective()));
@@ -475,7 +478,7 @@ void ULFFJourneyPanel::ApplySnapshot(const FLFFJourneySnapshot& Snapshot)
 
     // Buttons keep their place and are disabled rather than hidden, so nothing shifts under the pointer.
     Enable(StartButton.Get(), Snapshot.bCanNext);
-    Enable(NextButton.Get(), Snapshot.bCanNext);
+    Enable(NextButton.Get(), Snapshot.bCanNext && !(Snapshot.bStarted && Snapshot.bAtEnd && FinaleActions == nullptr));
     Enable(BackButton.Get(), Snapshot.bCanBack);
     Enable(PauseButton.Get(), Snapshot.bStarted && !bModal);
     Enable(SettingsButton.Get(), !Snapshot.bRestartConfirmOpen);
@@ -490,8 +493,16 @@ void ULFFJourneyPanel::ApplySnapshot(const FLFFJourneySnapshot& Snapshot)
     // Learn More now lives on the finale card (FinaleActions), so the rail keeps only Start Over.
     ShowGroup(LearnMorePanel.Get(), false);
     // Standard | Calm: the chosen side at full strength, the other dimmed (the label says which is which too).
-    ApplyModeButton(StandardButton.Get(), StandardLabel.Get(), StandardBaseStyle, bStandardStyleCached, !Snapshot.Settings.bCalmMode);
-    ApplyModeButton(CalmButton.Get(), CalmLabel.Get(), CalmBaseStyle, bCalmStyleCached, Snapshot.Settings.bCalmMode);
+    ApplyModeButton(StandardButton.Get(), StandardLabel.Get(), !Snapshot.Settings.bCalmMode);
+    ApplyModeButton(CalmButton.Get(), CalmLabel.Get(), Snapshot.Settings.bCalmMode);
+    // The Settings toggles: On is filled, Off is plain, so the state never rests on the word alone.
+    ApplyModeButton(CalmModeButton.Get(), CalmModeLabel.Get(), Snapshot.Settings.bCalmMode);
+    ApplyModeButton(ReducedMotionButton.Get(), ReducedMotionLabel.Get(), Snapshot.Settings.IsReducedMotionEffective());
+    ApplyModeButton(SoundButton.Get(), SoundLabel.Get(), Snapshot.Settings.IsSoundEffective());
+    ApplyModeButton(LargeTextButton.Get(), LargeTextLabel.Get(), Snapshot.Settings.bLargeText);
+    ApplyModeButton(HighContrastButton.Get(), HighContrastLabel.Get(), Snapshot.Settings.bHighContrast);
+    ApplyModeButton(VoiceButton.Get(), VoiceLabel.Get(), Snapshot.Settings.IsVoiceEffective());
+    ApplyModeButton(CrowdButton.Get(), CrowdLabel.Get(), Snapshot.Settings.IsCrowdShown());
     Enable(StandardButton.Get(), !bModal);
     Enable(CalmButton.Get(), !bModal);
     // Finale: the caption card moves to the centre of the screen with Start Over and Learn More on it.
@@ -506,7 +517,7 @@ void ULFFJourneyPanel::ApplySnapshot(const FLFFJourneySnapshot& Snapshot)
             // Otherwise lower left, above the timeline (build_wbp_lff_ui.py: CAPTION_BOTTOM).
             CardSlot->SetHorizontalAlignment(bFinale ? HAlign_Center : HAlign_Left);
             CardSlot->SetVerticalAlignment(bFinale ? VAlign_Center : VAlign_Bottom);
-            CardSlot->SetPadding(bFinale ? FMargin(0.0f) : FMargin(48.0f, 0.0f, 0.0f, 240.0f));
+            CardSlot->SetPadding(bFinale ? FMargin(0.0f) : FMargin(48.0f, 0.0f, 0.0f, 272.0f));
         }
     }
     ShowGroup(FinaleLogo.Get(), Snapshot.bStarted && Snapshot.bAtEnd);
@@ -543,6 +554,24 @@ void ULFFJourneyPanel::ApplySnapshot(const FLFFJourneySnapshot& Snapshot)
         ShowTicket(Snapshot.bStarted && Snapshot.bShowTicketPhone && !Snapshot.bTargetMissing, Snapshot.Settings.IsReducedMotionEffective());
     }
 
+    if (ProgressDone != nullptr && ProgressRest != nullptr && Snapshot.StepCount > 0)
+    {
+        // Two Fill slots in one row: done and the rest. A sliver of the rest stays so the bar never closes on itself.
+        const float Fraction = FMath::Clamp(static_cast<float>(Snapshot.StepIndex + 1) / static_cast<float>(Snapshot.StepCount), 0.02f, 1.0f);
+        FSlateChildSize DoneSize(ESlateSizeRule::Fill);
+        DoneSize.Value = Fraction;
+        FSlateChildSize RestSize(ESlateSizeRule::Fill);
+        RestSize.Value = FMath::Max(1.0f - Fraction, 0.001f);
+        if (UHorizontalBoxSlot* DoneSlot = Cast<UHorizontalBoxSlot>(ProgressDone->Slot))
+        {
+            DoneSlot->SetSize(DoneSize);
+        }
+        if (UHorizontalBoxSlot* RestSlot = Cast<UHorizontalBoxSlot>(ProgressRest->Slot))
+        {
+            RestSlot->SetSize(RestSize);
+        }
+    }
+
     if (ProgressPips != nullptr)
     {
         if (Pips.Num() != Snapshot.StepCount)
@@ -570,6 +599,7 @@ void ULFFJourneyPanel::ApplySnapshot(const FLFFJourneySnapshot& Snapshot)
     }
     // The badge line is for journey steps; the splash shows the full sentence instead.
     ShowGroup(DisclaimerLineText.Get(), Snapshot.bStarted && Snapshot.bShowDisclaimer);
+    ShowGroup(DisclaimerPill.Get(), Snapshot.bStarted && Snapshot.bShowDisclaimer);
 }
 
 void ULFFJourneyPanel::FadeIn(const bool bInstant)
@@ -1026,17 +1056,13 @@ void ULFFJourneyPanel::HandleLearnMoreClicked()
     ReturnFocusToGame();
 }
 
-void ULFFJourneyPanel::ApplyModeButton(UButton* Button, UTextBlock* Label, FButtonStyle& BaseStyle, bool& bBaseCached, const bool bSelected)
+void ULFFJourneyPanel::ApplyModeButton(UButton* Button, UTextBlock* Label, const bool bSelected)
 {
     if (Button == nullptr)
     {
         return;
     }
-    if (!bBaseCached)
-    {
-        BaseStyle = Button->GetStyle();
-        bBaseCached = true;
-    }
+    const FButtonStyle& BaseStyle = ToggleBaseStyles.FindOrAdd(Button, Button->GetStyle());
 
     // Chosen: brand fill, accent outline, bold bright text. Not chosen: the plain secondary look with muted text.
     FButtonStyle Style = BaseStyle;
@@ -1054,7 +1080,7 @@ void ULFFJourneyPanel::ApplyModeButton(UButton* Button, UTextBlock* Label, FButt
         FSlateFontInfo Font = Label->GetFont();
         Font.TypefaceFontName = bSelected ? FName(TEXT("Bold")) : FName(TEXT("Regular"));
         Label->SetFont(Font);
-        Label->SetColorAndOpacity(FSlateColor(bSelected ? FLinearColor(0.905f, 0.879f, 0.823f, 1.0f) : ModeMutedText));
+        Label->SetColorAndOpacity(FSlateColor(bSelected ? ModeSelectedText : ModeMutedText));
     }
 }
 

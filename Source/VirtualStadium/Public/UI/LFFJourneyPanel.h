@@ -78,7 +78,7 @@ protected:
     float FirstStepCardScale = 0.9f;
 
     UPROPERTY(EditDefaultsOnly, Category = "Style")
-    FLinearColor HighContrastSurfaceColor = FLinearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    FLinearColor HighContrastSurfaceColor = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
 
     UPROPERTY(EditDefaultsOnly, Category = "Style")
     FLinearColor PipCurrentColor = FLinearColor(0.888f, 0.847f, 0.777f, 1.0f);
@@ -91,13 +91,13 @@ protected:
 
     /** The current step's timeline mark: bone pill, midnight text. Every other mark is muted text only. */
     UPROPERTY(EditDefaultsOnly, Category = "Style")
-    FLinearColor TimelineCurrentFill = FLinearColor(0.888f, 0.847f, 0.777f, 1.0f);
+    FLinearColor TimelineCurrentFill = FLinearColor(0.0f, 0.0723f, 0.0887f, 1.0f);
 
     UPROPERTY(EditDefaultsOnly, Category = "Style")
-    FLinearColor TimelineCurrentText = FLinearColor(0.0f, 0.0723f, 0.0887f, 1.0f);
+    FLinearColor TimelineCurrentText = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
 
     UPROPERTY(EditDefaultsOnly, Category = "Style")
-    FLinearColor TimelineOtherText = FLinearColor(0.584f, 0.546f, 0.479f, 1.0f);
+    FLinearColor TimelineOtherText = FLinearColor(0.0497f, 0.0823f, 0.0887f, 1.0f);
 
     /** Ticket frames: /Game/LFF/UI/Ticket/T_LFF_Ticket_00 ... (Tools/Pipeline/prepare_ticket.py). */
     UPROPERTY(EditDefaultsOnly, Category = "Ticket")
@@ -261,7 +261,7 @@ protected:
 
     /** The word the voice is reading, on the caption card (karaoke). Calm, warm, no flashing: the colour only. */
     UPROPERTY(EditDefaultsOnly, Category = "Voice")
-    FLinearColor KaraokeColor = FLinearColor(1.0f, 0.80f, 0.36f, 1.0f);
+    FLinearColor KaraokeColor = FLinearColor(0.028f, 0.205f, 0.006f, 1.0f);
 
     /** Filled at runtime with one pip per step. */
     UPROPERTY(meta = (BindWidgetOptional))
@@ -353,6 +353,17 @@ protected:
     TObjectPtr<UTextBlock> TimelineToggleLabel;
 
     /** The Standard | Calm labels: the chosen side is bold and bright, the other muted. */
+    /** The "Illustration. Not directions…" pill behind DisclaimerLineText: shown and hidden with it. */
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UWidget> DisclaimerPill;
+
+    /** The progress bar: ProgressDone and ProgressRest are the two Fill slots of one HorizontalBox, resized to the step. */
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UWidget> ProgressDone;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UWidget> ProgressRest;
+
     UPROPERTY(meta = (BindWidgetOptional))
     TObjectPtr<UTextBlock> StandardLabel;
 
@@ -367,18 +378,20 @@ protected:
     FLinearColor ModeSelectedOutline = FLinearColor(0.141f, 0.514f, 0.021f, 1.0f);
 
     UPROPERTY(EditDefaultsOnly, Category = "Style")
-    FLinearColor ModeMutedText = FLinearColor(0.376f, 0.413f, 0.434f, 1.0f);
+    FLinearColor ModeMutedText = FLinearColor(0.0497f, 0.0823f, 0.0887f, 1.0f);
+
+    UPROPERTY(EditDefaultsOnly, Category = "Style")
+    FLinearColor ModeSelectedText = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
 
 private:
     UFUNCTION()
     void HandleTimelineToggleClicked();
-    void ApplyModeButton(UButton* Button, UTextBlock* Label, FButtonStyle& BaseStyle, bool& bBaseCached, bool bSelected);
+    /** Selected or On: brand fill, accent outline and white text. Off: the plain secondary look. Used by every toggle. */
+    void ApplyModeButton(UButton* Button, UTextBlock* Label, bool bSelected);
     void ApplyTimelineDrawer();
 
-    FButtonStyle StandardBaseStyle;
-    FButtonStyle CalmBaseStyle;
-    bool bStandardStyleCached = false;
-    bool bCalmStyleCached = false;
+    /** Each toggle's own look, remembered the first time it is touched. */
+    TMap<TWeakObjectPtr<UButton>, FButtonStyle> ToggleBaseStyles;
     bool bTimelineOpen = false;
     bool bTimelineAvailable = false;
     bool bModalOrPaused = false;
