@@ -72,11 +72,11 @@ T_LABEL, T_BODY, T_TITLE, T_HEAD = 18, 24, 36, 48
 TOP_H, RAIL_H, START_H, TOGGLE_H = 64, 64, 72, 64
 DOCK_H = 96
 # The bottom 72 px stay clear for the Cesium and Google credits. Dock above them, timeline drawer above the dock,
-# the caption card above the drawer (LFFJourneyPanel.cpp uses the same 272 px for the card).
+# the caption card above the drawer (LFFJourneyPanel.cpp uses the same 296 px for the card).
 CREDITS_CLEAR = 72
 TIMELINE_H = 76
 TIMELINE_BOTTOM = CREDITS_CLEAR + DOCK_H + 16
-CAPTION_BOTTOM = 272
+CAPTION_BOTTOM = 296
 # Caption text width. With padding the card is about 600 px wide at 1080p.
 CAPTION_WRAP = 520
 

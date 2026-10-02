@@ -35,10 +35,10 @@ namespace
     constexpr float PipGap = 7.0f;
     constexpr float HighContrastScrimAlpha = 0.85f;
     // Timeline marks keep the project's 64 px minimum hit target.
-    constexpr float MarkMinWidth = 118.0f;
+    constexpr float MarkMinWidth = 128.0f;
     constexpr float MarkMinHeight = 64.0f;
     constexpr float MarkGap = 6.0f;
-    constexpr int32 MarkFontSize = 16;
+    constexpr int32 MarkFontSize = 18;
 
     FSlateBrush Pill(const FLinearColor& Fill, const FLinearColor& Outline, const float OutlineWidth)
     {
@@ -517,7 +517,7 @@ void ULFFJourneyPanel::ApplySnapshot(const FLFFJourneySnapshot& Snapshot)
             // Otherwise lower left, above the timeline (build_wbp_lff_ui.py: CAPTION_BOTTOM).
             CardSlot->SetHorizontalAlignment(bFinale ? HAlign_Center : HAlign_Left);
             CardSlot->SetVerticalAlignment(bFinale ? VAlign_Center : VAlign_Bottom);
-            CardSlot->SetPadding(bFinale ? FMargin(0.0f) : FMargin(48.0f, 0.0f, 0.0f, 272.0f));
+            CardSlot->SetPadding(bFinale ? FMargin(0.0f) : FMargin(48.0f, 0.0f, 0.0f, 296.0f));
         }
     }
     ShowGroup(FinaleLogo.Get(), Snapshot.bStarted && Snapshot.bAtEnd);
@@ -1068,9 +1068,21 @@ void ULFFJourneyPanel::ApplyModeButton(UButton* Button, UTextBlock* Label, const
     FButtonStyle Style = BaseStyle;
     if (bSelected)
     {
+        // Every state keeps the brand fill under the white text: hovering or pressing a chosen button, or a chosen button that
+        // Calm Mode has locked, must never fall back to the pale secondary fill.
+        const FLinearColor Hover(ModeSelectedFill.R, ModeSelectedFill.G * 1.35f + 0.01f, ModeSelectedFill.B * 1.3f + 0.01f, 1.0f);
+        const FLinearColor Pressed(ModeSelectedFill.R, ModeSelectedFill.G * 0.55f, ModeSelectedFill.B * 0.55f, 1.0f);
+        const FLinearColor Locked(ModeSelectedFill.R, ModeSelectedFill.G, ModeSelectedFill.B, 0.7f);
         Style.Normal.TintColor = FSlateColor(ModeSelectedFill);
         Style.Normal.OutlineSettings.Color = FSlateColor(ModeSelectedOutline);
         Style.Normal.OutlineSettings.Width = 3.0f;
+        Style.Hovered = Style.Normal;
+        Style.Hovered.TintColor = FSlateColor(Hover);
+        Style.Pressed = Style.Normal;
+        Style.Pressed.TintColor = FSlateColor(Pressed);
+        Style.Disabled = Style.Normal;
+        Style.Disabled.TintColor = FSlateColor(Locked);
+        Style.Disabled.OutlineSettings.Color = FSlateColor(FLinearColor(ModeSelectedOutline.R, ModeSelectedOutline.G, ModeSelectedOutline.B, 0.5f));
     }
     Button->SetStyle(Style);
     Button->SetRenderOpacity(1.0f);
