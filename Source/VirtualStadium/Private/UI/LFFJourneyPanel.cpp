@@ -191,8 +191,8 @@ void ULFFJourneyPanel::BuildVoiceButton()
 
     // The project's minimum hit target (64 px at 1080p) around a 34 px icon.
     USizeBox* Box = WidgetTree->ConstructWidget<USizeBox>(USizeBox::StaticClass(), TEXT("VoiceIconSize"));
-    Box->SetWidthOverride(64.0f);
-    Box->SetHeightOverride(64.0f);
+    Box->SetMinDesiredWidth(64.0f);
+    Box->SetMinDesiredHeight(64.0f);
     UButton* Button = WidgetTree->ConstructWidget<UButton>(UButton::StaticClass(), TEXT("VoiceIconButton"));
     PRAGMA_DISABLE_DEPRECATION_WARNINGS
     Button->IsFocusable = false;
@@ -205,9 +205,30 @@ void ULFFJourneyPanel::BuildVoiceButton()
     }
     Button->SetToolTipText(LOCTEXT("VoiceIconTip", "Voice on or off (key 5)"));
     Box->SetContent(Button);
+    // Icon plus the words "Voice: On" or "Voice: Off": a control is never an icon alone.
+    UHorizontalBox* Content = WidgetTree->ConstructWidget<UHorizontalBox>(UHorizontalBox::StaticClass(), TEXT("VoiceIconContent"));
     UImage* Icon = WidgetTree->ConstructWidget<UImage>(UImage::StaticClass(), TEXT("VoiceIconImage"));
-    Icon->SetDesiredSizeOverride(FVector2D(34.0, 34.0));
-    Button->SetContent(Icon);
+    Icon->SetDesiredSizeOverride(FVector2D(28.0, 28.0));
+    UTextBlock* Label = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("VoiceIconLabel"));
+    if (StepNumberText != nullptr)
+    {
+        FSlateFontInfo Font = StepNumberText->GetFont();
+        Font.Size = 18;
+        Label->SetFont(Font);
+        Label->SetColorAndOpacity(StepNumberText->GetColorAndOpacity());
+    }
+    Label->SetText(LOCTEXT("VoiceLabelOff", "Voice: Off"));
+    if (UHorizontalBoxSlot* IconSlot = Content->AddChildToHorizontalBox(Icon))
+    {
+        IconSlot->SetVerticalAlignment(VAlign_Center);
+        IconSlot->SetPadding(FMargin(0.0f, 0.0f, 10.0f, 0.0f));
+    }
+    if (UHorizontalBoxSlot* LabelSlot = Content->AddChildToHorizontalBox(Label))
+    {
+        LabelSlot->SetVerticalAlignment(VAlign_Center);
+    }
+    Button->SetContent(Content);
+    VoiceIconLabel = Label;
     if (UHorizontalBoxSlot* Slot = Header->AddChildToHorizontalBox(Box))
     {
         Slot->SetVerticalAlignment(VAlign_Center);
@@ -402,7 +423,11 @@ void ULFFJourneyPanel::ApplySnapshot(const FLFFJourneySnapshot& Snapshot)
         if (UTexture2D* Icon = (bVoiceOn ? VoiceOnIcon : VoiceOffIcon).LoadSynchronous())
         {
             VoiceIconImage->SetBrushFromTexture(Icon);
-            VoiceIconImage->SetDesiredSizeOverride(FVector2D(34.0, 34.0));
+            VoiceIconImage->SetDesiredSizeOverride(FVector2D(28.0, 28.0));
+        }
+        if (VoiceIconLabel != nullptr)
+        {
+            VoiceIconLabel->SetText(bVoiceOn ? LOCTEXT("VoiceLabelOn", "Voice: On") : LOCTEXT("VoiceLabelOff", "Voice: Off"));
         }
         VoiceIconButton->SetToolTipText(bVoiceOn ? LOCTEXT("VoiceIconOn", "Voice is on. Turn it off (key 5)")
                                                  : LOCTEXT("VoiceIconOff", "Voice is off. Turn it on (key 5)"));
@@ -465,8 +490,8 @@ void ULFFJourneyPanel::ApplySnapshot(const FLFFJourneySnapshot& Snapshot)
     // Learn More now lives on the finale card (FinaleActions), so the rail keeps only Start Over.
     ShowGroup(LearnMorePanel.Get(), false);
     // Standard | Calm: the chosen side at full strength, the other dimmed (the label says which is which too).
-    if (StandardButton != nullptr) { StandardButton->SetRenderOpacity(Snapshot.Settings.bCalmMode ? 0.6f : 1.0f); }
-    if (CalmButton != nullptr) { CalmButton->SetRenderOpacity(Snapshot.Settings.bCalmMode ? 1.0f : 0.6f); }
+    ApplyModeButton(StandardButton.Get(), StandardLabel.Get(), StandardBaseStyle, bStandardStyleCached, !Snapshot.Settings.bCalmMode);
+    ApplyModeButton(CalmButton.Get(), CalmLabel.Get(), CalmBaseStyle, bCalmStyleCached, Snapshot.Settings.bCalmMode);
     Enable(StandardButton.Get(), !bModal);
     Enable(CalmButton.Get(), !bModal);
     // Finale: the caption card moves to the centre of the screen with Start Over and Learn More on it.
@@ -509,7 +534,9 @@ void ULFFJourneyPanel::ApplySnapshot(const FLFFJourneySnapshot& Snapshot)
             Enable(Mark, Snapshot.bStarted && !bModal && !Snapshot.bPaused);
         }
     }
-    ShowGroup(TimelinePanel.Get(), Snapshot.bStarted && Snapshot.TimelineMarks.Num() > 0);
+    bTimelineAvailable = Snapshot.bStarted && Snapshot.TimelineMarks.Num() > 0;
+    bModalOrPaused = bModal || Snapshot.bPaused;
+    ApplyTimelineDrawer();
 
     if (TicketPhone != nullptr)
     {
@@ -868,6 +895,7 @@ void ULFFJourneyPanel::BindButtons()
     if (VoiceButton != nullptr) { VoiceButton->OnClicked.AddUniqueDynamic(this, &ULFFJourneyPanel::HandleVoiceClicked); }
     if (CrowdButton != nullptr) { CrowdButton->OnClicked.AddUniqueDynamic(this, &ULFFJourneyPanel::HandleCrowdClicked); }
     if (LearnMoreButton != nullptr) { LearnMoreButton->OnClicked.AddUniqueDynamic(this, &ULFFJourneyPanel::HandleLearnMoreClicked); }
+    if (TimelineToggleButton != nullptr) { TimelineToggleButton->OnClicked.AddUniqueDynamic(this, &ULFFJourneyPanel::HandleTimelineToggleClicked); }
     if (StandardButton != nullptr) { StandardButton->OnClicked.AddUniqueDynamic(this, &ULFFJourneyPanel::HandleStandardClicked); }
     if (CalmButton != nullptr) { CalmButton->OnClicked.AddUniqueDynamic(this, &ULFFJourneyPanel::HandleCalmClicked); }
     if (FinaleStartOverButton != nullptr) { FinaleStartOverButton->OnClicked.AddUniqueDynamic(this, &ULFFJourneyPanel::HandleNextClicked); }
@@ -995,6 +1023,57 @@ void ULFFJourneyPanel::HandleCalmClicked()
 void ULFFJourneyPanel::HandleLearnMoreClicked()
 {
     if (ULFFJourneySubsystem* Journey = GetJourney()) { Journey->OpenLearnMore(); }
+    ReturnFocusToGame();
+}
+
+void ULFFJourneyPanel::ApplyModeButton(UButton* Button, UTextBlock* Label, FButtonStyle& BaseStyle, bool& bBaseCached, const bool bSelected)
+{
+    if (Button == nullptr)
+    {
+        return;
+    }
+    if (!bBaseCached)
+    {
+        BaseStyle = Button->GetStyle();
+        bBaseCached = true;
+    }
+
+    // Chosen: brand fill, accent outline, bold bright text. Not chosen: the plain secondary look with muted text.
+    FButtonStyle Style = BaseStyle;
+    if (bSelected)
+    {
+        Style.Normal.TintColor = FSlateColor(ModeSelectedFill);
+        Style.Normal.OutlineSettings.Color = FSlateColor(ModeSelectedOutline);
+        Style.Normal.OutlineSettings.Width = 3.0f;
+    }
+    Button->SetStyle(Style);
+    Button->SetRenderOpacity(1.0f);
+
+    if (Label != nullptr)
+    {
+        FSlateFontInfo Font = Label->GetFont();
+        Font.TypefaceFontName = bSelected ? FName(TEXT("Bold")) : FName(TEXT("Regular"));
+        Label->SetFont(Font);
+        Label->SetColorAndOpacity(FSlateColor(bSelected ? FLinearColor(0.905f, 0.879f, 0.823f, 1.0f) : ModeMutedText));
+    }
+}
+
+void ULFFJourneyPanel::ApplyTimelineDrawer()
+{
+    // The toggle only exists while there is a timeline to show; the drawer only opens from it.
+    if (TimelineToggleButton != nullptr)
+    {
+        TimelineToggleButton->SetVisibility(bTimelineAvailable ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+    }
+    Enable(TimelineToggleButton.Get(), bTimelineAvailable && !bModalOrPaused);
+    ApplyText(TimelineToggleLabel.Get(), bTimelineOpen ? LOCTEXT("HideTimeline", "Hide day timeline") : LOCTEXT("ShowTimeline", "Show day timeline"));
+    ShowGroup(TimelinePanel.Get(), bTimelineAvailable && bTimelineOpen);
+}
+
+void ULFFJourneyPanel::HandleTimelineToggleClicked()
+{
+    bTimelineOpen = !bTimelineOpen;
+    ApplyTimelineDrawer();
     ReturnFocusToGame();
 }
 

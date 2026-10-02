@@ -31,37 +31,53 @@ FOLDER = "/Game/LFF/UI"
 PANEL_CLASS = "/Script/VirtualStadium.LFFJourneyPanel"
 HUD_CLASS = "/Script/VirtualStadium.LFFHUDWidget"
 
-# Linear colours. Midnight green #004C54, bone white #F2EDE4, muted bone #C9C3B8.
-# Bone on midnight green is about 8.3:1; bone and muted bone on the glass tint are above 7:1 (WCAG AA needs 4.5:1).
-BONE = {"r": 0.888, "g": 0.847, "b": 0.777, "a": 1}
-BONE_MUTED = {"r": 0.584, "g": 0.546, "b": 0.479, "a": 1}
-BONE_EDGE = {"r": 0.888, "g": 0.847, "b": 0.777, "a": 0.14}
-BONE_OUTLINE = {"r": 0.888, "g": 0.847, "b": 0.777, "a": 0.4}
-MIDNIGHT = {"r": 0.0, "g": 0.0723, "b": 0.0887, "a": 1}
-MIDNIGHT_HOVER = {"r": 0.0, "g": 0.095, "b": 0.115, "a": 1}
-MIDNIGHT_PRESSED = {"r": 0.0, "g": 0.0331, "b": 0.0395, "a": 1}
-# Dark frosted glass: a background blur under a near-opaque tint, so text contrast holds over a bright sky.
-GLASS = {"r": 0.004, "g": 0.009, "b": 0.011, "a": 0.86}
-SECONDARY = {"r": 0.02, "g": 0.035, "b": 0.04, "a": 0.95}
-SECONDARY_PRESSED = {"r": 0.008, "g": 0.014, "b": 0.016, "a": 0.95}
-DISABLED = {"r": 0.03, "g": 0.03, "b": 0.03, "a": 0.55}
-CHIP = {"r": 0.05, "g": 0.07, "b": 0.075, "a": 1}
+def srgb(hex_value, alpha=1.0):
+    """#RRGGBB to the linear colour UMG stores."""
+    def lin(c):
+        c /= 255.0
+        return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
+    r, g, b = (int(hex_value[i:i + 2], 16) for i in (1, 3, 5))
+    return {"r": lin(r), "g": lin(g), "b": lin(b), "a": alpha}
+
+
+# Design tokens (Docs/UI_AUDIT.md). Opaque surfaces, so text contrast never depends on what the camera sees.
+# Contrast (WCAG): TEXT on SURFACE about 15:1, SILVER on SURFACE about 7.4:1, TEXT on BRAND about 8.8:1.
+SURFACE_HEX, RAISED_HEX, TEXT_HEX, SILVER_HEX, BRAND_HEX, ACCENT_HEX = "#0B1D1F", "#12292C", "#F4F1EA", "#A5ACAF", "#004C54", "#69BE28"
+SURFACE = srgb(SURFACE_HEX)
+RAISED = srgb(RAISED_HEX)
+RAISED_PRESSED = srgb("#0E2124")
+BONE = srgb(TEXT_HEX)               # primary text (name kept: C++ and DEFAULTS refer to it)
+BONE_MUTED = srgb(SILVER_HEX)       # secondary text, Eagles silver
+BONE_EDGE = srgb(SILVER_HEX, 0.30)  # hairline around cards
+BONE_OUTLINE = srgb(SILVER_HEX, 0.65)
+MIDNIGHT = srgb(BRAND_HEX)          # primary button fill, Eagles midnight green
+MIDNIGHT_HOVER = srgb("#00606A")
+MIDNIGHT_PRESSED = srgb("#003A40")
+ACCENT = srgb(ACCENT_HEX)           # kelly green: hover and focus ring only
+GLASS = SURFACE                     # kept as a name; no longer translucent
+SECONDARY = RAISED
+SECONDARY_PRESSED = RAISED_PRESSED
+DISABLED = srgb("#0B1D1F", 0.6)
+CHIP = RAISED
 SCRIM = {"r": 0.0, "g": 0.0, "b": 0.0, "a": 0.55}
-NOTICE = {"r": 1.0, "g": 0.85, "b": 0.45, "a": 1}
+NOTICE = srgb("#FFD973")
 WHITE = {"r": 1, "g": 1, "b": 1, "a": 1}
 
-RADIUS = 16
-BLUR = 18
+RADIUS = 12
+BLUR = 0  # opaque panels: no background blur
+# Type scale at 1080p: label 18, body 22, title 32, headline 40. Space on an 8 px grid.
+T_LABEL, T_BODY, T_TITLE, T_HEAD = 18, 22, 32, 40
 # The stadium is the product, so the chrome stays small. Hit targets (1080p) are the project minimum of 64 px
 # everywhere except Start (72). Font sizes follow ACCESSIBILITY.md at 1080p: titles 30-40, body 22, controls 20+.
 TOP_H, RAIL_H, START_H, TOGGLE_H = 64, 64, 72, 64
+HEADER_H = 96
 # The bottom 72 px stay clear for the Cesium and Google credits. The timeline sits on the rail; the caption above it.
 CREDITS_CLEAR = 72
 TIMELINE_H = 76
 TIMELINE_BOTTOM = CREDITS_CLEAR + RAIL_H + 12
 CAPTION_BOTTOM = TIMELINE_BOTTOM + TIMELINE_H + 16
 # Caption text width. With padding the card is about 450 px wide (under a quarter of 1920) and 180-240 px tall.
-CAPTION_WRAP = 400
+CAPTION_WRAP = 440
 
 KEYS = [
     ("Right arrow or Space", "Next"),
@@ -82,15 +98,16 @@ KEYS = [
 
 # Names C++ reads, per widget. They are marked as variables and checked after the build.
 CONTRACT = {
-    "WBP_LFF_Splash": {"TitleText", "BodyText", "StartButton", "DisclaimerText", "TextScale", "StandardButton", "CalmButton"},
-    "WBP_LFF_TopChrome": {"DisclaimerLineText", "StepControls", "ProgressText", "StandardButton", "CalmButton",
-                          "SettingsButton"},
+    "WBP_LFF_Splash": {"TitleText", "BodyText", "StartButton", "DisclaimerText", "TextScale", "StandardButton", "CalmButton",
+                       "StandardLabel", "CalmLabel"},
+    "WBP_LFF_TopChrome": {"DisclaimerLineText", "SettingsButton"},
     "WBP_LFF_StepCaption": {"StepNumberText", "TitleText", "BodyText", "DisclaimerChip", "DisclaimerChipText",
                             "TargetMissingText", "TextScale", "PreviewRow", "PreviewButton", "PreviewLabel",
                             "PreviewNoteText", "TicketPhone", "TicketImage",
                             "FinaleActions", "FinaleStartOverButton", "FinaleLearnMoreButton"},
     "WBP_LFF_BottomRail": {"BackButton", "NextButton", "NextLabel", "ProgressPips", "TimelinePanel", "TimelineMarks",
-                           "TimelineNoteText", "LearnMorePanel", "LearnMoreButton"},
+                           "TimelineNoteText", "LearnMorePanel", "LearnMoreButton", "ProgressText", "TimelineToggleButton",
+                           "TimelineToggleLabel"},
     "WBP_LFF_Settings": {"Scrim", "SettingsPanel", "SettingsCloseButton", "CalmModeButton", "CalmModeLabel",
                          "ReducedMotionButton", "ReducedMotionLabel", "SoundButton", "SoundLabel", "LargeTextButton",
                          "LargeTextLabel", "HighContrastButton", "HighContrastLabel", "RestartButton", "PausePanel",
@@ -181,8 +198,8 @@ def rounded(fill, outline, width, half_height=False):
 
 def button_style(fill, hover_fill, pressed_fill, outline):
     # Hover and press only change the outline or darken, so contrast never drops.
-    return {"normal": rounded(fill, outline, 2, True), "hovered": rounded(hover_fill, BONE, 3, True),
-            "pressed": rounded(pressed_fill, BONE, 3, True), "disabled": rounded(DISABLED, {"r": 0.3, "g": 0.3, "b": 0.3, "a": 0.5}, 2, True),
+    return {"normal": rounded(fill, outline, 2, True), "hovered": rounded(hover_fill, ACCENT, 3, True),
+            "pressed": rounded(pressed_fill, ACCENT, 3, True), "disabled": rounded(DISABLED, srgb(SILVER_HEX, 0.25), 2, True),
             "normalPadding": pad(20, 6), "pressedPadding": pad(20, 7, 20, 5)}
 
 
@@ -207,86 +224,81 @@ GEAR_ICON = "/Game/LFF/UI/Icons/T_LFF_Icon_Settings.T_LFF_Icon_Settings"  # Sour
 def mode_segment(w, parent, slot):
     """Standard | Calm: two halves of one row. C++ dims the side that isn't chosen."""
     row = w.add("HorizontalBox", "ModeSegment", parent, None, slot)
-    w.button("StandardButton", "StandardLabel", "Standard", row, min_w=140, min_h=TOP_H, size=20, slot={"Padding": pad(0, 0, 4, 0)})
-    w.button("CalmButton", "CalmLabel", "Calm", row, min_w=140, min_h=TOP_H, size=20)
+    w.button("StandardButton", "StandardLabel", "Standard", row, min_w=160, min_h=TOP_H, size=T_BODY, slot={"Padding": pad(0, 0, 8, 0)})
+    w.button("CalmButton", "CalmLabel", "Calm", row, min_w=160, min_h=TOP_H, size=T_BODY)
 
 
 def build_splash(w):
     root = w.add("Overlay", "Root")
     scale = w.add("ScaleBox", "TextScale", root, {"Stretch": "UserSpecified", "UserSpecifiedScale": 1.0},
-                  {"HorizontalAlignment": "HAlign_Center", "VerticalAlignment": "VAlign_Bottom", "Padding": pad(0, 0, 0, 110)})
-    card = w.glass("SplashCard", "SplashCard", scale, None, pad(40, 28))
+                  {"HorizontalAlignment": "HAlign_Center", "VerticalAlignment": "VAlign_Bottom", "Padding": pad(0, 0, 0, 120)})
+    card = w.glass("SplashCard", "SplashCard", scale, None, pad(56, 40))
     stack = w.add("VerticalBox", "SplashStack", card)
     centre = {"HorizontalAlignment": "HAlign_Center"}
-    w.text("WelcomeText", "Welcome to", stack, 20, color=BONE_MUTED, slot={**centre, **gap(2)})
-    w.text("TitleText", "Lincoln Financial Field", stack, 38, "Bold", justify="Center", slot={**centre, **gap(10)})
-    w.text("BodyText", "A calm preview of game day.\nYou choose when to move on.", stack, 22, wrap=560, justify="Center",
-           slot={**centre, **gap(20)})
-    # Standard or Calm before Start (the same choice as the top bar's segmented control).
-    w.text("ModePromptText", "How would you like your day?", stack, 20, color=BONE_MUTED, slot={**centre, **gap(8)})
-    mode_segment(w, stack, {**centre, **gap(6)})
-    w.text("ModeNoteText", "Standard: voice, music, crowd and the big moments. Calm: quiet, still, no spectacle.", stack, 16,
-           color=BONE_MUTED, wrap=560, justify="Center", slot={**centre, **gap(18)})
+    w.text("WelcomeText", "Welcome to", stack, T_LABEL, color=BONE_MUTED, slot={**centre, **gap(4)})
+    w.text("TitleText", "Lincoln Financial Field", stack, T_HEAD, "Bold", justify="Center", slot={**centre, **gap(16)})
+    w.text("BodyText", "A calm preview of game day.\nYou choose when to move on.", stack, T_BODY, wrap=560, justify="Center",
+           slot={**centre, **gap(32)})
+    # Standard or Calm before Start (the same choice is in Settings).
+    w.text("ModePromptText", "How would you like your day?", stack, T_LABEL, "Bold", color=BONE_MUTED, slot={**centre, **gap(12)})
+    mode_segment(w, stack, {**centre, **gap(12)})
+    w.text("ModeNoteText", "Standard: voice, music, crowd and the big moments.\nCalm: quiet, still, no spectacle.", stack, T_LABEL,
+           color=BONE_MUTED, wrap=560, justify="Center", slot={**centre, **gap(32)})
     w.button("StartButton", "StartLabel", "Start Your Day", stack, primary=True, min_w=320, min_h=START_H, size=26,
-             slot={**centre, **gap(18)})
-    w.text("DisclaimerText", "Illustration only. This is not a navigation instruction for the real stadium.", stack, 16,
+             slot={**centre, **gap(24)})
+    w.text("DisclaimerText", "Illustration only. This is not a navigation instruction for the real stadium.", stack, T_LABEL,
            color=BONE_MUTED, wrap=560, justify="Center", slot=centre)
 
 
 def build_top_chrome(w):
     root = w.add("Overlay", "Root")
-    # The white Eagles Autism Foundation logo straight on the world, no card behind it.
-    badge = w.add("VerticalBox", "Badge", root, None, {"HorizontalAlignment": "HAlign_Left", "VerticalAlignment": "VAlign_Top",
-                                                       "Padding": pad(32, 24, 0, 0)})
-    w.add("Image", "EAFLogo", badge, {"Brush": {"resourceObject": {"refPath": EAF_LOGO}, "imageSize": {"x": 220, "y": 77}},
-                                      "ToolTipText": "Eagles Autism Foundation"}, {"HorizontalAlignment": "HAlign_Left"})
-    # The one persistent disclaimer line on journey steps (C++ shows it after Start; the splash has the full sentence).
-    # No card either, so a soft shadow keeps it legible over a bright sky.
-    w.add("TextBlock", "DisclaimerLineText", badge, {"Text": "Illustration. Not directions for the real stadium.", "Font": font(16, "Regular"),
-          "ColorAndOpacity": {"specifiedColor": BONE, "colorUseRule": "UseColor_Specified"}, "ShadowOffset": {"x": 1, "y": 1},
-          "ShadowColorAndOpacity": {"r": 0, "g": 0, "b": 0, "a": 0.85}}, {"Padding": pad(0, 6, 0, 0)})
-    w.collapse("DisclaimerLineText")
-
-    bar = w.glass("TopBar", "TopBar", root, {"HorizontalAlignment": "HAlign_Right", "VerticalAlignment": "VAlign_Top",
-                                             "Padding": pad(0, 20, 32, 0)}, pad(6))
+    # One solid header band: logo and the disclaimer on the left, progress and Settings on the right. Nothing sits
+    # straight on the 3D scene any more, so the logo and the "Illustration" line are always legible.
+    bar = w.glass("TopBar", "TopBar", root, {"HorizontalAlignment": "HAlign_Fill", "VerticalAlignment": "VAlign_Top"}, pad(32, 16))
     row = w.add("HorizontalBox", "Bar", bar)
-    controls = w.add("HorizontalBox", "StepControls", row, None, {"VerticalAlignment": "VAlign_Center"})
-    w.text("ProgressText", "Step 1 of 16", controls, 20, "Bold",
-           slot={"VerticalAlignment": "VAlign_Center", "Padding": pad(14, 0, 16, 0)})
-    # Pause and Sound stay on the keyboard (P, 2); the bar shows the Standard | Calm choice instead.
-    mode_segment(w, controls, {"VerticalAlignment": "VAlign_Center", "Padding": pad(0, 0, 6, 0)})
-    # Settings: a 64 px gear button (the label is the tooltip).
-    box = w.add("SizeBox", "SettingsButtonSize", row, {"bOverride_WidthOverride": True, "WidthOverride": TOP_H,
-                                                       "bOverride_HeightOverride": True, "HeightOverride": TOP_H},
+    w.add("Image", "EAFLogo", row, {"Brush": {"resourceObject": {"refPath": EAF_LOGO}, "imageSize": {"x": 176, "y": 62}},
+                                    "ToolTipText": "Eagles Autism Foundation"},
+          {"VerticalAlignment": "VAlign_Center", "Padding": pad(0, 0, 24, 0)})
+    # The one persistent disclaimer line on journey steps (C++ shows it after Start; the splash has the full sentence).
+    w.add("TextBlock", "DisclaimerLineText", row, {"Text": "Illustration. Not directions for the real stadium.", "Font": font(T_LABEL, "Regular"),
+          "ColorAndOpacity": {"specifiedColor": BONE_MUTED, "colorUseRule": "UseColor_Specified"}},
+          {"VerticalAlignment": "VAlign_Center"})
+    w.collapse("DisclaimerLineText")
+    # Fill slot keeps Settings right-aligned on the splash, where the disclaimer line is hidden.
+    w.add("Spacer", "HeaderSpacer", row, None, {"Size": {"value": 1, "sizeRule": "Fill"}})
+    # Settings: icon plus the word, never the icon alone.
+    box = w.add("SizeBox", "SettingsButtonSize", row, {"bOverride_MinDesiredWidth": True, "MinDesiredWidth": 180,
+                                                       "bOverride_MinDesiredHeight": True, "MinDesiredHeight": TOP_H},
                 {"VerticalAlignment": "VAlign_Center"})
-    gear = w.add("Button", "SettingsButton", box, {"IsFocusable": False, "WidgetStyle": ICON_STYLE, "BackgroundColor": WHITE,
-                                                   "ToolTipText": "Settings"},
+    gear = w.add("Button", "SettingsButton", box, {"IsFocusable": False, "WidgetStyle": SECONDARY_STYLE, "BackgroundColor": WHITE,
+                                                   "ToolTipText": "Settings (S)"},
                  {"HorizontalAlignment": "HAlign_Fill", "VerticalAlignment": "VAlign_Fill"})
-    w.add("Image", "SettingsIcon", gear, {"Brush": {"resourceObject": {"refPath": GEAR_ICON}, "imageSize": {"x": 32, "y": 32}},
-                                          "ColorAndOpacity": BONE},
-          {"HorizontalAlignment": "HAlign_Center", "VerticalAlignment": "VAlign_Center"})
+    inner = w.add("HorizontalBox", "SettingsContent", gear, None, {"HorizontalAlignment": "HAlign_Center", "VerticalAlignment": "VAlign_Center"})
+    w.add("Image", "SettingsIcon", inner, {"Brush": {"resourceObject": {"refPath": GEAR_ICON}, "imageSize": {"x": 28, "y": 28}},
+                                           "ColorAndOpacity": BONE}, {"VerticalAlignment": "VAlign_Center", "Padding": pad(0, 0, 10, 0)})
+    w.text("SettingsLabel", "Settings", inner, T_BODY, "Bold", slot={"VerticalAlignment": "VAlign_Center"})
 
 
 def build_step_caption(w):
     root = w.add("Overlay", "Root")
     scale = w.add("ScaleBox", "TextScale", root, {"Stretch": "UserSpecified", "UserSpecifiedScale": 1.0},
                   {"HorizontalAlignment": "HAlign_Left", "VerticalAlignment": "VAlign_Bottom", "Padding": pad(48, 0, 0, CAPTION_BOTTOM)})
-    card = w.glass("Caption", "Caption", scale, None, pad(24, 18))
+    card = w.glass("Caption", "Caption", scale, None, pad(32, 24))
     stack = w.add("VerticalBox", "CaptionStack", card)
     header = w.add("HorizontalBox", "CaptionHeader", stack, None, gap(6))
-    w.text("StepNumberText", "Step 1", header, 17, "Bold", color=BONE_MUTED,
+    w.text("StepNumberText", "Step 1", header, T_LABEL, "Bold", color=BONE_MUTED,
            slot={"Size": {"value": 1, "sizeRule": "Fill"}, "VerticalAlignment": "VAlign_Center"})
     chip = w.add("Border", "DisclaimerChip", header, {"Background": rounded(WHITE, BONE_OUTLINE, 1.5, True), "BrushColor": CHIP,
                                                        "Padding": pad(10, 2)},
                  {"VerticalAlignment": "VAlign_Center", "HorizontalAlignment": "HAlign_Right", "Padding": pad(16, 0, 0, 0)})
-    w.text("DisclaimerChipText", "Illustration", chip, 16)
-    w.text("TitleText", "Title", stack, 30, "Bold", wrap=CAPTION_WRAP, slot=gap(4))
-    w.text("BodyText", "Body", stack, 22, wrap=CAPTION_WRAP)
+    w.text("DisclaimerChipText", "Illustration", chip, T_LABEL)
+    w.text("TitleText", "Title", stack, T_TITLE, "Bold", wrap=CAPTION_WRAP, slot=gap(12))
+    w.text("BodyText", "Body", stack, T_BODY, wrap=CAPTION_WRAP)
     # Loud or bright steps only. Nothing plays until the visitor picks Soft; Calm Mode hides the row (C++).
     preview = w.add("VerticalBox", "PreviewRow", stack, None, {"Padding": pad(0, 12, 0, 0)})
     w.button("PreviewButton", "PreviewLabel", "Preview this? Off", preview, min_w=260, min_h=TOGGLE_H, size=20,
              slot={"HorizontalAlignment": "HAlign_Left"})
-    w.text("PreviewNoteText", "", preview, 16, color=BONE_MUTED, wrap=CAPTION_WRAP, slot={"Padding": pad(0, 6, 0, 0)})
+    w.text("PreviewNoteText", "", preview, T_LABEL, color=BONE_MUTED, wrap=CAPTION_WRAP, slot={"Padding": pad(0, 6, 0, 0)})
     w.text("TargetMissingText", "This step is not available yet.", stack, 18, "Bold", color=NOTICE, wrap=CAPTION_WRAP,
            slot={"Padding": pad(0, 8, 0, 0)})
     w.collapse("TargetMissingText", "PreviewRow")
@@ -298,10 +310,18 @@ def build_bottom_rail(w):
                                                  "Padding": pad(32, 0, 32, CREDITS_CLEAR)})
     w.button("BackButton", "BackLabel", "Back", rail, min_w=170, size=24,
              slot={"HorizontalAlignment": "HAlign_Left", "VerticalAlignment": "VAlign_Center"})
-    pips = w.glass("PipsCard", "Pips", rail, {"HorizontalAlignment": "HAlign_Center", "VerticalAlignment": "VAlign_Center"}, pad(14, 10))
-    w.add("HorizontalBox", "ProgressPips", pips)
+    # The one progress indicator: "Step 2 of 23" over a slim segmented bar.
+    pips = w.glass("PipsCard", "Pips", rail, {"HorizontalAlignment": "HAlign_Center", "VerticalAlignment": "VAlign_Center"}, pad(24, 12))
+    block = w.add("VerticalBox", "ProgressBlock", pips)
+    w.text("ProgressText", "Step 1 of 16", block, T_BODY, "Bold", slot={"HorizontalAlignment": "HAlign_Center", "Padding": pad(0, 0, 0, 8)})
+    w.add("HorizontalBox", "ProgressPips", block, None, {"HorizontalAlignment": "HAlign_Center"})
     w.button("NextButton", "NextLabel", "Next", rail, primary=True, min_w=170, size=24,
              slot={"HorizontalAlignment": "HAlign_Right", "VerticalAlignment": "VAlign_Center"})
+    # Opens the day timeline (closed by default; C++ shows it only once the journey has started).
+    toggle = w.add("SizeBox", "TimelineToggleSize", rail, None, {"HorizontalAlignment": "HAlign_Right", "VerticalAlignment": "VAlign_Center",
+                                                                "Padding": pad(0, 0, 194, 0)})
+    w.button("TimelineToggleButton", "TimelineToggleLabel", "Show day timeline", toggle, min_w=260, size=T_BODY)
+    w.collapse("TimelineToggleButton")
 
 
 def build_settings(w):
@@ -309,39 +329,46 @@ def build_settings(w):
     w.add("Border", "Scrim", root, {"BrushColor": SCRIM, "Visibility": "Collapsed"}, fill_slot())
     centre = {"HorizontalAlignment": "HAlign_Center", "VerticalAlignment": "VAlign_Center"}
 
-    card = w.glass("SettingsPanel", "Settings", root, centre, pad(36, 28))
+    card = w.glass("SettingsPanel", "Settings", root, centre, pad(48, 36))
     stack = w.add("VerticalBox", "SettingsStack", card)
-    header = w.add("HorizontalBox", "SettingsHeader", stack, None, gap(4))
-    w.text("SettingsTitle", "Settings", header, 34, "Bold", slot={"Size": {"value": 1, "sizeRule": "Fill"}, "VerticalAlignment": "VAlign_Center"})
-    w.button("SettingsCloseButton", "SettingsCloseLabel", "Close", header, min_w=140, min_h=TOP_H, size=20,
+    header = w.add("HorizontalBox", "SettingsHeader", stack, None, gap(8))
+    w.text("SettingsTitle", "Settings", header, T_HEAD, "Bold", slot={"Size": {"value": 1, "sizeRule": "Fill"}, "VerticalAlignment": "VAlign_Center"})
+    w.button("SettingsCloseButton", "SettingsCloseLabel", "Close", header, min_w=140, min_h=TOP_H, size=T_BODY,
              slot={"VerticalAlignment": "VAlign_Center"})
-    w.text("SettingsHint", "You can change these at any time. Calm Mode turns sound off and uses less movement.", stack, 18,
-           color=BONE_MUTED, wrap=760, slot=gap(18))
+    w.text("SettingsHint", "You can change these at any time. Calm Mode turns sound and voice off and uses less movement.", stack, T_LABEL,
+           color=BONE_MUTED, wrap=760, slot=gap(24))
     columns = w.add("HorizontalBox", "SettingsColumns", stack)
-    toggles = w.add("VerticalBox", "ToggleColumn", columns, None, {"Padding": pad(0, 0, 40, 0)})
-    for name, label_name, label in (("CalmModeButton", "CalmModeLabel", "Calm Mode: Off"),
-                                    ("ReducedMotionButton", "ReducedMotionLabel", "Less movement: Off"),
-                                    ("SoundButton", "SoundLabel", "Sound: Off"),
-                                    ("LargeTextButton", "LargeTextLabel", "Large text: Off"),
-                                    ("HighContrastButton", "HighContrastLabel", "High contrast: Off")):
-        w.button(name, label_name, label, toggles, min_w=340, min_h=TOGGLE_H, size=20, slot=gap(8))
+    toggles = w.add("VerticalBox", "ToggleColumn", columns, None, {"Padding": pad(0, 0, 56, 0)})
+    # Two groups with a plain heading each, so seven toggles don't read as one flat list.
+    groups = (("Comfort", (("CalmModeButton", "CalmModeLabel", "Calm Mode: Off"),
+                           ("ReducedMotionButton", "ReducedMotionLabel", "Less movement: Off"),
+                           ("LargeTextButton", "LargeTextLabel", "Large text: Off"),
+                           ("HighContrastButton", "HighContrastLabel", "High contrast: Off"))),
+              ("Sound and scene", (("SoundButton", "SoundLabel", "Sound: Off"),
+                                   ("VoiceButton", "VoiceLabel", "Voice: Off"),
+                                   ("CrowdButton", "CrowdLabel", "Crowd: Low"))))
+    for index, (heading, items) in enumerate(groups):
+        w.text(f"Group{index}Title", heading, toggles, T_LABEL, "Bold", color=BONE_MUTED,
+               slot={"Padding": pad(0, 0 if index == 0 else 16, 0, 8)})
+        for name, label_name, label in items:
+            w.button(name, label_name, label, toggles, min_w=360, min_h=TOGGLE_H, size=T_BODY, slot=gap(8))
 
     keys = w.add("VerticalBox", "KeysColumn", columns)
-    w.text("KeysTitle", "Keyboard", keys, 20, "Bold", slot=gap(8))
+    w.text("KeysTitle", "Keyboard", keys, T_LABEL, "Bold", color=BONE_MUTED, slot=gap(8))
     table = w.add("HorizontalBox", "KeysTable", keys, None, gap(18))
-    w.text("KeysKeys", "\n".join(k for k, _ in KEYS), table, 17, "Bold", slot={"Padding": pad(0, 0, 20, 0)})
-    w.text("KeysActions", "\n".join(a for _, a in KEYS), table, 17, color=BONE_MUTED)
-    w.button("RestartButton", "RestartLabel", "Start again", keys, min_w=220, min_h=TOGGLE_H, size=20)
+    w.text("KeysKeys", "\n".join(k for k, _ in KEYS), table, T_LABEL, "Bold", slot={"Padding": pad(0, 0, 20, 0)})
+    w.text("KeysActions", "\n".join(a for _, a in KEYS), table, T_LABEL, color=BONE_MUTED)
+    w.button("RestartButton", "RestartLabel", "Start again", keys, min_w=220, min_h=TOGGLE_H, size=T_BODY)
 
-    pause = w.glass("PausePanel", "Pause", root, centre, pad(44, 32))
+    pause = w.glass("PausePanel", "Pause", root, centre, pad(56, 40))
     pause_stack = w.add("VerticalBox", "PauseStack", pause)
-    w.text("PauseTitle", "Paused", pause_stack, 34, "Bold", slot={"HorizontalAlignment": "HAlign_Center", **gap(8)})
+    w.text("PauseTitle", "Paused", pause_stack, T_HEAD, "Bold", slot={"HorizontalAlignment": "HAlign_Center", **gap(8)})
     w.text("PauseBody", "Nothing will move until you resume.", pause_stack, 22, wrap=560, slot={"HorizontalAlignment": "HAlign_Center", **gap(20)})
     w.button("ResumeButton", "ResumeLabel", "Resume", pause_stack, primary=True, min_w=220, slot={"HorizontalAlignment": "HAlign_Center"})
 
-    confirm = w.glass("RestartConfirmPanel", "Confirm", root, centre, pad(44, 32))
+    confirm = w.glass("RestartConfirmPanel", "Confirm", root, centre, pad(56, 40))
     confirm_stack = w.add("VerticalBox", "RestartStack", confirm)
-    w.text("RestartTitle", "Start again?", confirm_stack, 34, "Bold", slot={"HorizontalAlignment": "HAlign_Center", **gap(8)})
+    w.text("RestartTitle", "Start again?", confirm_stack, T_HEAD, "Bold", slot={"HorizontalAlignment": "HAlign_Center", **gap(8)})
     w.text("RestartBody", "You will go back to the beginning.", confirm_stack, 22, wrap=560,
            slot={"HorizontalAlignment": "HAlign_Center", **gap(20)})
     choices = w.add("HorizontalBox", "RestartChoices", confirm_stack, None, {"HorizontalAlignment": "HAlign_Center"})
@@ -368,7 +395,7 @@ def extend_bottom_rail(w):
     card = w.glass("TimelinePanel", "Timeline", root, {"HorizontalAlignment": "HAlign_Center", "VerticalAlignment": "VAlign_Bottom",
                                                        "Padding": pad(0, 0, 0, TIMELINE_BOTTOM)}, pad(12, 6))
     row = w.add("HorizontalBox", "TimelineRow", card)
-    w.text("TimelineNoteText", "Approximate times\nExample 1:00 PM game", row, 16, color=BONE_MUTED,
+    w.text("TimelineNoteText", "Approximate times\nExample 1:00 PM game", row, T_LABEL, color=BONE_MUTED,
            slot={"VerticalAlignment": "VAlign_Center", "Padding": pad(4, 0, 16, 0)})
     w.add("HorizontalBox", "TimelineMarks", row, None, {"VerticalAlignment": "VAlign_Center"})
     box = w.add("SizeBox", "LearnMorePanel", w.child("Rail"), None,
@@ -379,9 +406,11 @@ def extend_bottom_rail(w):
 
 def extend_settings(w):
     """Voice (off by default; needs Sound) and Crowd (Low or Off) under the other toggles, and the new keys."""
-    toggles = w.child("ToggleColumn")
-    for name, label_name, label in (("VoiceButton", "VoiceLabel", "Voice: Off"), ("CrowdButton", "CrowdLabel", "Crowd: Low")):
-        w.button(name, label_name, label, toggles, min_w=340, min_h=TOGGLE_H, size=20, slot=gap(8))
+    existing = {x["widgetName"] for x in call(UMG, "GetWidgets", {"widgetBlueprint": w.bp})["widgets"] if x["widget"] != "None"}
+    if "VoiceButton" not in existing:
+        toggles = w.child("ToggleColumn")
+        for name, label_name, label in (("VoiceButton", "VoiceLabel", "Voice: Off"), ("CrowdButton", "CrowdLabel", "Crowd: Low")):
+            w.button(name, label_name, label, toggles, min_w=340, min_h=TOGGLE_H, size=20, slot=gap(8))
     set_props(w.child("KeysKeys"), {"Text": "\n".join(k for k, _ in KEYS)})
     set_props(w.child("KeysActions"), {"Text": "\n".join(a for _, a in KEYS)})
     set_props(w.child("SettingsHint"), {"Text": "You can change these at any time. Calm Mode turns sound and voice off and uses less movement."})
@@ -427,7 +456,7 @@ def build_hud(w):
 # ULFFJourneyPanel style properties set on the generated class defaults. Done pips are muted bone, upcoming are grey,
 # and the current pip is a wider bone pill, so position never depends on colour alone.
 DEFAULTS = {
-    "WBP_LFF_BottomRail": {"PipCurrentColor": BONE, "PipDoneColor": BONE_MUTED, "PipUpcomingColor": {"r": 0.2, "g": 0.2, "b": 0.2, "a": 0.9}},
+    "WBP_LFF_BottomRail": {"PipCurrentColor": BONE, "PipDoneColor": BONE_MUTED, "PipUpcomingColor": srgb("#3A4A4C")},
 }
 
 WIDGETS = [

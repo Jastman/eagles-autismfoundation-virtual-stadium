@@ -345,7 +345,47 @@ protected:
     UPROPERTY(meta = (BindWidgetOptional))
     TObjectPtr<UButton> LearnMoreButton;
 
+    /** Opens and closes the day timeline drawer (closed by default). */
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UButton> TimelineToggleButton;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UTextBlock> TimelineToggleLabel;
+
+    /** The Standard | Calm labels: the chosen side is bold and bright, the other muted. */
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UTextBlock> StandardLabel;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UTextBlock> CalmLabel;
+
+    /** The chosen side of Standard | Calm: brand fill and an accent outline, so it never relies on dimming. */
+    UPROPERTY(EditDefaultsOnly, Category = "Style")
+    FLinearColor ModeSelectedFill = FLinearColor(0.0f, 0.0723f, 0.0887f, 1.0f);
+
+    UPROPERTY(EditDefaultsOnly, Category = "Style")
+    FLinearColor ModeSelectedOutline = FLinearColor(0.141f, 0.514f, 0.021f, 1.0f);
+
+    UPROPERTY(EditDefaultsOnly, Category = "Style")
+    FLinearColor ModeMutedText = FLinearColor(0.376f, 0.413f, 0.434f, 1.0f);
+
 private:
+    UFUNCTION()
+    void HandleTimelineToggleClicked();
+    void ApplyModeButton(UButton* Button, UTextBlock* Label, FButtonStyle& BaseStyle, bool& bBaseCached, bool bSelected);
+    void ApplyTimelineDrawer();
+
+    FButtonStyle StandardBaseStyle;
+    FButtonStyle CalmBaseStyle;
+    bool bStandardStyleCached = false;
+    bool bCalmStyleCached = false;
+    bool bTimelineOpen = false;
+    bool bTimelineAvailable = false;
+    bool bModalOrPaused = false;
+
+    UPROPERTY(Transient)
+    TObjectPtr<UTextBlock> VoiceIconLabel;
+
     ULFFJourneySubsystem* GetJourney() const;
     void BindButtons();
     void ReturnFocusToGame() const;
