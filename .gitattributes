@@ -1,3 +1,5 @@
 # Git LFS: the imported CGTrader stadium (ADR-0004), ~770 MB of licensed binary content.
 # Small project assets (levels, UI, data) stay in regular git.
 Content/LFF/Stadium/** filter=lfs diff=lfs merge=lfs -text
+# Epic CitySample vehicle content (~7.4 GB of .uasset/.umap)
+Content/CitySampleVehicles/** filter=lfs diff=lfs merge=lfs -text

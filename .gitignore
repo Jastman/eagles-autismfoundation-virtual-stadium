@@ -22,3 +22,4 @@ __pycache__/
 
 # Licensed CGTrader source model (5+ GB). Never commit; import from here into /Game/LFF/Stadium.
 /Assets/
+/Plugins/VibeUE/
