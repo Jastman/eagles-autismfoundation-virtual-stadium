@@ -86,6 +86,12 @@ public:
      */
     void SetLightPulse(bool bOn, float PeriodSeconds, float PeakStops);
 
+    /** A move, fade-cut, orbit or follow is running: free flight waits until it's done. */
+    bool IsBusy() const;
+
+    /** Adds Blendable to the camera's post-process (once) at Weight; 0 leaves it in place but off. */
+    void SetPostProcessBlendable(UObject* Blendable, float Weight);
+
 protected:
     virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 

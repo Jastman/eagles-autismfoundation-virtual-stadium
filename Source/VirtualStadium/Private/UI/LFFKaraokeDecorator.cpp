@@ -2,70 +2,88 @@
 
 #include "Brushes/SlateRoundedBoxBrush.h"
 #include "Components/RichTextBlock.h"
+#include "Framework/Text/ITextDecorator.h"
 #include "Framework/Text/SlateTextRun.h"
 #include "Rendering/DrawElements.h"
 #include "Styling/SlateTypes.h"
-#include "Widgets/SCompoundWidget.h"
-#include "Widgets/Text/STextBlock.h"
 
 namespace
 {
-    /** The word as plain text, with the highlight painted around it and the underline across its foot. */
-    class SLFFKaraokeWord : public SCompoundWidget
+    struct FLFFKaraokeLook
+    {
+        FLinearColor HighlightColor = FLinearColor::Transparent;
+        FLinearColor UnderlineColor = FLinearColor::Transparent;
+        float UnderlineThickness = 4.0f;
+        FVector2f Padding = FVector2f::ZeroVector;
+        float CornerRadius = 6.0f;
+    };
+
+    /**
+     * The spoken word as an ordinary text run in the card's own style, so the line breaks exactly as it does without the
+     * highlight (an inline widget is measured on its own and moves line breaks around it, which made the card reflow as
+     * the voice read). Only the paint differs: the highlight behind the word and the underline across its foot.
+     */
+    class FLFFKaraokeRun : public FSlateTextRun
     {
     public:
-        SLATE_BEGIN_ARGS(SLFFKaraokeWord) {}
-            SLATE_DEFAULT_SLOT(FArguments, Content)
-            SLATE_ARGUMENT(FLinearColor, HighlightColor)
-            SLATE_ARGUMENT(FLinearColor, UnderlineColor)
-            SLATE_ARGUMENT(float, UnderlineThickness)
-            SLATE_ARGUMENT(FVector2D, Padding)
-            SLATE_ARGUMENT(float, CornerRadius)
-        SLATE_END_ARGS()
-
-        void Construct(const FArguments& InArgs)
+        static TSharedRef<FLFFKaraokeRun> Create(const FRunInfo& InRunInfo, const TSharedRef<const FString>& InText, const FTextBlockStyle& InStyle,
+            const FTextRange& InRange, const FLFFKaraokeLook& InLook)
         {
-            Padding = FVector2f(InArgs._Padding);
-            UnderlineThickness = InArgs._UnderlineThickness;
-            HighlightBrush = FSlateRoundedBoxBrush(InArgs._HighlightColor, InArgs._CornerRadius);
-            // Square ends: the bar reads as one solid line under the word.
-            UnderlineBrush = FSlateRoundedBoxBrush(InArgs._UnderlineColor, FMath::Min(InArgs._UnderlineThickness * 0.5f, 2.0f));
-            ChildSlot[InArgs._Content.Widget];
+            return MakeShareable(new FLFFKaraokeRun(InRunInfo, InText, InStyle, InRange, InLook));
         }
 
-        virtual int32 OnPaint(const FPaintArgs& Args, const FGeometry& AllottedGeometry, const FSlateRect& MyCullingRect,
+        virtual int32 OnPaint(const FPaintArgs& PaintArgs, const FTextArgs& TextArgs, const FGeometry& AllottedGeometry, const FSlateRect& MyCullingRect,
             FSlateWindowElementList& OutDrawElements, int32 LayerId, const FWidgetStyle& InWidgetStyle, bool bParentEnabled) const override
         {
-            const FVector2f Size = AllottedGeometry.GetLocalSize();
-            const FVector2f BoxSize(Size.X + Padding.X * 2.0f, Size.Y + Padding.Y * 2.0f);
+            // Block offsets and sizes are pre-scaled, as in FSlateTextRun::OnPaint.
+            const float InverseScale = Inverse(AllottedGeometry.Scale);
+            const FVector2f Offset(TransformPoint(InverseScale, TextArgs.Block->GetLocationOffset()));
+            const FVector2f Size(TransformVector(InverseScale, TextArgs.Block->GetSize()));
+            const FVector2f BoxSize(Size.X + Look.Padding.X * 2.0f, Size.Y + Look.Padding.Y * 2.0f);
+            const FVector2f BoxOffset = Offset - Look.Padding;
             const FLinearColor Tint = InWidgetStyle.GetColorAndOpacityTint();
+            const ESlateDrawEffect Effects = bParentEnabled ? ESlateDrawEffect::None : ESlateDrawEffect::DisabledEffect;
 
-            FSlateDrawElement::MakeBox(OutDrawElements, LayerId,
-                AllottedGeometry.ToPaintGeometry(BoxSize, FSlateLayoutTransform(FVector2f(-Padding.X, -Padding.Y))),
-                &HighlightBrush, ESlateDrawEffect::None, HighlightBrush.GetTint(InWidgetStyle) * Tint);
-
+            FSlateDrawElement::MakeBox(OutDrawElements, LayerId, AllottedGeometry.ToPaintGeometry(BoxSize, FSlateLayoutTransform(BoxOffset)),
+                &HighlightBrush, Effects, HighlightBrush.GetTint(InWidgetStyle) * Tint);
             // Across the bottom of the highlight, below the descenders.
             FSlateDrawElement::MakeBox(OutDrawElements, LayerId + 1,
-                AllottedGeometry.ToPaintGeometry(FVector2f(BoxSize.X, UnderlineThickness),
-                    FSlateLayoutTransform(FVector2f(-Padding.X, Size.Y + Padding.Y - UnderlineThickness))),
-                &UnderlineBrush, ESlateDrawEffect::None, UnderlineBrush.GetTint(InWidgetStyle) * Tint);
+                AllottedGeometry.ToPaintGeometry(FVector2f(BoxSize.X, Look.UnderlineThickness),
+                    FSlateLayoutTransform(FVector2f(BoxOffset.X, BoxOffset.Y + BoxSize.Y - Look.UnderlineThickness))),
+                &UnderlineBrush, Effects, UnderlineBrush.GetTint(InWidgetStyle) * Tint);
 
-            return SCompoundWidget::OnPaint(Args, AllottedGeometry, MyCullingRect, OutDrawElements, LayerId + 2, InWidgetStyle, bParentEnabled);
+            return FSlateTextRun::OnPaint(PaintArgs, TextArgs, AllottedGeometry, MyCullingRect, OutDrawElements, LayerId + 2, InWidgetStyle, bParentEnabled);
+        }
+
+        virtual TSharedRef<IRun> Clone() const override
+        {
+            return MakeShareable(new FLFFKaraokeRun(*this));
         }
 
     private:
-        FVector2f Padding = FVector2f::ZeroVector;
-        float UnderlineThickness = 4.0f;
-        FSlateRoundedBoxBrush HighlightBrush = FSlateRoundedBoxBrush(FLinearColor::Transparent, 0.0f);
-        FSlateRoundedBoxBrush UnderlineBrush = FSlateRoundedBoxBrush(FLinearColor::Transparent, 0.0f);
+        FLFFKaraokeRun(const FRunInfo& InRunInfo, const TSharedRef<const FString>& InText, const FTextBlockStyle& InStyle, const FTextRange& InRange,
+            const FLFFKaraokeLook& InLook)
+            : FSlateTextRun(InRunInfo, InText, InStyle, InRange)
+            , Look(InLook)
+            , HighlightBrush(InLook.HighlightColor, InLook.CornerRadius)
+            // Square ends: the bar reads as one solid line under the word.
+            , UnderlineBrush(InLook.UnderlineColor, FMath::Min(InLook.UnderlineThickness * 0.5f, 2.0f))
+        {
+        }
+
+        FLFFKaraokeRun(const FLFFKaraokeRun& Other) = default;
+
+        FLFFKaraokeLook Look;
+        FSlateRoundedBoxBrush HighlightBrush;
+        FSlateRoundedBoxBrush UnderlineBrush;
     };
 
-    class FLFFKaraokeTextDecorator : public FRichTextDecorator
+    class FLFFKaraokeTextDecorator : public ITextDecorator
     {
     public:
-        FLFFKaraokeTextDecorator(URichTextBlock* InOwner, const ULFFKaraokeDecorator* InSettings)
-            : FRichTextDecorator(InOwner)
-            , Settings(InSettings)
+        FLFFKaraokeTextDecorator(URichTextBlock* InOwner, const FLFFKaraokeLook& InLook)
+            : Owner(InOwner)
+            , Look(InLook)
         {
         }
 
@@ -74,38 +92,32 @@ namespace
             return RunParseResult.Name == TEXT("w");
         }
 
-    protected:
-        virtual TSharedPtr<SWidget> CreateDecoratorWidget(const FTextRunInfo& RunInfo, const FTextBlockStyle& DefaultTextStyle) const override
+        virtual TSharedRef<ISlateRun> Create(const TSharedRef<FTextLayout>& TextLayout, const FTextRunParseResults& RunParseResult, const FString& OriginalText,
+            const TSharedRef<FString>& InOutModelText, const ISlateStyle* Style) override
         {
-            const ULFFKaraokeDecorator* S = Settings.Get();
-            if (S == nullptr)
-            {
-                return TSharedPtr<SWidget>();
-            }
-
-            // The same font and colour as the words around it, so the line keeps its exact width.
-            return SNew(SLFFKaraokeWord)
-                .HighlightColor(S->HighlightColor)
-                .UnderlineColor(S->UnderlineColor)
-                .UnderlineThickness(S->UnderlineThickness)
-                .Padding(S->HighlightPadding)
-                .CornerRadius(S->CornerRadius)
-                [
-                    SNew(STextBlock)
-                    .Text(RunInfo.Content)
-                    .Font(DefaultTextStyle.Font)
-                    .ColorAndOpacity(DefaultTextStyle.ColorAndOpacity)
-                    .ShadowOffset(DefaultTextStyle.ShadowOffset)
-                    .ShadowColorAndOpacity(DefaultTextStyle.ShadowColorAndOpacity)
-                ];
+            // The word itself goes into the line's text, as plain text would, in the card's default style.
+            FTextRange ModelRange;
+            ModelRange.BeginIndex = InOutModelText->Len();
+            *InOutModelText += OriginalText.Mid(RunParseResult.ContentRange.BeginIndex, RunParseResult.ContentRange.Len());
+            ModelRange.EndIndex = InOutModelText->Len();
+            const URichTextBlock* Block = Owner.Get();
+            const FTextBlockStyle& TextStyle = Block != nullptr ? Block->GetCurrentDefaultTextStyle() : FTextBlockStyle::GetDefault();
+            return FLFFKaraokeRun::Create(FRunInfo(RunParseResult.Name), InOutModelText, TextStyle, ModelRange, Look);
         }
 
     private:
-        TWeakObjectPtr<const ULFFKaraokeDecorator> Settings;
+        TWeakObjectPtr<URichTextBlock> Owner;
+        FLFFKaraokeLook Look;
     };
 }
 
 TSharedPtr<ITextDecorator> ULFFKaraokeDecorator::CreateDecorator(URichTextBlock* InOwner)
 {
-    return MakeShared<FLFFKaraokeTextDecorator>(InOwner, this);
+    FLFFKaraokeLook Look;
+    Look.HighlightColor = HighlightColor;
+    Look.UnderlineColor = UnderlineColor;
+    Look.UnderlineThickness = UnderlineThickness;
+    Look.Padding = FVector2f(HighlightPadding);
+    Look.CornerRadius = CornerRadius;
+    return MakeShared<FLFFKaraokeTextDecorator>(InOwner, Look);
 }

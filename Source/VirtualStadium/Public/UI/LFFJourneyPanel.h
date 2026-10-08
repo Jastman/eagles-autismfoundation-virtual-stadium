@@ -11,6 +11,7 @@ class UHorizontalBox;
 class URichTextBlock;
 class UVerticalBox;
 class UImage;
+class UPanelWidget;
 class UTexture2D;
 class UScaleBox;
 class USizeBox;
@@ -51,9 +52,8 @@ public:
 };
 
 /**
- * Base class for the five HUD pieces: WBP_LFF_Splash, WBP_LFF_TopChrome, WBP_LFF_StepCaption,
- * WBP_LFF_BottomRail and WBP_LFF_Settings. WBP_LFF_HUD (ULFFHUDWidget) owns them, decides which ones
- * are on screen and pushes each snapshot here. A panel fills in whichever named widgets it contains
+ * Base class for the HUD pieces (the panel list is in LFFHUDWidget.h). WBP_LFF_HUD (ULFFHUDWidget) owns them, decides
+ * which ones are on screen and pushes each snapshot here. A panel fills in whichever named widgets it contains
  * and routes its buttons to the journey subsystem. Every binding is optional; the names are the
  * contract in Docs/JOURNEY_SCHEMA.md.
  *
@@ -67,6 +67,11 @@ class VIRTUALSTADIUM_API ULFFJourneyPanel : public UUserWidget
 
 public:
     void ApplySnapshot(const FLFFJourneySnapshot& Snapshot);
+
+    void LayoutChapters(float AvailableWidth, bool bLargeText);
+
+    void LayoutWelcome(const FVector2D& ViewportSize);
+    void UpdateWelcomeHint(const UButton* NavigationFocus, bool bParentVisible = true);
 
     /** Fades the panel in over FadeSeconds with an ease-out. Instant when reduced motion is on. */
     void FadeIn(bool bInstant);
@@ -83,6 +88,16 @@ protected:
     UFUNCTION(BlueprintImplementableEvent, Category = "Journey")
     void OnSnapshotChanged(const FLFFJourneySnapshot& Snapshot);
 
+    /** For C++ panels built on this one (the timeline arc): runs after the named widgets are filled. */
+    virtual void NativeOnSnapshot(const FLFFJourneySnapshot& Snapshot) {}
+
+    /** The chapter a step belongs to (INDEX_NONE before the first). */
+    int32 ChapterOf(int32 StepIndex) const;
+    /** Where StepIndex is in its chapter: OutPlace of OutCount ("2 of 3"). */
+    void ChapterPlace(int32 Chapter, const FLFFJourneySnapshot& Snapshot, int32& OutPlace, int32& OutCount) const;
+    /** "Resume tour · Plaza, 2 of 3", or "Start the tour" if Free explore was picked on the welcome screen. */
+    FText ResumeText(const FLFFJourneySnapshot& Snapshot) const;
+
     UPROPERTY(EditDefaultsOnly, Category = "Style", meta = (ClampMin = "0.0", ClampMax = "0.4"))
     float FadeSeconds = 0.25f;
 
@@ -95,16 +110,15 @@ protected:
 
     /**
      * The day in chapters, in order (SourceData/Journey/LFF_GoldenPath.json, 23 steps). A chapter runs until the next one's
-     * FirstStep. The chapter bar shows one chip per chapter, the caption eyebrow names the chapter ("02 / Gates open").
+     * FirstStep. The timeline arc shows one node per chapter, and Resume tour names the chapter ("Gates, 2 of 3").
      */
     UPROPERTY(EditDefaultsOnly, Category = "Chapters")
     TArray<FLFFChapter> Chapters = {
-        { NSLOCTEXT("LFFHUD", "ChapterGettingThere", "Getting there"), 0 },
-        { NSLOCTEXT("LFFHUD", "ChapterGatesOpen", "Gates open"), 4 },
-        { NSLOCTEXT("LFFHUD", "ChapterPlaza", "The plaza"), 7 },
+        { NSLOCTEXT("LFFHUD", "ChapterArrival", "Arrival"), 0 },
+        { NSLOCTEXT("LFFHUD", "ChapterGates", "Gates"), 4 },
+        { NSLOCTEXT("LFFHUD", "ChapterPlazaShort", "Plaza"), 7 },
         { NSLOCTEXT("LFFHUD", "ChapterToMySeat", "To my seat"), 10 },
-        { NSLOCTEXT("LFFHUD", "ChapterTheGame", "The game"), 14 },
-        { NSLOCTEXT("LFFHUD", "ChapterBreaksHelp", "Breaks and help"), 18 },
+        { NSLOCTEXT("LFFHUD", "ChapterGame", "Game"), 14 },
     };
 
     /** Where the caption sits on journey steps (lower left, above the chapter bar). The finale centres it. */
@@ -139,15 +153,19 @@ protected:
     UPROPERTY(EditDefaultsOnly, Category = "Style")
     FLinearColor PipUpcomingColor = FLinearColor(0.35f, 0.35f, 0.35f, 0.6f);
 
-    /** The current step's timeline mark: kelly pill, dark text. Every other mark is light text with a faint outline. */
+    /** The current step's timeline mark: the light chip with dark text, as the current mode is. Every other mark is light
+     *  text with a faint outline; the ones already passed are in the muted text colour. */
     UPROPERTY(EditDefaultsOnly, Category = "Style")
-    FLinearColor TimelineCurrentFill = FLinearColor(0.141f, 0.514f, 0.021f, 1.0f);
+    FLinearColor TimelineCurrentFill = FLinearColor(0.905f, 0.888f, 0.838f, 1.0f);
 
     UPROPERTY(EditDefaultsOnly, Category = "Style")
     FLinearColor TimelineCurrentText = FLinearColor(0.0018f, 0.0242f, 0.0296f, 1.0f);
 
     UPROPERTY(EditDefaultsOnly, Category = "Style")
     FLinearColor TimelineOtherText = FLinearColor(0.905f, 0.888f, 0.838f, 1.0f);
+
+    UPROPERTY(EditDefaultsOnly, Category = "Style")
+    FLinearColor TimelineDoneText = FLinearColor(0.479f, 0.558f, 0.565f, 1.0f);
 
     /** Ticket frames: /Game/LFF/UI/Ticket/T_LFF_Ticket_00 ... (Tools/Pipeline/prepare_ticket.py). */
     UPROPERTY(EditDefaultsOnly, Category = "Ticket")
@@ -177,7 +195,7 @@ protected:
     UPROPERTY(meta = (BindWidgetOptional))
     TObjectPtr<UTextBlock> ProgressText;
 
-    /** "Step 2" (caption card). */
+    /** "Step 5 · 10:00 AM" (caption card): the step and, when it has one, the example clock. */
     UPROPERTY(meta = (BindWidgetOptional))
     TObjectPtr<UTextBlock> StepNumberText;
 
@@ -267,13 +285,18 @@ protected:
     UPROPERTY(meta = (BindWidgetOptional))
     TObjectPtr<UWidget> TimelinePanel;
 
-    /** Filled at runtime with one clickable mark per timed step. */
+    /** Filled at runtime with one clickable mark per timed step: a HorizontalBox for a bar, or a VerticalBox for the tour
+     *  panel's schedule column, top to bottom. */
     UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UHorizontalBox> TimelineMarks;
+    TObjectPtr<UPanelWidget> TimelineMarks;
 
     /** Filled at runtime with one chip per chapter (Chapters); a click jumps to the chapter's first step. */
     UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UHorizontalBox> ChapterMarks;
+    TObjectPtr<UPanelWidget> ChapterMarks;
+
+    /** Dock presentation: responsive chapter chips, wrapped labels, no redundant number line. */
+    UPROPERTY(EditDefaultsOnly, Category = "Style")
+    bool CompactChapterChips = false;
 
     /** The phone that rises on the ticket step; TicketImage shows the ticket frames. */
     UPROPERTY(meta = (BindWidgetOptional))
@@ -405,6 +428,31 @@ protected:
     TObjectPtr<UTextBlock> TimelineToggleLabel;
 
     /** The Standard | Calm labels: the chosen side is bold and bright, the other muted. */
+    /** Guided tour | Explore: the sidebar's mode switch and the welcome screen's two cards. The current mode is the
+     *  light chip; on the welcome screen neither is chosen yet. Labels are authored in the blueprint. */
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UButton> TourModeButton;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UTextBlock> TourModeLabel;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UButton> ExploreModeButton;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UTextBlock> ExploreModeLabel;
+
+    /** Free explore, in Next's slot: "Resume tour · Plaza, 2 of 3". */
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UButton> ResumeTourButton;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UTextBlock> ResumeTourLabel;
+
+    /** Free explore, in Back's slot. */
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UButton> MySeatButton;
+
     /** The "Illustration. Not directions…" pill behind DisclaimerLineText: shown and hidden with it. */
     UPROPERTY(meta = (BindWidgetOptional))
     TObjectPtr<UWidget> DisclaimerPill;
@@ -435,15 +483,19 @@ protected:
     UPROPERTY(EditDefaultsOnly, Category = "Style")
     FLinearColor ModeSelectedText = FLinearColor(0.0018f, 0.0242f, 0.0296f, 1.0f);
 
-private:
-    UFUNCTION()
-    void HandleTimelineToggleClicked();
     /** Selected or On: brand fill, accent outline and white text. Off: the plain secondary look. Used by every toggle. */
     void ApplyModeButton(UButton* Button, UTextBlock* Label, bool bSelected);
     /** The row's On / Off word (a text block named like the label, ending State instead of Label), if the row has one. */
     UTextBlock* FindStateText(const UTextBlock* Label) const;
     /** "Calm Mode" and "On" in their own blocks when the row has a state word, else "Calm Mode: On" in the label. */
     void ApplyToggleText(UTextBlock* Label, const FText& Name, const FText& State);
+    ULFFJourneySubsystem* GetJourney() const;
+    /** After a click, keyboard focus goes back to the viewport so the arrow keys and Space keep driving the journey. */
+    void ReturnFocusToGame() const;
+
+private:
+    UFUNCTION()
+    void HandleTimelineToggleClicked();
     void ApplyTimelineDrawer();
 
     /** Each toggle's own look, remembered the first time it is touched. */
@@ -455,9 +507,7 @@ private:
     UPROPERTY(Transient)
     TObjectPtr<UTextBlock> VoiceIconLabel;
 
-    ULFFJourneySubsystem* GetJourney() const;
     void BindButtons();
-    void ReturnFocusToGame() const;
     void CollectSurfaces();
     void ApplySurfaces(bool bHighContrast);
     void RebuildPips(int32 Count);
@@ -466,16 +516,12 @@ private:
     void RebuildTimeline(const TArray<FLFFTimelineMark>& Marks);
     void RebuildChapters();
     void ApplyChapters(const FLFFJourneySnapshot& Snapshot);
-    /** The chapter a step belongs to (INDEX_NONE before the first). */
-    int32 ChapterOf(int32 StepIndex) const;
-    /** "02 / Gates open · 10:00 AM" (the caption eyebrow). */
-    FText ChapterEyebrow(const FLFFJourneySnapshot& Snapshot) const;
     void ApplyTimeline(int32 CurrentIndex);
     /** Shows or hides the ticket phone. Still: no rise and a still frame (less movement, Calm Mode). */
     void ShowTicket(bool bShow, bool bStill);
     /** Builds FinaleLogo on the caption card when the blueprint doesn't have one. */
     void BuildFinaleLogo();
-    /** The caption card's voice button, at the end of its header row. */
+    /** Voice in the control dock, or the legacy caption header. */
     void BuildVoiceButton();
     /** Rich-text copies of the card's title and body (the text blocks stay as the source, collapsed), for the highlight. */
     void BuildKaraokeText();
@@ -524,6 +570,14 @@ private:
     void HandleStandardClicked();
     UFUNCTION()
     void HandleCalmClicked();
+    UFUNCTION()
+    void HandleTourModeClicked();
+    UFUNCTION()
+    void HandleExploreModeClicked();
+    UFUNCTION()
+    void HandleResumeTourClicked();
+    UFUNCTION()
+    void HandleMySeatClicked();
 
     UPROPERTY(Transient)
     TArray<TObjectPtr<UBorder>> SurfaceBorders;

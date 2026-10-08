@@ -5,19 +5,34 @@
 #include "Journey/LFFJourneyTypes.h"
 #include "LFFHUDWidget.generated.h"
 
+class UBorder;
 class UButton;
 class ULFFJourneyPanel;
+class ULFFCalloutLayer;
 class ULFFJourneySubsystem;
+class ULFFMapPanel;
+class ULFFTimelineArc;
 class USizeBox;
+class UWidget;
+class UWidgetSwitcher;
 
 /**
- * Base class for WBP_LFF_HUD (/Game/LFF/UI/WBP_LFF_HUD), the one HUD on screen.
- * It holds the five panels, decides which are shown for the current screen, and pushes every
- * journey snapshot into them:
- *  - Splash (before Start): the welcome card. TopChrome shows only the badge and Settings.
- *  - Step (after Start): TopChrome, StepCaption and BottomRail.
- *  - Settings: the modal layer (Settings, Paused, Start again?) over a dimmed world.
- * Required bindings make a HUD without one of the panels fail to compile.
+ * Base class for WBP_LFF_HUD (/Game/LFF/UI/WBP_LFF_HUD), the one HUD on screen (Docs/UI_MODES_SPEC.md). It holds the
+ * panels below, decides which are shown for the current screen and mode, and pushes every journey snapshot into them.
+ * Required bindings make a HUD without one of them fail to compile, and the compile error names what's missing.
+ *
+ *   RootOverlay (Overlay)
+ *   ├─ Callouts (full screen, under everything: places on the model, Free explore's and the tour step's; none under a panel)
+ *   ├─ InformationSize (top left: identity card and the Guided tour caption with expandable day timeline)
+ *   ├─ ControlSize (top right, scrollable: mode/settings/toggles, compact chapter chips and mode navigation,
+ *   │                                      then ExploreMap with categories, expandable levels and picked-place detail)
+ *   ├─ Welcome (full screen, before a mode is chosen)
+ *   ├─ Settings (the modal layer: Settings, Paused, Start again? over a dimmed world)
+ *   └─ FocusRing (runtime)
+ *
+ * The stadium fills the viewport; there is no permanent sidebar or central arc. Both corner groups adapt to the actual
+ * logical viewport. Their measured bounds govern marker avoidance and map framing. NavSwitcher shows TourNav or
+ * ExploreNav; the other child is collapsed too, and the focus ring skips anything under an inactive switcher child.
  *
  * Keyboard focus: HUD buttons never take Slate focus (the viewport keeps the arrow keys and Space), so the HUD runs its
  * own. Tab and Shift+Tab (D-pad Down and Up) move a focus ring through the buttons on screen, in reading order, and
@@ -46,17 +61,58 @@ protected:
     UFUNCTION()
     void HandleJourneyChanged(const FLFFJourneySnapshot& Snapshot);
 
-    UPROPERTY(meta = (BindWidget))
-    TObjectPtr<ULFFJourneyPanel> Splash;
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<USizeBox> InformationSize;
 
-    UPROPERTY(meta = (BindWidget))
-    TObjectPtr<ULFFJourneyPanel> TopChrome;
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<USizeBox> ControlSize;
 
-    UPROPERTY(meta = (BindWidget))
-    TObjectPtr<ULFFJourneyPanel> StepCaption;
+    /** Optional legacy sidebar bindings allow rebuilding an older saved widget in place. */
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UWidget> SidebarSize;
 
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UBorder> SidebarBackdrop;
+
+    /** WBP_LFF_Callouts (parent ULFFCalloutLayer): the places on the stadium, in both modes. First child of RootOverlay. */
     UPROPERTY(meta = (BindWidget))
-    TObjectPtr<ULFFJourneyPanel> BottomRail;
+    TObjectPtr<ULFFCalloutLayer> Callouts;
+
+    /** WBP_LFF_Welcome: the two mode cards (TourModeButton, ExploreModeButton) and Calm Mode. */
+    UPROPERTY(meta = (BindWidget))
+    TObjectPtr<ULFFJourneyPanel> Welcome;
+
+    /** WBP_LFF_SidebarHeader: identity-only card; the legacy asset name is retained. */
+    UPROPERTY(meta = (BindWidget))
+    TObjectPtr<ULFFJourneyPanel> SidebarHeader;
+
+    /** WBP_LFF_Narrative: caption, expandable day timeline, previews, ticket phone and finale actions. */
+    UPROPERTY(meta = (BindWidget))
+    TObjectPtr<ULFFJourneyPanel> Narrative;
+
+    /** WBP_LFF_ExploreMap (parent ULFFMapPanel): the level buttons, the place toggles and the picked place's card. */
+    UPROPERTY(meta = (BindWidget))
+    TObjectPtr<ULFFMapPanel> ExploreMap;
+
+    /** WBP_LFF_TimelineArc (parent ULFFTimelineArc). */
+    UPROPERTY(meta = (BindWidget))
+    TObjectPtr<ULFFTimelineArc> TimelineArc;
+
+    /** WBP_LFF_StageChrome: modes, Settings, Voice, Calm Mode and Crowd; the same control dock in both modes. */
+    UPROPERTY(meta = (BindWidget))
+    TObjectPtr<ULFFJourneyPanel> StageChrome;
+
+    /** Child 0 TourNav, child 1 ExploreNav. */
+    UPROPERTY(meta = (BindWidget))
+    TObjectPtr<UWidgetSwitcher> NavSwitcher;
+
+    /** WBP_LFF_TourNav: BackButton and NextButton. */
+    UPROPERTY(meta = (BindWidget))
+    TObjectPtr<ULFFJourneyPanel> TourNav;
+
+    /** WBP_LFF_ExploreNav: MySeatButton and ResumeTourButton. */
+    UPROPERTY(meta = (BindWidget))
+    TObjectPtr<ULFFJourneyPanel> ExploreNav;
 
     UPROPERTY(meta = (BindWidget))
     TObjectPtr<ULFFJourneyPanel> Settings;
@@ -84,8 +140,22 @@ private:
 
     /** The buttons the ring may visit right now, in reading order. */
     void CollectFocusable(TArray<UButton*>& Out) const;
+    /**
+     * Enabled, laid out, and visible all the way up to the HUD, crossing from each panel's tree into the HUD's. Under a
+     * Widget Switcher only the active child counts: the others stay Visible and keep their last geometry, so without
+     * this check Tab would land on buttons that aren't drawn.
+     */
     static bool IsOnScreen(const UButton* Button);
+    /** The next widget up: the slot's parent, or, at the root of a panel's tree, the panel itself in the HUD's tree. */
+    static UWidget* ParentAcrossTrees(const UWidget* Widget);
     void PlaceFocusRing();
+
+    /** Every panel, in focus reading order (welcome and modal layer last). */
+    TArray<ULFFJourneyPanel*, TInlineAllocator<12>> GetPanels() const;
+    /** The welcome screen is up until a mode is chosen: before Start in the tour, never in Free explore. */
+    static bool IsWelcome(const FLFFJourneySnapshot& Snapshot);
+    /** Shows Child in its switcher, or collapses it. Returns true if it went from hidden to shown (it fades in). */
+    static bool ShowSwitcherChild(UWidgetSwitcher* Switcher, ULFFJourneyPanel* Child, bool bShown, bool bInstant);
 
     TWeakObjectPtr<UButton> FocusedButton;
 
@@ -97,4 +167,7 @@ private:
 
     TWeakObjectPtr<ULFFJourneySubsystem> BoundJourney;
     int32 LastStepIndex = INDEX_NONE;
+    FLinearColor BackdropColor = FLinearColor::Black;
+    FVector2D LastLayoutSize = FVector2D::ZeroVector;
+    bool bLastLargeText = false;
 };

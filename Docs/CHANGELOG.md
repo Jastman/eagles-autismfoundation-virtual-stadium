@@ -1,5 +1,46 @@
 # Changelog
 
+## 2026-10-07 (Welcome screen)
+- Replaced the centered welcome cards and full-screen veil with a lower-left Eagles-green fade, EAF and Five Below Foundation logos, and **GAMEDAY VISUAL SCHEDULE** over the stadium.
+- Guided Tour, Explore and an explicit Calm Mode switch share the action row; Settings remains bottom right. Calm Mode's explanation appears on hover or keyboard/controller selection, with unchanged sensory behavior.
+- Calm Mode is a full illustrated toggle with its label below: cheering fans when Off, empty stadium seats when On. Its dedicated Widget Blueprint mirrors the journey's boolean state and plays a reversible 240 ms UMG animation; Less movement snaps immediately. Moved the hint out of layout measurement to prevent hover from stretching the buttons, and included nested widgets in keyboard/controller focus navigation.
+- Added a welcome-only asset rebuild path; mode controls wrap on narrower viewports and High contrast uses solid black.
+
+## 2026-10-07 (Scene-first HUD and measured crowd)
+- Replaced the dominant sidebar, central chapter arc and separate bottom navigation with upper-left identity/tour information and an upper-right control dock. Chapters use a responsive compact grid; timeline and levels expand on demand. Preserved tour copy, narration/karaoke, ticket, previews, bookmarks, finale, keyboard/controller focus and attribution.
+- Explore categories span levels and frame their mapped anchors into the measured unobstructed viewport. The saved table includes Guest Services 121, 136, 206 and 226. Unmapped categories read **Not mapped**; existing packaged-build verification filtering remains in force.
+- Measured tread heights for 56,643 of 56,707 source seats. Excluded the 64 unmeasured rows rather than guessing. Fans no longer use chair undersides as floor positions; only the immediate visitor space is cleared.
+- Added four project-local fan clips and bounded detailed neighbors with six appearances, independent idle phases/rates and occasional seated claps or standing cheers/claps. Preserved Mass, far billboards and occupancy; Mass-cap overflow keeps its occupied seats as billboards. No engine crowd assets changed.
+- Crowd Off/Calm hide and suspend detailed fans; Less movement immediately freezes them and restores independent timing when disabled. `configure_stadium_crowd.py` configures the crowd without rebuilding or replacing sensory stand-ins.
+- Current design and reproduction guidance: `UI_DESIGN.md`, `JOURNEY_SCHEMA.md`, `ACCESSIBILITY.md`, `LOCAL_AGENT_SETUP.md`. The earlier sidebar/arc spec is explicitly historical.
+
+## 2026-10-07 (Photo-based sensory spaces)
+- Restored all `SR_` furnishings to their room-local positions under `SI_SensoryRoomProxy` and saved the stadium level. Refinement actors remain Movable to match the room root; changing them to Static detached them and left their local offsets at midfield. The refinement script now verifies attachments before saving.
+- The sensory trailer now explicitly uses `T_LFF_SAV_Wrap` and `M_LFF_SAV_PhotoWrap`, derived from the supplied side photo. `import_lff_props.py` reapplies that material after import instead of relying on Interchange to replace an existing embedded texture. Other trailer materials, scale, rooftop AC and camera are unchanged.
+- Registered the photographed door to the physical door frame's hull UV coordinates and removed the photo-only drip cap, eliminating the offset double-door outline while retaining the EAF door artwork.
+- The sensory room keeps its existing root, doorway, staff and tour camera. Dark-green walls, carpet, ceiling tiles, pear-shaped fabric bean bags, light benches, toy storage, photo-derived field/eagle artwork and static sensory panels replace its basic visual treatment. Two steady ceiling lights illuminate the interior; nothing flashes or animates.
+- This is an **illustrative reconstruction**, not a surveyed floor plan or a claim that every furnishing is accurately positioned.
+- Reproduce with `python3 Tools/Pipeline/prepare_sensory_room.py`, then run `Tools/Editor/refine_sensory_spaces.py` inside Unreal on `L_LFF_Stadium` with PIE stopped. The editor script requires the wrap from `prepare_sav_wrap.py`, updates its own assets, and replaces only its tagged room children on reruns.
+
+## 2026-10-07 (Prop models)
+- **Five stand-ins are now real models** (`Assets/*.gltf`, imported to `/Game/LFF/Props` by `Tools/Editor/import_lff_props.py`):
+  - the line's stanchions are bike-rack **barriers** (step 04);
+  - the security arches are walk-through **metal detectors** (05);
+  - a **clear bag** with a wallet, phone and headphones inside, its plastic in `M_LFF_ClearBag` (06);
+  - the **Sensory Activation Vehicle** trailer (11). Its wrap carries the lettering and the KultureCity, CHOP and Eagles Autism Foundation logos on both sides, so the old `TXT_SAV_` lettering is gone;
+  - a **concession stand** on the concourse (22), with `LBL_Food` moved up over it.
+- `Tools/Editor/swap_prop_models.py` swaps them in the level without a full stand-in rebuild. `build_lff_standins.py` places the models from `MODELS`.
+
+## 2026-10-06 (Guided tour and Explore, `Docs/UI_MODES_SPEC.md`)
+- **Two modes**, switchable at any time from the header card (T / E) without losing the tour's place; a welcome screen picks the first one, over the stadium behind a veil.
+- **Guided tour:** one opaque panel at the left: the day's times in a column (the current one is the light chip, the passed ones muted; click one to go to it) beside the caption card ("Step 5 · 10:00 AM", Voice, title and body with the spoken word highlighted and underlined). The five-chapter arc sits top centre and slides in and out with the tour. Back and Next at the bottom.
+- **Free explore:** the opaque sidebar (level buttons, place toggles, the picked place's card), free flight (WASD or arrows, E/Q, drag to look, Shift), places as callouts on the stadium, and the picked level framed and tinted on the model (`M_LFF_LevelHighlight`). My seat (H).
+- Calm Mode and Settings top right in both modes. The flares mark reads "11:50 AM / 12:00 PM / 12:15 PM / Flares"; its step line reads "11:50 AM".
+- **Karaoke** is back on the tour card (it only builds in a panel with a `CaptionStack`), and the spoken word is now a styled text run rather than an inline widget, so the card's lines break the same with or without the highlight and nothing reflows while the voice reads.
+- **Places from the level (2026-10-07):** the sensory room and Guest Services at sections 121, 136, 206 and 226 stand where their marker actors are (`LocationActorTag`), in Free explore and on tour steps 19 and 20 (`PlacesToShow`; named on the model, not clickable). The step 20 sensory room (room, door, sign, staff, `CT_SensoryRoom`) moved to `Actor - Sensory Room Location`, turned to face Guest Services, with `CP_ConcourseToSensoryRoom` re-routed (7 s). Callouts hide under any opaque panel and stack when two would overlap.
+- Dev: `LFF.Shots` also takes `5@4.5` (capture 4.5 s after the jump, to catch the voice mid-line), `large` (toggle Large text), `explore`, `tour`, `fly`, `level:<name>` and `pick:<id>`.
+- `Tools/Editor/build_wbp_lff_modes.py` builds the HUD; `build_m_lff_timeline_arc.py` and `build_m_lff_level_highlight.py` the materials.
+
 ## 2026-10-02 (UI reimagined: "Chapters", `Docs/UI_DESIGN.md`)
 - **Structure, not just skin**, after the reference pieces (Aegean, Stillwater, sael.net):
   - No cards: the step is a caption on the scene, on a soft feathered field (`T_LFF_Fog`).

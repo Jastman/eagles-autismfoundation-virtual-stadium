@@ -33,6 +33,29 @@ ALFFGameMode::ALFFGameMode()
     AmbientBed = TSoftObjectPtr<USoundBase>(FSoftObjectPath(TEXT("/Game/LFF/Audio/SW_LFF_AmbientPlaza.SW_LFF_AmbientPlaza")));
     PreviewSound = TSoftObjectPtr<USoundBase>(FSoftObjectPath(TEXT("/Game/LFF/Audio/SW_LFF_PreviewCrowdMuffled.SW_LFF_PreviewCrowdMuffled")));
     JourneyMissingText = LOCTEXT("JourneyMissing", "The journey could not be loaded.");
+
+    MySeatLabel = LOCTEXT("MySeatLabel", "My seat");
+    MySeatNote = LOCTEXT("MySeatNote", "Section 111, Row 10, Seat 8.");
+
+    // ELFFMapLevel order. Bands overlap nothing and cover the whole model from the turf to the top of the upper deck; each
+    // overview looks at its floor from the west, a little steeper for the lower levels so the bowl doesn't hide them.
+    auto View = [](const float FloorZ, const float MinZ, const float MaxZ, const float Distance, const float Pitch)
+    {
+        FLFFLevelView Level;
+        Level.FloorZ = FloorZ;
+        Level.MinZ = MinZ;
+        Level.MaxZ = MaxZ;
+        Level.ViewDistance = Distance;
+        Level.ViewPitchDegrees = Pitch;
+        return Level;
+    };
+    LevelViews = {
+        View(0.0f, -150.0f, 120.0f, 18000.0f, -55.0f),       // Field: the turf and sidelines
+        View(770.0f, 120.0f, 1000.0f, 19000.0f, -45.0f),     // Lower concourse: the grade walkway, the 7.7 m deck, the lower bowl
+        View(1720.0f, 1000.0f, 1950.0f, 20000.0f, -38.0f),   // Club level
+        View(2180.0f, 1950.0f, 2900.0f, 21000.0f, -34.0f),   // Suites: both suite floors (21.8 and 26.7 m)
+        View(3120.0f, 2900.0f, 5000.0f, 22000.0f, -30.0f),   // Upper deck: the upper concourse and seats
+    };
 }
 
 FText ALFFGameMode::GetDisclaimerText(const ELFFDisclaimerLevel Level) const

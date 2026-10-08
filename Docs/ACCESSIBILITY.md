@@ -23,12 +23,14 @@
 - Tab order: intro → disclaimer → first control → viewport → next/back buttons → settings button → pause button.
 - Visible focus indicator: 2–3 px contrast-minimum border or ring (WCAG AA, 3:1 at minimum).
 
-#### As built (2026-10-02, `ULFFHUDWidget`)
+#### As built (2026-10-07, `ULFFHUDWidget`)
 - HUD buttons still never take Slate focus (the viewport keeps the arrow keys and Space), so the HUD runs its own focus ring.
 - **Tab / Shift+Tab** (D-pad Down / Up on a controller) move the ring through the buttons on screen; it wraps at the ends. **Enter** (A) presses the ringed button; with no ring, Enter keeps its old meaning (Start, Yes). **Esc** drops the ring.
-- Order: the card in front (splash or caption card), then the dock (Back, timeline, Next, the timeline marks when open), then Settings in the header. A modal card (Settings, Paused, Start again?) keeps the ring inside itself.
+- Order: the caption and its disclosed timeline, control dock, chapter grid, active mode navigation, Explore places and spatial markers. Welcome and modal cards (Settings, Paused, Start again?) keep the ring inside themselves.
 - The ring is a 4 px warm off-white line inside a 2 px dark halo, 4 px clear of the button, following its shape. It reads on the dark cards and on a bright sky (3:1 or better against both). It isn't kelly green, which already means "On" and "spoken".
 - Disabled buttons and buttons that are hidden or collapsed are skipped. If the ringed button goes away (new step, card closed), the ring goes too.
+- Inactive widget-switcher branches are also skipped. Focused descendants of a scroll box are brought into view without animated scrolling.
+- Corner groups adapt to the actual logical viewport. Caption/controls scroll when needed; compact labels wrap and chapter chips use additional rows. Large text never reduces the 64-unit control target.
 
 ---
 
@@ -65,6 +67,7 @@
 - The camera doesn't fly. It does a short fade-through: fade to a neutral color over about 0.3 s, change position, fade back over about 0.3 s. A hard cut can be disorienting, so a fade is preferred.
 - No camera path motion. The location and rotation change while the screen is faded.
 - Immediate availability of Next/Back (not blocked during transition).
+- Detailed nearby fans freeze immediately, including their gesture timers and skinned-component ticks. Turning Less movement off resumes independent idle and gesture timing.
 
 ### Motion restrictions (all modes)
 - No autoplay or automatic advancement.
@@ -104,6 +107,7 @@
 - **Less movement on,** and every camera move is a plain cut (no easing, no fade).
 - **Voice off,** captions (the card) stay.
 - **Crowd hidden** (actors tagged `LFF_Crowd`).
+- Detailed fan actors are also suspended; Mass crowd is despawned. Turning Calm Mode off restores the visitor's Crowd and Less movement choices.
 - **Gates already open, the car already parked, the ticket phone already up and still,** and the splash holds a still wide shot instead of orbiting.
 - **Intensity previews locked off** and their buttons hidden.
 - The Sound and Less movement toggles show Off / On and are disabled until Calm Mode is turned off, which restores the visitor's own choices.

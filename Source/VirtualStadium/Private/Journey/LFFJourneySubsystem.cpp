@@ -17,6 +17,8 @@
 #include "Camera/PlayerCameraManager.h"
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
+#include "Materials/MaterialInstanceDynamic.h"
+#include "Materials/MaterialInterface.h"
 #include "Sound/SoundBase.h"
 #include "Sound/SoundWave.h"
 #include "HAL/IConsoleManager.h"
@@ -24,10 +26,13 @@
 #include "TimerManager.h"
 #include "VirtualStadium.h"
 #include "World/LFFCueActor.h"
+#include "World/LFFCrowdFanActor.h"
 #include "World/LFFFireworksActor.h"
 #include "MassSpawner.h"
 
 #define LOCTEXT_NAMESPACE "LFFJourney"
+
+const FName ULFFJourneySubsystem::MySeatAmenityId(TEXT("my-seat"));
 
 namespace
 {
@@ -44,6 +49,9 @@ namespace
     constexpr float BedDuckWhilePreview = 0.35f;
     /** Camera "size" for the wall check, so a move can't graze a surface either. */
     constexpr float CameraProbeRadius = 40.0f;
+    /** Free explore's own camera moves (My seat) use an id the journey never issues, so their finish is ignored and the
+     *  tour's place and phase stay as they were. The state machine's ids start at 1 (Load). */
+    constexpr uint32 ExploreMoveId = 0;
 
     /** Where World lands in the frame seen from View (hfov in degrees). False if it's behind the camera. */
     bool ProjectToView(const FTransform& View, const float HorizontalFov, const float Aspect, const FVector& World, FVector2D& OutFraction)
@@ -116,6 +124,9 @@ void ULFFJourneySubsystem::InitializeJourney()
     TArray<FLFFJourneyStep> Steps;
     bJourneyMissing = !LoadSteps(Steps);
     Machine.Load(Steps);
+    Machine.SetTourSteps(GameMode->TourStepFirstSteps);
+    RefreshSiteFrame();
+    LoadAmenities();
 
     TimelineMarks.Reset();
     FirstCueIndex.Reset();
@@ -268,7 +279,7 @@ ALFFCameraTarget* ULFFJourneySubsystem::FindTarget(const FName TargetId) const
 
 void ULFFJourneySubsystem::Next()
 {
-    if (IsModalOpen())
+    if (IsModalOpen() || IsExploring())
     {
         return;
     }
@@ -300,7 +311,7 @@ void ULFFJourneySubsystem::Next()
 
 void ULFFJourneySubsystem::Back()
 {
-    if (IsModalOpen())
+    if (IsModalOpen() || IsExploring())
     {
         return;
     }
@@ -387,6 +398,7 @@ void ULFFJourneySubsystem::ConfirmRestart()
     bSettingsOpen = false;
 
     StopVoice();
+    ResetMap();
     if (Machine.Restart() == ELFFCommandResult::Accepted)
     {
         if (Rig != nullptr)
@@ -470,6 +482,7 @@ void ULFFJourneySubsystem::ToggleReducedMotion()
     }
 
     Settings.bReducedMotion = !Settings.bReducedMotion;
+    ApplyCrowd();
     ApplyCues(ELFFCueReason::SettingsChanged);
     if (!Machine.HasStarted())
     {
@@ -551,6 +564,14 @@ void ULFFJourneySubsystem::JumpToStep(const int32 StepIndex)
         return;
     }
 
+    if (IsExploring())
+    {
+        // An arc node in Free explore goes back to the tour. The chapter you left resumes at your exact step, not its first.
+        const bool bOwnChapter = Machine.TourStepOf(StepIndex) == Machine.GetBookmark().TourStep;
+        ResumeTourAt(bOwnChapter ? INDEX_NONE : StepIndex);
+        return;
+    }
+
     if (Machine.JumpTo(StepIndex) == ELFFCommandResult::Accepted)
     {
         UE_LOG(LogVirtualStadium, Log, TEXT("Timeline: jump to step %d."), StepIndex + 1);
@@ -558,6 +579,499 @@ void ULFFJourneySubsystem::JumpToStep(const int32 StepIndex)
     }
 
     Broadcast();
+}
+
+void ULFFJourneySubsystem::SwitchToMode(const ELFFSimulationMode NewMode)
+{
+    if (IsModalOpen())
+    {
+        return;
+    }
+
+    if (NewMode == ELFFSimulationMode::GuidedTour)
+    {
+        if (IsExploring())
+        {
+            ResumeTour();
+        }
+        else if (Machine.GetPhase() == ELFFJourneyPhase::Intro)
+        {
+            // Guided tour on the welcome screen is Start.
+            Next();
+        }
+        return;
+    }
+
+    const ELFFCommandResult Result = Machine.SwitchToMode(NewMode);
+    if (Result != ELFFCommandResult::Accepted)
+    {
+        return;
+    }
+
+    // Free explore starts from where you're standing: the camera doesn't move. Only the tour's own sound and motion
+    // stop (the voice, a preview, the anthem flight, which cuts back to the seat). A move already in flight still lands.
+    StopVoice();
+    StopAnthemSequence(true);
+    ResetPreview();
+    if (Rig != nullptr)
+    {
+        Rig->StopOrbit();
+    }
+    if (!bMapOpened && GameMode != nullptr)
+    {
+        MapLevel = GameMode->MySeatLevel;
+        bMapOpened = true;
+    }
+    RefreshSiteFrame();
+    bLevelHighlight = false;
+    FlyVelocity = FVector::ZeroVector;
+    ApplyLevelHighlight();
+    if (const FLFFJourneyStep* Step = Machine.GetCurrentStep())
+    {
+        ViewTargetId = Step->CameraTargetId;
+    }
+    const FLFFTourBookmark& Bookmark = Machine.GetBookmark();
+    UE_LOG(LogVirtualStadium, Log, TEXT("Free explore: tour bookmarked at step %d (%s)%s."), Bookmark.StepIndex + 1,
+        *UEnum::GetDisplayValueAsText(Bookmark.TourStep).ToString(), Bookmark.bTourStarted ? TEXT("") : TEXT(", not started yet"));
+    Broadcast();
+}
+
+void ULFFJourneySubsystem::ResumeTour()
+{
+    ResumeTourAt(INDEX_NONE);
+}
+
+void ULFFJourneySubsystem::ResumeTourAt(const int32 StepIndex)
+{
+    if (IsModalOpen() || Machine.ResumeTour(StepIndex) != ELFFCommandResult::Accepted)
+    {
+        return;
+    }
+    bLevelHighlight = false;
+    FlyVelocity = FVector::ZeroVector;
+    ApplyLevelHighlight();
+
+    if (Rig != nullptr)
+    {
+        Rig->StopOrbit();
+    }
+    // Always a fade-cut: Free explore may have left the camera anywhere, and a long sweep back across the stadium would
+    // be a surprise. The fade says "back to the story". Calm Mode makes it a cut; the card is read again on arrival.
+    UE_LOG(LogVirtualStadium, Log, TEXT("Resume tour at step %d (%s), fade-cut."), Machine.GetIndex() + 1,
+        *UEnum::GetDisplayValueAsText(Machine.GetTourStep()).ToString());
+    MoveCameraToCurrentStep(true);
+    Broadcast();
+}
+
+void ULFFJourneySubsystem::GoToMySeat()
+{
+    if (!CanUseMap() || GameMode == nullptr)
+    {
+        return;
+    }
+    MapLevel = GameMode->MySeatLevel;
+    ShowTarget(GameMode->MySeatTargetId);
+    Broadcast();
+}
+
+void ULFFJourneySubsystem::ShowTarget(const FName CameraTargetId)
+{
+    bMapAutoFramed = false;
+    if (!CanUseMap() || Rig == nullptr || GameMode == nullptr)
+    {
+        return;
+    }
+
+    const ALFFCameraTarget* Target = FindTarget(CameraTargetId);
+    if (Target == nullptr)
+    {
+        UE_LOG(LogVirtualStadium, Warning, TEXT("Show me: camera target '%s' not found. The camera stays put."), *CameraTargetId.ToString());
+        return;
+    }
+
+    // Always a fade-cut (a cut in Calm Mode): the spot can be anywhere in the stadium, and a long glide across it is a surprise.
+    Rig->StopOrbit();
+    FlyVelocity = FVector::ZeroVector;
+    FlyDollyLeft = 0.0f;
+    const ELFFTransitionProfile Profile = LFFJourneyRules::ResolveMove(ELFFTransitionProfile::ReducedMotion, Settings, false);
+    UE_LOG(LogVirtualStadium, Log, TEXT("Show me: %s to %s."), *UEnum::GetDisplayValueAsText(Profile).ToString(), *CameraTargetId.ToString());
+    Rig->BeginTransition(Target->GetCameraTransform(), Target->FieldOfView, Profile, GameMode->DefaultEaseSeconds,
+        GameMode->ReducedMotionFadeSeconds, GameMode->FadeColor, ExploreMoveId);
+    ViewTargetId = CameraTargetId;
+    Broadcast();
+}
+
+void ULFFJourneySubsystem::SetMapLevel(const ELFFMapLevel Level)
+{
+    if (!CanUseMap())
+    {
+        return;
+    }
+    MapLevel = Level;
+    bLevelHighlight = true;
+    // Places show on every level (their kinds decide), so a pick stays picked.
+    ApplyLevelHighlight();
+    FlyToLevel(Level);
+    Broadcast();
+}
+
+void ULFFJourneySubsystem::FlyToLevel(const ELFFMapLevel Level)
+{
+    bMapAutoFramed = false;
+    if (Rig == nullptr || GameMode == nullptr || !GameMode->LevelViews.IsValidIndex(static_cast<int32>(Level)))
+    {
+        return;
+    }
+    const FTransform Local = LFFJourneyRules::LevelOverviewPose(GameMode->LevelViews[static_cast<int32>(Level)]);
+    const FTransform World = Local * SiteFrame;
+    FRotator Look = World.Rotator();
+    Look.Roll = 0.0f;
+    Rig->StopOrbit();
+    FlyVelocity = FVector::ZeroVector;
+    FlyDollyLeft = 0.0f;
+    // The overview is a sweep you asked for, so it eases; less movement fades and cuts, Calm Mode cuts.
+    const ELFFTransitionProfile Profile = LFFJourneyRules::ResolveMove(ELFFTransitionProfile::Ease, Settings, false);
+    UE_LOG(LogVirtualStadium, Log, TEXT("Level %s: %s to its overview."), *UEnum::GetDisplayValueAsText(Level).ToString(),
+        *UEnum::GetDisplayValueAsText(Profile).ToString());
+    Rig->BeginTransition(FTransform(Look, World.GetLocation()), 60.0f, Profile, 2.5f, GameMode->ReducedMotionFadeSeconds,
+        GameMode->FadeColor, ExploreMoveId);
+    ViewTargetId = NAME_None;
+}
+
+void ULFFJourneySubsystem::ApplyLevelHighlight()
+{
+    if (Rig == nullptr || GameMode == nullptr)
+    {
+        return;
+    }
+    if (LevelHighlight == nullptr)
+    {
+        UMaterialInterface* Base = GameMode->LevelHighlightMaterial.LoadSynchronous();
+        if (Base == nullptr)
+        {
+            if (!bLoggedHighlightMissing)
+            {
+                UE_LOG(LogVirtualStadium, Warning, TEXT("Level highlight material %s not found; levels are picked without a highlight."),
+                    *GameMode->LevelHighlightMaterial.ToString());
+                bLoggedHighlightMissing = true;
+            }
+            return;
+        }
+        LevelHighlight = UMaterialInstanceDynamic::Create(Base, this);
+    }
+
+    const int32 Index = static_cast<int32>(MapLevel);
+    const bool bOn = IsExploring() && bLevelHighlight && GameMode->LevelViews.IsValidIndex(Index);
+    if (bOn)
+    {
+        // The material measures each pixel in the site frame (it has no other idea where the stadium is).
+        const FLFFLevelView& View = GameMode->LevelViews[Index];
+        auto AsColor = [](const FVector& V) { return FLinearColor(static_cast<float>(V.X), static_cast<float>(V.Y), static_cast<float>(V.Z), 0.0f); };
+        LevelHighlight->SetVectorParameterValue(TEXT("SiteOrigin"), AsColor(SiteFrame.GetLocation()));
+        LevelHighlight->SetVectorParameterValue(TEXT("SiteAxisX"), AsColor(SiteFrame.GetUnitAxis(EAxis::X)));
+        LevelHighlight->SetVectorParameterValue(TEXT("SiteAxisY"), AsColor(SiteFrame.GetUnitAxis(EAxis::Y)));
+        LevelHighlight->SetVectorParameterValue(TEXT("SiteAxisZ"), AsColor(SiteFrame.GetUnitAxis(EAxis::Z)));
+        LevelHighlight->SetScalarParameterValue(TEXT("BandMin"), View.MinZ);
+        LevelHighlight->SetScalarParameterValue(TEXT("BandMax"), View.MaxZ);
+        LevelHighlight->SetScalarParameterValue(TEXT("FootprintX"), static_cast<float>(GameMode->StadiumFootprintRadii.X));
+        LevelHighlight->SetScalarParameterValue(TEXT("FootprintY"), static_cast<float>(GameMode->StadiumFootprintRadii.Y));
+        LevelHighlight->SetVectorParameterValue(TEXT("HighlightColor"), GameMode->LevelHighlightColor);
+        LevelHighlight->SetScalarParameterValue(TEXT("HighlightOpacity"), GameMode->LevelHighlightOpacity);
+        LevelHighlight->SetScalarParameterValue(TEXT("DimOutside"), GameMode->LevelDimOutside);
+    }
+    Rig->SetPostProcessBlendable(LevelHighlight, bOn ? 1.0f : 0.0f);
+    UE_LOG(LogVirtualStadium, Log, TEXT("Level highlight: %s."), bOn ? *UEnum::GetDisplayValueAsText(MapLevel).ToString() : TEXT("off"));
+}
+
+void ULFFJourneySubsystem::FlyTick(const FVector2D& Move, const float Rise, const FVector2D& LookDelta, const float Dolly, const bool bFast,
+    const float DeltaSeconds)
+{
+    if (!Move.IsNearlyZero() || !LookDelta.IsNearlyZero() || !FMath::IsNearlyZero(Rise) || !FMath::IsNearlyZero(Dolly))
+    {
+        bMapAutoFramed = false;
+    }
+    FVector2D Input = Move;
+#if !UE_BUILD_SHIPPING
+    if (ShotFlySecondsLeft > 0.0f)
+    {
+        Input.Y += 1.0;
+        ShotFlySecondsLeft -= DeltaSeconds;
+    }
+#endif
+    if (!CanFly() || Rig == nullptr || GameMode == nullptr || Rig->IsBusy() || DeltaSeconds <= 0.0f)
+    {
+        // Nothing carries over: after a move or a modal, flight starts from rest.
+        FlyVelocity = FVector::ZeroVector;
+        FlyDollyLeft = 0.0f;
+        return;
+    }
+
+    FRotator Look = Rig->GetActorRotation();
+    if (!LookDelta.IsNearlyZero())
+    {
+        // Drag right to turn right, up to look up. Never past straight down or far overhead; never any roll.
+        Look.Yaw += static_cast<float>(LookDelta.X) * GameMode->FlyLookDegreesPerPixel;
+        Look.Pitch = FMath::Clamp(Look.Pitch + static_cast<float>(LookDelta.Y) * GameMode->FlyLookDegreesPerPixel, -85.0f, 70.0f);
+    }
+    Look.Roll = 0.0f;
+
+    // Forward follows where you look; sideways stays level; up and down follow the site.
+    const FVector Forward = Look.Vector();
+    const FVector Right = FRotationMatrix(Look).GetScaledAxis(EAxis::Y);
+    const FVector Up = SiteFrame.GetUnitAxis(EAxis::Z);
+    const bool bGentle = Settings.IsReducedMotionEffective();
+    const float Speed = GameMode->FlySpeed * (bFast ? GameMode->FlyFastMultiplier : 1.0f) * (bGentle ? 0.6f : 1.0f);
+    const FVector Desired = (Forward * Input.Y + Right * Input.X + Up * Rise).GetClampedToMaxSize(1.0) * Speed;
+    // Less movement and Calm Mode start and stop at once: no drifting after you let go.
+    const float Ease = GameMode->FlyEaseSeconds;
+    FlyVelocity = bGentle || Ease <= 0.0f ? Desired : FMath::VInterpTo(FlyVelocity, Desired, DeltaSeconds, 3.0f / Ease);
+
+    FlyDollyLeft += Dolly * GameMode->FlyWheelStep;
+    const float DollyStep = bGentle ? FlyDollyLeft : FlyDollyLeft * FMath::Min(DeltaSeconds * 8.0f, 1.0f);
+    FlyDollyLeft -= DollyStep;
+
+    const FVector From = Rig->GetActorLocation();
+    FVector To = From + FlyVelocity * DeltaSeconds + Forward * DollyStep;
+    To = SiteFrame.TransformPosition(LFFJourneyRules::ClampFlyPosition(SiteFrame.InverseTransformPosition(To),
+        GameMode->FlyBoundsRadius, GameMode->FlyMinZ, GameMode->FlyMaxZ));
+    if (!To.Equals(From, 0.01) || !Look.Equals(Rig->GetActorRotation(), 0.001f))
+    {
+        Rig->SetActorLocationAndRotation(To, Look);
+    }
+}
+
+void ULFFJourneySubsystem::ToggleAmenity(const ELFFAmenity Amenity)
+{
+    if (!CanUseMap())
+    {
+        return;
+    }
+    AmenityMask ^= 1 << static_cast<int32>(Amenity);
+    // Turning a kind on shows its places on every level, so the camera makes sure they're all in view.
+    if ((AmenityMask & (1 << static_cast<int32>(Amenity))) != 0)
+    {
+        FramePlacesShown();
+    }
+    Broadcast();
+}
+
+void ULFFJourneySubsystem::FramePlacesShown()
+{
+    if (Rig == nullptr || GameMode == nullptr)
+    {
+        return;
+    }
+    TArray<FVector> Points;
+    for (const FLFFAmenityMarker& Amenity : Amenities)
+    {
+        if ((AmenityMask & (1 << static_cast<int32>(Amenity.Category))) != 0)
+        {
+            Points.Add(Amenity.Location);
+            Points.Add(Amenity.Location + FVector(0.0, 0.0, MapStemHeight));
+        }
+    }
+    FLFFAmenityMarker Seat;
+    if (GetAmenity(MySeatAmenityId, Seat))
+    {
+        Points.Add(Seat.Location);
+        Points.Add(Seat.Location + FVector(0.0, 0.0, MapStemHeight));
+    }
+    FrameMapPoints(Points);
+    bMapAutoFramed = true;
+}
+
+void ULFFJourneySubsystem::SetMapViewportFrame(const FVector2D& Size, const FBox2D& SafeRect, const float StemHeight)
+{
+    const bool bChanged = !Size.Equals(MapViewportSize, 1.0) || SafeRect != MapSafeRect || !FMath::IsNearlyEqual(StemHeight, MapStemHeight);
+    MapViewportSize = Size;
+    MapSafeRect = SafeRect;
+    MapStemHeight = StemHeight;
+    if (bChanged && bMapAutoFramed && CanUseMap())
+    {
+        FramePlacesShown();
+    }
+}
+
+void ULFFJourneySubsystem::FocusAmenity(const FName AmenityId)
+{
+    if (!CanUseMap())
+    {
+        return;
+    }
+    FLFFAmenityMarker Place;
+    if (!GetAmenity(AmenityId, Place))
+    {
+        UE_LOG(LogVirtualStadium, Warning, TEXT("Focus place: '%s' is not mapped."), *AmenityId.ToString());
+        return;
+    }
+    if (!Place.CameraTargetId.IsNone())
+    {
+        ShowTarget(Place.CameraTargetId);
+        return;
+    }
+    FrameMapPoints({ Place.Location, Place.Location + FVector(0.0, 0.0, MapStemHeight) });
+    bMapAutoFramed = false;
+}
+
+void ULFFJourneySubsystem::FrameMapPoints(const TArray<FVector>& Points)
+{
+    if (Rig == nullptr || GameMode == nullptr || Points.Num() == 0)
+    {
+        return;
+    }
+    if (!MapSafeRect.bIsValid || MapViewportSize.X <= 1.0 || MapViewportSize.Y <= 1.0)
+    {
+        if (!bLoggedFramingUnavailable)
+        {
+            UE_LOG(LogVirtualStadium, Warning, TEXT("Places: no unobstructed HUD frame yet; expand the window or close a drawer."));
+            bLoggedFramingUnavailable = true;
+        }
+        return;
+    }
+    bLoggedFramingUnavailable = false;
+    const FLFFLevelView& View = GameMode->LevelViews.IsValidIndex(static_cast<int32>(MapLevel))
+        ? GameMode->LevelViews[static_cast<int32>(MapLevel)] : FLFFLevelView();
+    const FTransform Local = LFFJourneyRules::FramePointsPose(Points, -50.0f, View.ViewYawDegrees, 60.0f,
+        MapViewportSize.X / MapViewportSize.Y, MapSafeRect, 400.0f, 6000.0f);
+    const FTransform World = Local * SiteFrame;
+    FRotator Look = World.Rotator();
+    Look.Roll = 0.0f;
+    Rig->StopOrbit();
+    FlyVelocity = FVector::ZeroVector;
+    FlyDollyLeft = 0.0f;
+    const ELFFTransitionProfile Profile = LFFJourneyRules::ResolveMove(ELFFTransitionProfile::Ease, Settings, false);
+    UE_LOG(LogVirtualStadium, Log, TEXT("Places: framing %d anchors within actual %.0fx%.0f HUD safe area (%s)."),
+        Points.Num(), MapViewportSize.X, MapViewportSize.Y, *UEnum::GetDisplayValueAsText(Profile).ToString());
+    Rig->BeginTransition(FTransform(Look, World.GetLocation()), 60.0f, Profile, 2.5f, GameMode->ReducedMotionFadeSeconds,
+        GameMode->FadeColor, ExploreMoveId);
+    ViewTargetId = NAME_None;
+}
+
+void ULFFJourneySubsystem::HideAllAmenities()
+{
+    if (!CanUseMap() || AmenityMask == 0)
+    {
+        return;
+    }
+    AmenityMask = 0;
+    Broadcast();
+}
+
+void ULFFJourneySubsystem::SelectAmenity(const FName AmenityId)
+{
+    if (!CanUseMap() || AmenityId == SelectedAmenityId)
+    {
+        return;
+    }
+    SelectedAmenityId = AmenityId;
+    Broadcast();
+}
+
+void ULFFJourneySubsystem::ResetMap()
+{
+    bLevelHighlight = false;
+    FlyVelocity = FVector::ZeroVector;
+    // The next visitor gets the map as it starts: no picks, the default markers, opening on the seat's level.
+    MapLevel = GameMode != nullptr ? GameMode->MySeatLevel : ELFFMapLevel::LowerConcourse;
+    AmenityMask = LFFDefaultAmenityMask;
+    SelectedAmenityId = NAME_None;
+    bMapOpened = false;
+    ViewTargetId = NAME_None;
+    ApplyLevelHighlight();
+}
+
+void ULFFJourneySubsystem::RefreshSiteFrame()
+{
+    for (TActorIterator<AActor> It(GetWorld()); It; ++It)
+    {
+        if (It->ActorHasTag(SiteRootTag))
+        {
+            SiteFrame = It->GetActorTransform();
+            SiteFrame.SetScale3D(FVector::OneVector);
+            return;
+        }
+    }
+    SiteFrame = FTransform::Identity;
+}
+
+void ULFFJourneySubsystem::LoadAmenities()
+{
+    Amenities.Reset();
+    UDataTable* Table = GameMode != nullptr ? GameMode->AmenityTable.LoadSynchronous() : nullptr;
+    if (Table == nullptr || Table->GetRowStruct() != FLFFAmenityMarker::StaticStruct())
+    {
+        UE_LOG(LogVirtualStadium, Log, TEXT("Places: no amenity table; Free explore shows the seat only."));
+        return;
+    }
+#if WITH_EDITOR
+    const bool bKeepUnverified = true;
+#else
+    const bool bKeepUnverified = GameMode->bShowUnverifiedAmenities;
+#endif
+    int32 Dropped = 0;
+    Table->ForeachRow<FLFFAmenityMarker>(TEXT("LFFJourneySubsystem"), [this, bKeepUnverified, &Dropped](const FName& RowName, const FLFFAmenityMarker& Row)
+    {
+        // A wrong sensory-room pin could send someone the wrong way, so unverified places stay out of packaged builds.
+        if (Row.VerificationSource.IsEmpty() && !bKeepUnverified)
+        {
+            ++Dropped;
+            return;
+        }
+        Amenities.Add_GetRef(Row).AmenityId = RowName;
+    });
+
+    // A place marked by an actor in the level stands where that actor is now.
+    int32 Placed = 0;
+    for (FLFFAmenityMarker& Amenity : Amenities)
+    {
+        if (Amenity.LocationActorTag.IsNone())
+        {
+            continue;
+        }
+        const AActor* Marker = nullptr;
+        for (TActorIterator<AActor> It(GetWorld()); It && Marker == nullptr; ++It)
+        {
+            Marker = It->ActorHasTag(Amenity.LocationActorTag) ? *It : nullptr;
+        }
+        if (Marker == nullptr)
+        {
+            UE_LOG(LogVirtualStadium, Warning, TEXT("Places: no actor tagged %s; %s keeps its data location."),
+                *Amenity.LocationActorTag.ToString(), *Amenity.AmenityId.ToString());
+            continue;
+        }
+        Amenity.Location = SiteFrame.InverseTransformPosition(Marker->GetActorLocation());
+        ++Placed;
+    }
+    UE_LOG(LogVirtualStadium, Log, TEXT("Places: %d from %s (%d at their actors)%s."), Amenities.Num(), *Table->GetName(), Placed,
+        Dropped > 0 ? *FString::Printf(TEXT(", %d unverified dropped"), Dropped) : TEXT(""));
+}
+
+bool ULFFJourneySubsystem::GetAmenity(const FName AmenityId, FLFFAmenityMarker& OutAmenity) const
+{
+    if (AmenityId == MySeatAmenityId)
+    {
+        const ALFFCameraTarget* Seat = GameMode != nullptr ? FindTarget(GameMode->MySeatTargetId) : nullptr;
+        if (Seat == nullptr)
+        {
+            return false;
+        }
+        OutAmenity = FLFFAmenityMarker();
+        OutAmenity.AmenityId = MySeatAmenityId;
+        OutAmenity.Label = GameMode->MySeatLabel;
+        OutAmenity.Note = GameMode->MySeatNote;
+        OutAmenity.Level = GameMode->MySeatLevel;
+        OutAmenity.Location = SiteFrame.InverseTransformPosition(Seat->GetActorLocation());
+        OutAmenity.CameraTargetId = GameMode->MySeatTargetId;
+        return true;
+    }
+    const FLFFAmenityMarker* Found = AmenityId.IsNone() ? nullptr
+        : Amenities.FindByPredicate([AmenityId](const FLFFAmenityMarker& Amenity) { return Amenity.AmenityId == AmenityId; });
+    if (Found == nullptr)
+    {
+        return false;
+    }
+    OutAmenity = *Found;
+    return true;
 }
 
 void ULFFJourneySubsystem::ToggleVoice()
@@ -865,7 +1379,7 @@ void ULFFJourneySubsystem::EnterSplash(const bool bCut)
 
 void ULFFJourneySubsystem::StartSplashOrbit()
 {
-    if (Rig == nullptr || GameMode == nullptr || Machine.HasStarted())
+    if (Rig == nullptr || GameMode == nullptr || Machine.HasStarted() || IsExploring())
     {
         return;
     }
@@ -901,7 +1415,7 @@ void ULFFJourneySubsystem::OnArrived()
 
     // The anthem plays by itself in Standard; the Soft button only replays it. Calm Mode skips it.
     const FLFFJourneyStep* Step = Machine.GetCurrentStep();
-    if (Step != nullptr && Step->IntensityPreview == ELFFIntensityPreview::Anthem && !Settings.bCalmMode)
+    if (Step != nullptr && Step->IntensityPreview == ELFFIntensityPreview::Anthem && !Settings.bCalmMode && !IsExploring())
     {
         StartAnthemSequence();
     }
@@ -1204,7 +1718,7 @@ void ULFFJourneySubsystem::StopAnthemSequence(const bool bRestoreCamera)
 void ULFFJourneySubsystem::ScheduleVoice()
 {
     StopVoice();
-    if (!bArrived || Machine.IsPaused() || !LFFJourneyRules::ShouldPlayVoice(Settings, Machine.HasStarted(), bPreviewOn))
+    if (!bArrived || Machine.IsPaused() || IsExploring() || !LFFJourneyRules::ShouldPlayVoice(Settings, Machine.HasStarted(), bPreviewOn))
     {
         return;
     }
@@ -1216,7 +1730,7 @@ void ULFFJourneySubsystem::ScheduleVoice()
 void ULFFJourneySubsystem::StartVoice()
 {
     const FLFFJourneyStep* Step = Machine.GetCurrentStep();
-    if (Step == nullptr || GameMode == nullptr || !LFFJourneyRules::ShouldPlayVoice(Settings, Machine.HasStarted(), bPreviewOn))
+    if (Step == nullptr || GameMode == nullptr || IsExploring() || !LFFJourneyRules::ShouldPlayVoice(Settings, Machine.HasStarted(), bPreviewOn))
     {
         return;
     }
@@ -1416,6 +1930,10 @@ void ULFFJourneySubsystem::ApplyCrowd()
         if (It->ActorHasTag(CrowdTag))
         {
             It->SetActorHiddenInGame(!bShown);
+            if (ALFFCrowdFanActor* Fan = Cast<ALFFCrowdFanActor>(*It))
+            {
+                Fan->SetCrowdActive(bShown, !Settings.IsReducedMotionEffective());
+            }
             ++Count;
             // The bowl crowd is Mass entities, not actors: despawn it for Crowd Off or Calm Mode, spawn it back after.
             if (AMassSpawner* Spawner = Cast<AMassSpawner>(*It); Spawner != nullptr && bShown != bCrowdSpawnersShown)
@@ -1489,7 +2007,7 @@ namespace
     constexpr float ShotDelaySeconds = 9.0f;
     FAutoConsoleCommandWithWorldAndArgs GLFFShotsCommand(
         TEXT("LFF.Shots"),
-        TEXT("LFF.Shots <step> <step> ... [quit]: start the journey, visit those steps (1-based), screenshot each (dev only)."),
+        TEXT("LFF.Shots [welcome] <step>[@seconds] ... [large] [explore] [tour] ... [quit]: screenshot the welcome screen, steps (1-based; @ sets the wait, to catch the voice mid-line), Large text (toggles it) and the modes (dev only)."),
         FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
         {
             if (ULFFJourneySubsystem* Journey = World != nullptr ? World->GetSubsystem<ULFFJourneySubsystem>() : nullptr)
@@ -1501,45 +2019,42 @@ namespace
 
 void ULFFJourneySubsystem::StartShots(const TArray<FString>& Args)
 {
-    ShotSteps.Reset();
+    ShotQueue.Reset();
     bShotsQuit = false;
     for (const FString& Arg : Args)
     {
+        // A step may carry its own wait: 5@4.5.
+        FString StepPart = Arg;
+        Arg.Split(TEXT("@"), &StepPart, nullptr);
         if (Arg.Equals(TEXT("quit"), ESearchCase::IgnoreCase))
         {
             bShotsQuit = true;
         }
-        else if (Arg.IsNumeric())
+        else if (StepPart.IsNumeric() || Arg.Equals(TEXT("welcome"), ESearchCase::IgnoreCase) || Arg.Equals(TEXT("explore"), ESearchCase::IgnoreCase)
+            || Arg.Equals(TEXT("tour"), ESearchCase::IgnoreCase) || Arg.Equals(TEXT("fly"), ESearchCase::IgnoreCase)
+            || Arg.Equals(TEXT("large"), ESearchCase::IgnoreCase) || Arg.StartsWith(TEXT("level:"), ESearchCase::IgnoreCase) || Arg.StartsWith(TEXT("pick:"), ESearchCase::IgnoreCase))
         {
-            ShotSteps.Add(FCString::Atoi(*Arg));
+            ShotQueue.Add(Arg.ToLower());
         }
     }
     // Give the journey (and the tiles) time to come up: -ExecCmds can run before the first tick.
     bShotTaken = true;
-    GetWorld()->GetTimerManager().SetTimer(ShotTimer, FTimerDelegate::CreateWeakLambda(this, [this]()
-    {
-        if (!Machine.HasStarted())
-        {
-            Next();
-        }
-        GetWorld()->GetTimerManager().SetTimer(ShotTimer, FTimerDelegate::CreateUObject(this, &ULFFJourneySubsystem::NextShot), ShotDelaySeconds, false);
-    }), 12.0f, false);
-    UE_LOG(LogVirtualStadium, Log, TEXT("Shots: %d steps."), ShotSteps.Num());
+    GetWorld()->GetTimerManager().SetTimer(ShotTimer, FTimerDelegate::CreateUObject(this, &ULFFJourneySubsystem::NextShot), 12.0f, false);
+    UE_LOG(LogVirtualStadium, Log, TEXT("Shots: %d shots."), ShotQueue.Num());
 }
 
 void ULFFJourneySubsystem::NextShot()
 {
     if (!bShotTaken)
     {
-        const int32 Step = Machine.GetIndex() + 1;
-        const FString Name = FString::Printf(TEXT("LFF_step_%02d"), Step);
-        FScreenshotRequest::RequestScreenshot(Name, true, false);
-        UE_LOG(LogVirtualStadium, Log, TEXT("Shots: step %d (%s) captured as %s."), Step, *Snapshot.Title.ToString(), *Name);
+        FScreenshotRequest::RequestScreenshot(ShotName, true, false);
+        UE_LOG(LogVirtualStadium, Log, TEXT("Shots: %s, step %d (%s), captured."), *ShotName, Machine.GetIndex() + 1,
+            *UEnum::GetDisplayValueAsText(Machine.GetMode()).ToString());
         bShotTaken = true;
         GetWorld()->GetTimerManager().SetTimer(ShotTimer, FTimerDelegate::CreateUObject(this, &ULFFJourneySubsystem::NextShot), 1.0f, false);
         return;
     }
-    if (ShotSteps.Num() == 0)
+    if (ShotQueue.Num() == 0)
     {
         UE_LOG(LogVirtualStadium, Log, TEXT("Shots: DONE."));
         if (bShotsQuit)
@@ -1548,10 +2063,66 @@ void ULFFJourneySubsystem::NextShot()
         }
         return;
     }
-    JumpToStep(ShotSteps[0] - 1);
-    ShotSteps.RemoveAt(0);
+
+    FString Token = ShotQueue[0];
+    ShotQueue.RemoveAt(0);
+    float Delay = ShotDelaySeconds;
+    FString Wait;
+    if (Token.Split(TEXT("@"), &Token, &Wait))
+    {
+        Delay = FMath::Max(FCString::Atof(*Wait), 0.5f);
+    }
+    if (Token == TEXT("welcome"))
+    {
+        ShotName = TEXT("LFF_welcome");
+    }
+    else if (Token == TEXT("explore"))
+    {
+        SwitchToMode(ELFFSimulationMode::FreeExplore);
+        ShotName = FString::Printf(TEXT("LFF_explore_from_step_%02d"), Machine.GetIndex() + 1);
+    }
+    else if (Token == TEXT("tour"))
+    {
+        SwitchToMode(ELFFSimulationMode::GuidedTour);
+        ShotName = FString::Printf(TEXT("LFF_tour_resumed_step_%02d"), Machine.GetIndex() + 1);
+    }
+    else if (Token == TEXT("large"))
+    {
+        ToggleLargeText();
+        ShotName = FString::Printf(TEXT("LFF_large_text_%s_step_%02d"), Settings.bLargeText ? TEXT("on") : TEXT("off"), Machine.GetIndex() + 1);
+    }
+    else if (Token == TEXT("fly"))
+    {
+        ShotFlySecondsLeft = 1.5f;
+        ShotName = TEXT("LFF_explore_flown");
+    }
+    else if (Token.StartsWith(TEXT("level:")))
+    {
+        const FString Name = Token.RightChop(6);
+        const int64 Value = StaticEnum<ELFFMapLevel>()->GetValueByNameString(Name);
+        if (Value != INDEX_NONE)
+        {
+            SetMapLevel(static_cast<ELFFMapLevel>(Value));
+        }
+        ShotName = FString::Printf(TEXT("LFF_level_%s"), *Name);
+    }
+    else if (Token.StartsWith(TEXT("pick:")))
+    {
+        SelectAmenity(FName(*Token.RightChop(5)));
+        ShotName = FString::Printf(TEXT("LFF_pick_%s"), *Token.RightChop(5));
+    }
+    else
+    {
+        if (!Machine.HasStarted() && !IsExploring())
+        {
+            Next();
+        }
+        JumpToStep(FCString::Atoi(*Token) - 1);
+        ShotName = Wait.IsEmpty() ? FString::Printf(TEXT("LFF_step_%02d"), Machine.GetIndex() + 1)
+                                  : FString::Printf(TEXT("LFF_step_%02d_at_%ss"), Machine.GetIndex() + 1, *Wait.Replace(TEXT("."), TEXT("_")));
+    }
     bShotTaken = false;
-    GetWorld()->GetTimerManager().SetTimer(ShotTimer, FTimerDelegate::CreateUObject(this, &ULFFJourneySubsystem::NextShot), ShotDelaySeconds, false);
+    GetWorld()->GetTimerManager().SetTimer(ShotTimer, FTimerDelegate::CreateUObject(this, &ULFFJourneySubsystem::NextShot), Delay, false);
 }
 #endif
 
@@ -1568,7 +2139,7 @@ void ULFFJourneySubsystem::ResetPreview()
 
 ELFFIntensityPreview ULFFJourneySubsystem::GetCurrentPreviewKind() const
 {
-    const FLFFJourneyStep* Step = Machine.HasStarted() ? Machine.GetCurrentStep() : nullptr;
+    const FLFFJourneyStep* Step = Machine.HasStarted() && !IsExploring() ? Machine.GetCurrentStep() : nullptr;
     return Step != nullptr ? Step->IntensityPreview : ELFFIntensityPreview::None;
 }
 
@@ -1716,16 +2287,31 @@ void ULFFJourneySubsystem::Broadcast()
 {
     FLFFJourneySnapshot NewSnapshot;
     NewSnapshot.Phase = Machine.GetPhase();
+    NewSnapshot.Mode = Machine.GetMode();
+    NewSnapshot.TourStep = Machine.GetTourStep();
+    NewSnapshot.TourStepFirstSteps = Machine.GetTourStepFirstSteps();
+    NewSnapshot.bCanResumeTour = CanUseMap();
+    NewSnapshot.MapLevel = MapLevel;
+    NewSnapshot.bLevelHighlight = IsExploring() && bLevelHighlight;
+    NewSnapshot.AmenityMask = AmenityMask;
+    NewSnapshot.SelectedAmenityId = SelectedAmenityId;
+    NewSnapshot.ViewTargetId = ViewTargetId;
+    if (GameMode != nullptr)
+    {
+        NewSnapshot.MySeatTargetId = GameMode->MySeatTargetId;
+        NewSnapshot.MySeatLevel = GameMode->MySeatLevel;
+    }
     NewSnapshot.StepIndex = Machine.GetIndex();
     NewSnapshot.StepCount = Machine.Num();
     NewSnapshot.bStarted = Machine.HasStarted();
     NewSnapshot.bPaused = Machine.IsPaused();
     NewSnapshot.bAtEnd = Machine.IsAtEnd();
-    NewSnapshot.bCanNext = !IsModalOpen() && (Machine.GetPhase() == ELFFJourneyPhase::Intro || Machine.CanNext() || (NewSnapshot.bAtEnd && !NewSnapshot.bPaused));
+    NewSnapshot.bCanNext = !IsModalOpen() && !IsExploring()
+        && (Machine.GetPhase() == ELFFJourneyPhase::Intro || Machine.CanNext() || (NewSnapshot.bAtEnd && !NewSnapshot.bPaused));
     const FLFFJourneyStep* CurrentStep = Machine.GetCurrentStep();
     const bool bBackToIntro = LFFJourneyRules::ShouldBackReturnToIntro(
         NewSnapshot.bStarted, NewSnapshot.StepIndex, NewSnapshot.bPaused, CurrentStep != nullptr && CurrentStep->bBackEnabled);
-    NewSnapshot.bCanBack = !IsModalOpen() && (Machine.CanBack() || bBackToIntro);
+    NewSnapshot.bCanBack = !IsModalOpen() && !IsExploring() && (Machine.CanBack() || bBackToIntro);
     NewSnapshot.bSettingsOpen = bSettingsOpen;
     NewSnapshot.bRestartConfirmOpen = bRestartConfirmOpen;
     NewSnapshot.bTargetMissing = bTargetMissing;
@@ -1754,6 +2340,10 @@ void ULFFJourneySubsystem::Broadcast()
             NewSnapshot.Body = Step->Body;
             NewSnapshot.ClockText = Step->ClockText;
             NewSnapshot.bShowTicketPhone = Step->bShowTicketPhone;
+            if (!IsExploring())
+            {
+                NewSnapshot.TourPlaces = Step->PlacesToShow;
+            }
             NewSnapshot.ProgressText = FText::Format(LOCTEXT("Progress", "Step {0} of {1}"), FText::AsNumber(NewSnapshot.StepIndex + 1), FText::AsNumber(NewSnapshot.StepCount));
         }
     }
@@ -1772,7 +2362,8 @@ void ULFFJourneySubsystem::Broadcast()
         NewSnapshot.DisclaimerLine = GameMode->GetDisclaimerLine(NewSnapshot.bStarted ? NewSnapshot.DisclaimerLevel : ELFFDisclaimerLevel::Illustrative);
     }
 
-    UE_LOG(LogVirtualStadium, Verbose, TEXT("Journey: started=%d step=%d/%d (%s) paused=%d settings=%d restartConfirm=%d canBack=%d canNext=%d sound=%d calm=%d lessMovement=%d previewControls=%d preview=%d voice=%d/%d crowd=%d"),
+    UE_LOG(LogVirtualStadium, Verbose, TEXT("Journey: mode=%s started=%d step=%d/%d (%s) paused=%d settings=%d restartConfirm=%d canBack=%d canNext=%d sound=%d calm=%d lessMovement=%d previewControls=%d preview=%d voice=%d/%d crowd=%d"),
+        *UEnum::GetDisplayValueAsText(NewSnapshot.Mode).ToString(),
         NewSnapshot.bStarted, NewSnapshot.StepIndex + 1, NewSnapshot.StepCount, *NewSnapshot.StepId.ToString(), NewSnapshot.bPaused,
         NewSnapshot.bSettingsOpen, NewSnapshot.bRestartConfirmOpen, NewSnapshot.bCanBack, NewSnapshot.bCanNext,
         Settings.IsSoundEffective(), Settings.bCalmMode, Settings.IsReducedMotionEffective(), NewSnapshot.bShowPreviewControls, bPreviewOn,

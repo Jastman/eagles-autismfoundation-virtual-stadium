@@ -24,6 +24,7 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Journey", meta = (ClampMin = "20.0", ClampMax = "120.0"))
     float FieldOfView = 70.0f;
 
+
     /** World pose with roll forced to zero (no camera roll, ACCESSIBILITY.md). */
     FTransform GetCameraTransform() const;
 

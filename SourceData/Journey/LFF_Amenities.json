@@ -1,0 +1,107 @@
+[
+  {
+    "Name": "sensory-room",
+    "Label": "Sensory room",
+    "Note": "West Lower Suite Level. Take the elevators behind sections 105 and 205.",
+    "Category": "SensoryRoom",
+    "Level": "LowerConcourse",
+    "Location": {
+      "X": -8027.4,
+      "Y": 4379.4,
+      "Z": 310
+    },
+    "LocationActorTag": "LFF_Place_SensoryRoom",
+    "CameraTargetId": "CT_SensoryRoom",
+    "VerificationSource": "Project team brief, 2026-10-07: placed in L_LFF_Stadium as 'Actor - Sensory Room Location'"
+  },
+  {
+    "Name": "sensory-vehicle",
+    "Label": "Sensory Activation Vehicle",
+    "Note": "On Pepsi Plaza, before the gates.",
+    "Category": "SensoryRoom",
+    "Level": "LowerConcourse",
+    "Location": {
+      "X": -8300,
+      "Y": -20400,
+      "Z": 160
+    },
+    "LocationActorTag": "",
+    "CameraTargetId": "CT_SensoryVehicle",
+    "VerificationSource": ""
+  },
+  {
+    "Name": "guest-services-121",
+    "Label": "Guest Services, section 121",
+    "Note": "By section 121.",
+    "Category": "GuestServices",
+    "Level": "LowerConcourse",
+    "Location": {
+      "X": -8002.7,
+      "Y": 4251.4,
+      "Z": 310
+    },
+    "LocationActorTag": "LFF_Place_GuestServices121",
+    "CameraTargetId": "CT_GuestServices",
+    "VerificationSource": "Project team brief, 2026-10-07: placed in L_LFF_Stadium as 'Actor - Guest Services 121'"
+  },
+  {
+    "Name": "guest-services-136",
+    "Label": "Guest Services, section 136",
+    "Note": "By section 136.",
+    "Category": "GuestServices",
+    "Level": "LowerConcourse",
+    "Location": {
+      "X": -7415.6,
+      "Y": -6289.9,
+      "Z": 310
+    },
+    "LocationActorTag": "LFF_Place_GuestServices136",
+    "CameraTargetId": "",
+    "VerificationSource": "Project team brief, 2026-10-07: placed in L_LFF_Stadium as 'Actor - Guest Services 136'"
+  },
+  {
+    "Name": "guest-services-206",
+    "Label": "Guest Services, section 206",
+    "Note": "By section 206.",
+    "Category": "GuestServices",
+    "Level": "UpperDeck",
+    "Location": {
+      "X": -9168.2,
+      "Y": 6000.7,
+      "Z": 3470
+    },
+    "LocationActorTag": "LFF_Place_GuestServices206",
+    "CameraTargetId": "",
+    "VerificationSource": "Project team brief, 2026-10-07: placed in L_LFF_Stadium as 'Actor - Guest Services 206'"
+  },
+  {
+    "Name": "guest-services-226",
+    "Label": "Guest Services, section 226",
+    "Note": "By section 226.",
+    "Category": "GuestServices",
+    "Level": "UpperDeck",
+    "Location": {
+      "X": 8247.9,
+      "Y": 7995.1,
+      "Z": 3470
+    },
+    "LocationActorTag": "LFF_Place_GuestServices226",
+    "CameraTargetId": "",
+    "VerificationSource": "Project team brief, 2026-10-07: placed in L_LFF_Stadium as 'Actor - Guest Services 226'"
+  },
+  {
+    "Name": "food",
+    "Label": "Food and drinks",
+    "Note": "On the main concourse.",
+    "Category": "Food",
+    "Level": "LowerConcourse",
+    "Location": {
+      "X": -7320,
+      "Y": -1200,
+      "Z": 160
+    },
+    "LocationActorTag": "",
+    "CameraTargetId": "CT_Food",
+    "VerificationSource": ""
+  }
+]

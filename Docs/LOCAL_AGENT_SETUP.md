@@ -66,6 +66,18 @@ PROJ="$PWD/VirtualStadium.uproject"
 ```
 
 ### Windows (needs a Windows PC)
+
+For a build-only handoff from the Mac, save all assets first, then run
+`python3 Tools/Packaging/prepare_windows_handoff.py`. It creates a new
+`Saved/WindowsHandoff/` folder from the current saved working files, including
+uncommitted content. The copy disables MCP/editor toolsets and VibeUE, keeps
+runtime/content plugins, and excludes Mac binaries, caches, source model imports,
+and machine-specific ion credentials. The Mac project is unchanged. Copy the
+whole handoff folder to Windows and follow its `WINDOWS_BUILD.md`; `BuildWindows.cmd`
+compiles and packages a Development build. Use `--destination <new-folder>` for
+another export; existing handoffs are never overwritten. Install Windows Cesium
+for Unreal separately and select/save the restricted ion token before packaging.
+
 ```bat
 set UE_ROOT=C:\Program Files\Epic Games\UE_5.8
 set PROJ=%CD%\VirtualStadium.uproject
@@ -102,13 +114,36 @@ These scripts do ManualSetup §2–§5 reproducibly. Each one refuses to overwri
 | `import_lff_content.py` | `DT_LFF_GoldenPath` from the JSON; the beds and preview sample in `/Game/LFF/Audio` (`Tools/Audio/make_lff_audio.py`); the voice lines (`import_lff_vo.py`); the 30 ticket frames in `/Game/LFF/UI/Ticket` (`Tools/Pipeline/prepare_ticket.py`); the eagle geometry cache, textures and materials in `/Game/LFF/Eagle` (`Tools/Pipeline/prepare_eagle.py`, Blender); `MI_LFF_FireworkGlow`. Replaces them all; skips a part whose source is missing. | Editor closed: `Tools/Editor/run_headless.sh Tools/Editor/import_lff_content.py "LFF content"` |
 | `import_lff_vo.py` | Just the voice lines: `SourceData/Audio/VO/VO_*.wav` → `/Game/LFF/Audio/VO/` (non-looping), and a report of steps whose line is missing. Use it when the recorded voice arrives. | Editor closed: `Tools/Editor/run_headless.sh Tools/Editor/import_lff_vo.py "LFF vo"` |
 | `build_lff_standins.py` | The extra `CT_` targets (including `CT_StadiumWide`, which the splash orbits through), the stand-in props and labels, the cue actors (3 gates, the arriving car, the eagle's flight, fireworks), 10 parked cars and 15 crowd stand-ins, through Unreal MCP. Removes its previous run first (tag `LFF_StandIn`), traces heights onto the model and saves the level. Takes 35 s with the editor in front, several minutes behind other windows. | Editor open on `L_LFF_Stadium`: `python3 Tools/Editor/build_lff_standins.py` |
-| `build_wbp_lff_ui.py` | The five HUD panels and `WBP_LFF_HUD`, through Unreal MCP. It checks each widget's contract names, compiles and saves. `--rebuild` clears and rebuilds existing widget trees in place (the assets are kept). `--extend` only adds the session 3 widgets (Voice, Crowd, timeline, ticket phone, Learn More) to existing trees. | Editor open with the MCP server running: `python3 Tools/Editor/build_wbp_lff_ui.py` |
+| `refine_sensory_spaces.py` | Explicit trailer photo-wrap binding and an illustrative refinement of the existing sensory room. Preserves room placement, staff, doorway and tour camera. Replaces only its tagged room children; static sensory panels and steady lighting. | First run `python3 Tools/Pipeline/prepare_sav_wrap.py` and `python3 Tools/Pipeline/prepare_sensory_room.py` locally (Pillow/numpy). Then run `runpy.run_path(unreal.Paths.project_dir() + "Tools/Editor/refine_sensory_spaces.py", run_name="__main__")` inside Unreal on `L_LFF_Stadium`, PIE stopped. Run again after a full stand-in rebuild to restore the room materials. |
+| `build_wbp_lff_modes.py` | The active scene-first HUD (`Docs/UI_DESIGN.md`): upper-left identity/caption, upper-right controls and responsive chapter grid, mode navigation, Explore places and spatial callouts. Rebuilds ten widget trees in place, checks contracts, applies defaults to nested instances, compiles and saves. Also rebuilds `M_LFF_LevelHighlight` and reimports all seven development rows of `DT_LFF_Amenities`. Reuses `WBP_LFF_Settings`; no longer builds the legacy arc material. | Editor open, PIE stopped, MCP running: `python3 Tools/Editor/build_wbp_lff_modes.py`. For another port: `UNREAL_MCP_URL=http://127.0.0.1:8010/mcp` |
+| `build_crowd_poses.py` | Four project-local fan clips in `/Game/LFF/Crowd`: seated idle/clap, standing cheer/clap. Uses the existing sample skeleton and idle, not modified engine assets. Default check mode reports joint geometry; write mode refuses to overwrite existing clips. | Inside Unreal: `runpy.run_path(...)`. To create missing assets, set `os.environ["LFF_POSES_WRITE"]="1"` for that run, then restore the environment value. |
+| `configure_stadium_crowd.py` | Configures only the existing bowl spawner: six appearances/outfits, measured tread sidecar, local clips, 48 detailed candidates, a 50 cm camera-clear radius and no cleared forward cone. Preserves occupancy and sensory-room/trailer actors; deliberately saves the stadium map. | After native compilation and pose creation, open `L_LFF_Stadium`, stop PIE and run `runpy.run_path(unreal.Paths.project_dir() + "Tools/Editor/configure_stadium_crowd.py", run_name="__main__")`. Do not run the full stand-in builder for this operation. |
+| `build_m_lff_timeline_arc.py` | **Legacy presentation only.** `M_LFF_TimelineArc`: Custom node from `SourceData/UI/Materials/LFF_TimelineArc.hlsl`, RGB to Final Color and A to Opacity. Fails if a pin is unconnected. | Inside the editor: `runpy.run_path(...)` through `execute_python_code`; not called by the active HUD builder. |
+| `build_m_lff_level_highlight.py` | `M_LFF_LevelHighlight`: Free explore's level highlight, a post-process material (after tonemapping) from `SourceData/UI/Materials/LFF_LevelHighlight.hlsl`. It tints the picked level's height band inside the stadium's footprint, from depth, so the Nanite stadium materials are untouched. | Inside the editor: `runpy.run_path(...)`; called by `build_wbp_lff_modes.py`. |
+| `build_wbp_lff_ui.py` | **Superseded for the HUD** (needs `--legacy`; rebuilding `WBP_LFF_HUD` with it would break the new bindings). The old five HUD panels and `WBP_LFF_HUD`, through Unreal MCP. It checks each widget's contract names, compiles and saves. `--rebuild` clears and rebuilds existing widget trees in place (the assets are kept). `--extend` only adds the session 3 widgets (Voice, Crowd, timeline, ticket phone, Learn More) to existing trees. | Editor open with the MCP server running: `python3 Tools/Editor/build_wbp_lff_ui.py` |
 
 Command for `build_lff_stadium_level.py`:
 
 ```bash
 "$UE_ROOT/Engine/Binaries/Mac/UnrealEditor.app/Contents/MacOS/UnrealEditor" "$PROJ" -ExecutePythonScript="$PWD/Tools/Editor/build_lff_stadium_level.py" -ModelContextProtocolPort=18000 -unattended -nullrhi -nopause -nosplash -stdout -log
 ```
+
+### Measured crowd floors
+
+`seats.json` contains chair undersides, not tread heights. If the source seats or structure chunks change, regenerate the aligned sidecar in Blender before configuring the spawner:
+
+```bash
+/Applications/Blender.app/Contents/MacOS/Blender -b --factory-startup \
+  --python Tools/Pipeline/build_seat_treads.py -- \
+  --chunks Saved/StadiumImport/v1 --seats Content/LFF/Crowd/seats.json \
+  --out Content/LFF/Crowd/seat_treads.json
+```
+
+The current sidecar has 56,643 measured seat rows and 64 explicit unmeasured rows. Runtime validates the exact seat-file hash and foot offsets, reports and excludes unmeasured seats, and rejects invalid/mismatched data. Do not substitute a guessed height. Standing feet are 70 cm forward; seated feet are 45 cm forward and 13 cm lateral. `Config/DefaultGame.ini` already stages the crowd JSON directory and cooks the animation assets.
+
+Crowd-only recovery order: preserve the saved map/assets, compile the native editor target normally, generate missing clips, run `configure_stadium_crowd.py`, then verify My seat, Crowd Off, Calm Mode and Less movement in PIE. A full `build_lff_standins.py` run replaces stand-ins and requires reapplying sensory refinements; it is not the crowd configuration command.
+
+Sensory-room refinements (`SR_`) must remain Movable and attached to `SI_SensoryRoomProxy`, with relative location, rotation and scale. Setting their mesh components to Static detaches them from the movable room root and can leave room-local offsets at midfield. `refine_sensory_spaces.py` maintains compatible mobility and verifies these attachments before saving; moving the room root then carries its furnishings with it.
 
 Things to know:
 - **Exit code 1 is expected from the headless level build.** On 5.8.3 the editor crashes *after* the script has saved, during Slate text teardown in `quit_editor` (`UserActivityHint=EditorExit`). Check for the `[LFF build] DONE` and `validate OK` log lines instead. They're in the crash folder's `VirtualStadium.log` under `~/Library/Application Support/Epic/UnrealEngine/5.8/Saved/Crashes/` when `Saved/Logs` doesn't get them.
@@ -165,4 +200,3 @@ Notes:
 - `run_headless.sh` exists because 5.8.3 editors hang or crash in `quit_editor` after these scripts. It stops that exact process once the script logs DONE or FAILED. Headless logs go to `~/Library/Logs/Unreal Engine/VirtualStadiumEditor/`, not to the redirected stdout.
 - **Tiles don't stream while the editor is in the background** unless `bThrottleCPUWhenNotForeground=False` is set. That setting is per user (`Saved/Config/MacEditor/EditorPerProjectUserSettings.ini`, under `[/Script/UnrealEd.EditorPerformanceSettings]`). Without it, Cesium gets no camera: tile load progress sits at 0 and nothing is logged.
 - **The standalone game logs** to `~/Library/Logs/VirtualStadium/`.
-

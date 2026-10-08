@@ -18,7 +18,7 @@ Status: compiled and tested on the Mac (UE 5.8.3). Session 3 (2026-09-30) added 
 | `Public/World/LFFFireworksActor.h` / `.cpp` | `ALFFCueActor` | Soft fireworks for the anthem preview: slow bursts of instanced glowing spheres that open, drift and shrink. Steady brightness, no flashes. |
 | `Public/Core/LFFGameMode.h` / `.cpp` | `AGameModeBase` | No pawn. The table path, copy (intro, badge, disclaimers) and timing live here as C++ defaults. |
 | `Public/Core/LFFPlayerController.h` / `.cpp` | `APlayerController` | Builds the Enhanced Input actions and mapping context in code. Loads `WBP_LFF_HUD`. |
-| `Public/UI/LFFHUDWidget.h` / `.cpp` | `UUserWidget` (Abstract) | Parent of `WBP_LFF_HUD`, the one HUD. Holds the five panels, picks which are on screen (splash, step, modal) and fades them in. Logs an error if the badge or disclaimer widgets are missing. |
+| `Public/UI/LFFHUDWidget.h` / `.cpp` | `UUserWidget` (Abstract) | Parent of `WBP_LFF_HUD`, the one HUD. Holds the panels, picks which are on screen (welcome, Guided tour, Free explore, modal), fades them in and runs the keyboard focus ring. |
 | `Public/UI/LFFJourneyPanel.h` / `.cpp` | `UUserWidget` (Abstract) | Parent of the five panels. Pushes the snapshot into named widgets, builds the progress pips, applies Large text and High contrast, routes clicks and enforces the badge and disclaimer. |
 | `Private/Tests/LFFJourneyStateMachineTest.cpp` | Automation tests | `LFF.Journey.StateMachine.*` (Navigation, PauseRestart, EdgeCases, Jump), `LFF.Journey.Rules` |
 
@@ -39,12 +39,13 @@ The source of truth is `SourceData/Journey/LFF_GoldenPath.json`. Reimport it; ne
 | `Body` | FText | — | The visual-schedule sentence, first person. At most 2 short sentences (120 characters) |
 | `DisclaimerLevel` | enum | Illustrative | A step marked `Verified` with no `VerificationSource` is downgraded at load |
 | `ClockText` | FText | "" | Example-game clock ("~9:30 AM"), shown as "Step 3 · ~9:30 AM". Timed steps are `Approximate` |
-| `TimelineLabel` | FText | "" | Non-empty puts the step on the timeline above Back/Next ("10:00 AM\nPlaza gates") |
+| `TimelineLabel` | FText | "" | Non-empty puts the step in the tour panel's schedule column, one line per `\n` ("10:00 AM\nPlaza gates") |
 | `VerificationSource` | FString | "" | Who verified the step, and when |
 | `CameraTargetId` | FName | None | Must match exactly one `ALFFCameraTarget` |
 | `TransitionProfile` | enum | Ease | |
 | `TransitionSeconds` | float | 0 | 0 means `DefaultEaseSeconds` (3). Clamped to 0.5–6 |
 | `LabelsToShow` | FName[] | [] | Actors tagged `LFF_Label` plus one of these names are visible during the step, unless the label would land in the lower third of the step's framing |
+| `PlacesToShow` | FName[] | [] | Places (`DT_LFF_Amenities` row names) whose callouts stand on the model during the step, always named and not clickable. Guest Services (step 19) shows its four; the sensory room (step 20) its one |
 | `AudioBed` | soft `USoundBase` | none | Overrides the game mode's `AmbientBed` for this step. Plays only when Sound is on |
 | `IntensityPreview` | enum | None | `None`, `Sound` or `Lights`. Offers "Preview this? Off / Soft" on the step; Off on every arrival |
 | `PreviewSound` | soft `USoundBase` | none | Overrides the game mode's `PreviewSound` for a `Sound` preview |
@@ -53,6 +54,10 @@ The source of truth is `SourceData/Journey/LFF_GoldenPath.json`. Reimport it; ne
 | `SceneCues` | FName[] | [] | `ALFFCueActor` ids: arrival cues play when the camera arrives and stay done on later steps; preview cues play only on Soft |
 | `bShowTicketPhone` | bool | false | The phone with the mobile ticket rises from the bottom of the screen |
 | `bNextEnabled` / `bBackEnabled` | bool | true | Omitted from the JSON, so the defaults apply |
+
+## `FLFFAmenityMarker` (row of `/Game/LFF/Data/DT_LFF_Amenities`)
+A place on the model: Free explore's callouts and the tour steps' `PlacesToShow`. The source of truth is `SourceData/Journey/LFF_Amenities.json`; the row `Name` is the place's id. `Label`, `Note`, `Category`, `Level` (must hold `Location.Z` in its band; `LFF.Explore.Rules` checks), `Location` (site frame, cm), `CameraTargetId` (Go there; none disables it) and `VerificationSource` (empty: dropped in packaged builds).
+- **`LocationActorTag`:** an actor in `L_LFF_Stadium` with this tag marks the place. When the journey loads, its position replaces `Location`, so moving the actor moves the marker; `Location` is kept in step as the fallback (and the log warns when the actor is missing). The sensory room and the four Guest Services are marked this way: `Actor - Sensory Room Location` (`LFF_Place_SensoryRoom`) and `Actor - Guest Services 121` / `136` / `206` / `226` (`LFF_Place_GuestServices121` …).
 
 ## Snapshot (`FLFFJourneySnapshot`), pushed on every change
 - Position: `Phase`, `StepIndex`, `StepCount`, `StepId`.
@@ -66,8 +71,8 @@ The source of truth is `SourceData/Journey/LFF_GoldenPath.json`. Reimport it; ne
 ## Behaviour
 - **Splash (session 3).** The camera slowly orbits the stadium (one lap in `SplashOrbitSeconds`, 40 s) on a circle through `CT_StadiumWide`, around `LFF_SiteRoot`. Less movement or Calm Mode holds it still. **Start** glides along the orbit, the short way round, into step 1's wide shot (1.5–6 s by angle). Back on step 1 resumes the orbit from there; Restart fades to the wide shot, then orbits. No voice on the splash.
 - **Next and Back.** They never wrap. At the last step, Next becomes **Start Over**, which returns to the splash with a fade and stops the voice.
-- **Timeline marks** jump straight to their step (`JumpToStep`). Only steps with a `TimelineLabel` have a mark, so a mark can't point at a missing step. Only the current step's mark is emphasized.
-- **Voice.** Off by default. With Voice and Sound on, the step's `VoiceWave` plays once, 0.5 s after the camera arrives, at `VoiceVolume` (0.3, a little under the bed), and the bed ducks by `VoiceDuckDecibels` (−8 dB). A new step, Back, a jump, Start Over, Pause, Sound off, Calm Mode or starting a preview stops it at once. Resume reads the card again. Sound off and Calm Mode also make the Voice toggle read Off and disable it. The card is the caption: it's always on screen, and the voice reads exactly its Title and Body.
+- **Schedule marks** (the tour panel's times) jump straight to their step (`JumpToStep`). Only steps with a `TimelineLabel` have a mark, so a mark can't point at a missing step. The current step's mark is the light chip; the marks already passed are in the muted text colour.
+- **Voice.** On by default (`ALFFGameMode::DefaultVisitorSettings`). With Voice and Sound on, the step's `VoiceWave` plays once, 0.5 s after the camera arrives, at `VoiceVolume` (0.3, a little under the bed), and the bed ducks by `VoiceDuckDecibels` (−8 dB). A new step, Back, a jump, Start Over, Pause, Sound off, Calm Mode or starting a preview stops it at once. Resume reads the card again. Sound off and Calm Mode also make the Voice toggle read Off and disable it. The card is the caption: it's always on screen, and the voice reads exactly its Title and Body.
 - **Scene cues.** An arrival cue (`GatePlaza`, `GateClub`, `GateInner`, `CarArrival`) is `Before` until its step, `Play` on it (it moves once the camera arrives), and `After` on every later step. Less movement and Calm Mode show `After` straight away (the gate is already open, the car already parked). Preview cues (`Anthem`: the eagle and fireworks) play only while the anthem preview is Soft, then hide and turn the preview back to Off.
 - **Crowd.** Low (default) shows the stand-in people tagged `LFF_Crowd`; Off or Calm Mode hides them.
 - **Ticket phone.** On the ticket step it rises from below the screen edge over 1.2 s (ease-out), then the ticket frames play at 10 fps. Less movement and Calm Mode show it already up, on a still frame.
@@ -83,7 +88,7 @@ The source of truth is `SourceData/Journey/LFF_GoldenPath.json`. Reimport it; ne
 - **World labels** stay above their prop, and any label that would fall in the lower third of the step's framing (where the caption card is) is hidden at runtime (`LFFJourneyRules::ShouldHideLabelAt`).
 - **Back on step 1** returns to the splash. The splash sits on step 1's view, so the camera doesn't move.
 - **Start again from Settings** closes Settings and asks "Start again?".
-- **UI motion.** Panels fade in over 0.25 s with an ease-out; so does the caption on a new step. Reduced motion or Calm Mode makes every UI change an instant cut. Nothing slides or flies in.
+- **UI motion.** Panels fade in over 0.25 s with an ease-out; so does the tour panel on a new step. The timeline arc fades in and drops 48 px from the top over 0.35 s when the tour starts or resumes, and goes back up when you leave the tour. Reduced motion or Calm Mode makes every UI change an instant cut. Nothing else moves.
 - **High contrast** (Settings only, no key) makes the glass panels opaque black and darkens the scrim. **Large text** scales the splash and caption cards by 1.25.
 
 ## Input (built in `ALFFPlayerController::BuildInputObjects`)
@@ -100,34 +105,49 @@ The source of truth is `SourceData/Journey/LFF_GoldenPath.json`. Reimport it; ne
 | Less movement / Sound / Calm Mode / Large text | 1 / 2 / 3 / 4 | — (mouse or keyboard) |
 | Voice / Crowd | 5 / 6 | — |
 | Preview this? (intensity steps) | V | — |
+| Guided tour (`IA_LFF_SwitchToTour` → `SwitchToMode(GuidedTour)`): on the welcome screen, Start; in Free explore, `ResumeTour` to the bookmarked step with a fade-cut; in the tour, nothing | T | — |
+| Free explore (`IA_LFF_SwitchToExplore` → `SwitchToMode(FreeExplore)`): bookmarks the step and chapter, stops the voice and any preview, the camera stays put; in Free explore, nothing | E | — |
+| My seat, Free explore only (`IA_LFF_FocusMySeat` → `GoToMySeat`): the camera fade-cuts to `CT_SeatFieldView` (a cut in Calm Mode); the tour's place doesn't change | H | — |
+| Free flight, Free explore only (`IMC_LFF_Fly`, priority 1, added while Free explore can fly; its keys win over the journey context's): move | W A S D or the arrow keys | — |
+| Free flight: up / down | E, Space, Page Up / Q, C, Page Down | — |
+| Free flight: faster (hold) | Shift | — |
+| Free flight: look around (drag over the 3D view with either button; the viewport only sends mouse movement while a button is held there) | Mouse drag | — |
+| Free flight: step forward / back | Mouse wheel | — |
+| In Free explore, S is flight (back), so Settings is its button there; Next and Back are rejected (`RejectedInExplore`) | — | — |
 
 Esc also ends PIE in the editor. That's expected there; test Cancel in a packaged build or with the controller.
 
-## HUD widgets (`/Game/LFF/UI`, built by `Tools/Editor/build_wbp_lff_ui.py`)
+## HUD widgets (`/Game/LFF/UI`, built by `Tools/Editor/build_wbp_lff_modes.py`)
 
-`WBP_LFF_HUD` (parent `LFFHUDWidget`) is the one HUD. It must contain five panel instances with these names, or it won't compile:
+`WBP_LFF_HUD` (parent `LFFHUDWidget`) is the one HUD. It must contain these panel instances, or it won't compile (`LFFHUDWidget.h` has the tree):
 
 | Instance | Widget | On screen | Contents |
 |---|---|---|---|
-| `TopChrome` | `WBP_LFF_TopChrome` | Always | Header: wordmark (EAF logo, "Game day guide / Lincoln Financial Field") left; `VoiceSlot` cluster right (C++ adds the Voice button before `SettingsButton`). |
-| `Splash` | `WBP_LFF_Splash` | Before Start | Title screen on a soft field at the left: eyebrow, `TitleText`, `BodyText`, Standard / Calm cards (`StandardButton`/`StandardLabel`/`StandardNote`, same for Calm), **Start your day** with an Enter keycap. |
-| `StepCaption` | `WBP_LFF_StepCaption` | After Start | The step as a caption on the scene, lower left, on a soft field (`SurfaceCaption`): `StepNumberText` (chapter eyebrow), title, body, `PreviewRow` on intensity steps; `TicketPhone` on the ticket step; `FinaleActions` on the last step (C++ centres it). |
-| `BottomRail` | `WBP_LFF_BottomRail` | After Start | The chapter bar: `BackButton`, `ChapterMarks` (C++ adds one chip per `Chapters` entry), `NextButton`; key hints in the credits band on the right. |
-| `Settings` | `WBP_LFF_Settings` | Settings, Paused or "Start again?" open | Light scrim, then `SettingsPanel` (a right-hand sheet), `PausePanel` or `RestartConfirmPanel` (centred soft fields). |
+| `Welcome` | `WBP_LFF_Welcome` | Before a mode is chosen | The stadium behind a veil; "Welcome to the Linc.", the Guided tour and Explore cards (`TourModeButton`, `ExploreModeButton`), Calm Mode, Settings. |
+| `SidebarHeader` | `WBP_LFF_SidebarHeader` | After the welcome | Upper-left identity card: wordmark, guide name and venue. Legacy asset name retained. |
+| `Narrative` | `WBP_LFF_Narrative` | Guided tour | Scrollable caption below identity: `StepNumberText`, `TitleText`/`BodyText` and karaoke copies in `CaptionStack`, `PreviewRow`, `TicketPhone`, `FinaleActions`. `TimelineToggleButton` discloses `TimelinePanel` and its timed marks. |
+| `ExploreMap` | `WBP_LFF_ExploreMap` (`LFFMapPanel`) | Free explore | Places in the right control group: cross-level category toggles, expandable `LevelsGroup`, picked-place card and Show me. Unmapped categories are disabled. |
+| `Callouts` | `WBP_LFF_Callouts` (`LFFCalloutLayer`) | Explore and applicable tour steps | Full-screen layer beneath panels: stems, heads and opaque name chips, avoiding measured panel bounds. |
+| `TimelineArc` | `WBP_LFF_TimelineArc` (`LFFTimelineArc`) | Guided tour | Compact chapter grid below the right dock (`ChapterMarks`, `UniformGridPanel`; `CompactChapterChips=true`). Legacy class retains optional arc APIs. |
+| `StageChrome` | `WBP_LFF_StageChrome` | After the welcome | Upper-right dock: Tour/Explore/Settings, `VoiceSlot`, Calm Mode and Crowd. |
+| `TourNav` / `ExploreNav` | `WBP_LFF_TourNav` / `WBP_LFF_ExploreNav` | Guided tour / Free explore | `NavSwitcher` below the right dock/chapters: Back/Next, or My seat/Resume tour and flight guidance. |
+| `Settings` | `WBP_LFF_Settings` | Settings, Paused or "Start again?" open | Light scrim, then `SettingsPanel` (a right-hand sheet), `PausePanel` or `RestartConfirmPanel` (centred). |
 
-The five panels share the parent `LFFJourneyPanel`. Every name below is optional; a panel fills in the ones it contains.
-- **Session 3 names:** `VoiceButton`/`VoiceLabel`, `CrowdButton`/`CrowdLabel` (Settings); `TimelinePanel`, `TimelineMarks` (a `HorizontalBox`; C++ adds one clickable mark per timed step), `TimelineNoteText`, `LearnMorePanel`, `LearnMoreButton` (BottomRail); `TicketPhone`, `TicketImage` (an `Image`; C++ plays `/Game/LFF/UI/Ticket/T_LFF_Ticket_NN`) (StepCaption). Added to existing widgets by `build_wbp_lff_ui.py --extend`.
+`InformationSize` and `ControlSize` are responsive corner `SizeBox` groups; controls scroll when needed. Their live bounds drive map framing and callout avoidance. There is no scene viewport split, permanent sidebar or central arc.
+
+The panels share the parent `LFFJourneyPanel`. Every name below is optional; a panel fills in the ones it contains. `ChapterMarks` accepts the active `UniformGridPanel` or a legacy `HorizontalBox`.
+- **Session 3 names:** `VoiceButton`/`VoiceLabel`, `CrowdButton`/`CrowdLabel` (Settings); `TimelinePanel`, `TimelineMarks` (a `HorizontalBox` for a bar or a `VerticalBox` for a column; C++ adds one clickable mark per timed step), `TimelineNoteText`, `LearnMorePanel`, `LearnMoreButton` (BottomRail); `TicketPhone`, `TicketImage` (an `Image`; C++ plays `/Game/LFF/UI/Ticket/T_LFF_Ticket_NN`) (StepCaption). Added to existing widgets by `build_wbp_lff_ui.py --extend`.
 - **Text:** `TitleText`, `BodyText`, `ProgressText` ("Step 2 of 16"), `StepNumberText` ("Step 2"), `DisclaimerText` (full sentence), `DisclaimerLineText` (the short line), `PreviewLabel`, `PreviewNoteText`, `DisclaimerChipText` (one word), `PrototypeBadgeText`, `TargetMissingText`, `NextLabel`, `PauseLabel`, `SoundLabel`, `ReducedMotionLabel`, `CalmModeLabel`, `LargeTextLabel`, `HighContrastLabel`.
 - **Groups:** `StepControls`, `DisclaimerChip`, `SettingsPanel`, `PausePanel`, `RestartConfirmPanel` (only one modal card shows at a time), `PreviewRow`, `Scrim` (a `Border`; it blocks clicks), `ProgressPips` (a `HorizontalBox`; C++ adds one pip per step), `TextScale` (a `ScaleBox` set to User Specified).
 - **Buttons:** `StartButton`, `NextButton`, `BackButton`, `PauseButton`, `ResumeButton`, `SoundButton`, `SettingsButton`, `SettingsCloseButton`, `RestartButton`, `RestartYesButton`, `RestartNoButton`, `ReducedMotionButton`, `CalmModeButton`, `LargeTextButton`, `HighContrastButton`, `PreviewButton`.
 - **Naming conventions C++ reads:** a `Border` whose name starts with `Surface` turns black in High contrast. A Settings toggle row can split its label: `CalmModeLabel` holds the name and a text block named the same but ending `State` (`CalmModeState`) holds On / Off; without one, the label reads "Calm Mode: On". Every text block inside a toggle or the Standard / Calm cards takes the chosen / not-chosen text colour.
-- **Built at runtime, not in the blueprint:** the caption's voice button (`VoiceIconButton`), the karaoke rich-text copies of the title and body (`TitleRich`, `BodyRich`, marked up `<w>word</>` for `ULFFKaraokeDecorator`), the finale wordmark (`FinaleLogo`), one pip per step in `ProgressPips`, one mark per timed step in `TimelineMarks`, and the HUD's keyboard focus ring (`FocusRing`, last child of `RootOverlay`).
+- **Built at runtime, not in the blueprint:** the caption's voice button (`VoiceIconButton`, at the end of `CaptionHeader`, or first in a `VoiceSlot`), the karaoke rich-text copies of the title and body (`TitleRich`, `BodyRich`, marked up `<w>word</>` for `ULFFKaraokeDecorator`; only in a panel that has a `CaptionStack`), the finale wordmark (`FinaleLogo`), one pip per step in `ProgressPips`, one mark per timed step in `TimelineMarks`, and the HUD's keyboard focus ring (`FocusRing`, last child of `RootOverlay`).
 - **Disclaimer rule (retired 2026-10-02).** The HUD no longer shows disclaimer copy and `LFFHUDWidget` no longer checks for it. Old text, kept for history: C++ always shows `PrototypeBadgeText`, shows `DisclaimerChip` on every step, shows `DisclaimerText` whenever the level isn't Verified, and shows `DisclaimerLineText` ("Illustration. Not directions for the real stadium.") on every non-Verified step. `LFFHUDWidget` logs an error if `TopChrome` has no `PrototypeBadgeText` or `DisclaimerLineText`, `StepCaption` has no `DisclaimerChipText` or `Splash` has no `DisclaimerText`.
 
 Layout rules (from `ACCESSIBILITY.md`, LEDGER D26 and `Docs/UI_DESIGN.md`, which has the full token table):
 - One primary (kelly green) action per screen: Start your day, Next, Resume, "Yes, start again" or Learn More. Everything else is a dark secondary button.
-- **The stadium is the product.** The chrome keeps to the corners and one dock: logo chip and disclaimer pill top left, Settings top right, the caption card lower left, the dock bottom centre.
+- **The stadium is the product.** Identity and tour information occupy the upper left; controls, navigation and Explore places occupy the upper right. The day timeline and level controls are progressively disclosed. No on-screen disclaimer pill.
 - Hit targets at 1080p: 64 px everywhere (the project minimum), Start 76 px. Buttons never move between steps; they're disabled rather than hidden, and a disabled button keeps its outline and its label.
 - Buttons show words (Settings and Voice add an icon, never an icon alone). The keyboard legend lives in Settings.
-- Warm off-white text on opaque deep midnight-green cards (`#072A2F`), Atkinson Hyperlegible throughout. Body 13.6:1, secondary text 8.7:1. Sizes at 1080p: headline 52, caption title 38, body 24, controls 22, labels 18 (the floor).
+- Warm off-white text on opaque deep midnight-green cards (`#072A2F`), Atkinson Hyperlegible throughout. Sizes at the reference logical scale: caption title 32, body 24, navigation 22, compact mode controls and labels 18 (the floor). Labels wrap rather than clip.
 - Leave the bottom 72 px clear for the Cesium and Google credits.

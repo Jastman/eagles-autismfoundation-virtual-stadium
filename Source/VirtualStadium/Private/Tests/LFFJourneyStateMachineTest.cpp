@@ -230,4 +230,93 @@ bool FLFFJourneyStateMachineJumpTest::RunTest(const FString& Parameters)
     return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FLFFJourneyStateMachineModesTest, "LFF.Journey.StateMachine.Modes",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FLFFJourneyStateMachineModesTest::RunTest(const FString& Parameters)
+{
+    // The real day: 23 steps in five chapters (ALFFGameMode::TourStepFirstSteps).
+    const TArray<int32> FirstSteps = { 0, 4, 7, 10, 14 };
+    FLFFJourneyStateMachine Machine;
+    Machine.Load(MakeSteps(23));
+    Machine.SetTourSteps(FirstSteps);
+
+    using LFFJourneyRules::ResolveTourStep;
+    TestTrue(TEXT("Step 1 is Arrival"), ResolveTourStep(0, FirstSteps) == ELFFTourStep::Arrival);
+    TestTrue(TEXT("Step 5 opens Gates"), ResolveTourStep(4, FirstSteps) == ELFFTourStep::Gates);
+    TestTrue(TEXT("Step 7 is still Gates"), ResolveTourStep(6, FirstSteps) == ELFFTourStep::Gates);
+    TestTrue(TEXT("Step 9 is Plaza"), ResolveTourStep(8, FirstSteps) == ELFFTourStep::Plaza);
+    TestTrue(TEXT("Breaks and help belong to Game"), ResolveTourStep(22, FirstSteps) == ELFFTourStep::Game);
+    TestTrue(TEXT("No chapters: everything is Arrival"), ResolveTourStep(12, TArray<int32>()) == ELFFTourStep::Arrival);
+
+    // Tour to step 9 (Popcorn for the People), then Next towards step 10 and switch while that move is in flight.
+    Machine.Start();
+    Machine.JumpTo(8);
+    Machine.NotifyTransitionFinished(Machine.GetTransitionId());
+    Machine.Next();
+    const uint32 InFlight = Machine.GetTransitionId();
+    TestTrue(TEXT("Free explore is accepted mid-move"), Machine.SwitchToMode(ELFFSimulationMode::FreeExplore) == ELFFCommandResult::Accepted);
+    TestTrue(TEXT("Now in Free explore"), Machine.GetMode() == ELFFSimulationMode::FreeExplore);
+    TestEqual(TEXT("The bookmark is the step the tour was on"), Machine.GetBookmark().StepIndex, 9);
+    TestTrue(TEXT("The bookmark keeps its chapter"), Machine.GetBookmark().TourStep == ELFFTourStep::Plaza);
+    TestTrue(TEXT("The bookmark knows the tour had started"), Machine.GetBookmark().bTourStarted);
+    TestTrue(TEXT("Switching to the same mode is rejected"), Machine.SwitchToMode(ELFFSimulationMode::FreeExplore) == ELFFCommandResult::RejectedSameMode);
+    TestTrue(TEXT("The move from before the switch still lands"), Machine.NotifyTransitionFinished(InFlight));
+    TestTrue(TEXT("Landing doesn't leave Free explore"), Machine.GetMode() == ELFFSimulationMode::FreeExplore);
+
+    // Free explore can't move the step.
+    TestTrue(TEXT("Next is rejected in Free explore"), Machine.Next() == ELFFCommandResult::RejectedInExplore);
+    TestTrue(TEXT("Back is rejected in Free explore"), Machine.Back() == ELFFCommandResult::RejectedInExplore);
+    TestTrue(TEXT("Jump is rejected in Free explore"), Machine.JumpTo(2) == ELFFCommandResult::RejectedInExplore);
+    TestFalse(TEXT("CanNext is false in Free explore"), Machine.CanNext());
+    TestFalse(TEXT("CanBack is false in Free explore"), Machine.CanBack());
+    TestEqual(TEXT("The step is unchanged"), Machine.GetIndex(), 9);
+    TestTrue(TEXT("The arc keeps the bookmarked chapter"), Machine.GetTourStep() == ELFFTourStep::Plaza);
+
+    // Paused means nothing changes, the mode included.
+    Machine.Pause();
+    TestTrue(TEXT("Resume tour while paused is rejected"), Machine.ResumeTour() == ELFFCommandResult::RejectedPaused);
+    Machine.Resume();
+
+    // Resume tour: back to the bookmark with a new move (the caller fade-cuts there).
+    const uint32 BeforeResume = Machine.GetTransitionId();
+    TestTrue(TEXT("Resume tour is accepted"), Machine.ResumeTour() == ELFFCommandResult::Accepted);
+    TestTrue(TEXT("Back in the Guided tour"), Machine.GetMode() == ELFFSimulationMode::GuidedTour);
+    TestEqual(TEXT("Resumes on the bookmarked step"), Machine.GetIndex(), 9);
+    TestTrue(TEXT("Resume starts a move even to the same step"), Machine.GetPhase() == ELFFJourneyPhase::Transitioning);
+    TestTrue(TEXT("Resume retires older moves"), Machine.GetTransitionId() != BeforeResume);
+    TestFalse(TEXT("The bookmark is cleared"), Machine.GetBookmark().IsSet());
+    TestTrue(TEXT("Resume tour in the tour is rejected"), Machine.ResumeTour() == ELFFCommandResult::RejectedSameMode);
+    Machine.NotifyTransitionFinished(Machine.GetTransitionId());
+    TestTrue(TEXT("Next works again"), Machine.Next() == ELFFCommandResult::Accepted);
+    TestEqual(TEXT("Next goes on from the bookmark"), Machine.GetIndex(), 10);
+
+    // An arc node in Free explore resumes at that chapter instead.
+    Machine.SwitchToMode(ELFFSimulationMode::FreeExplore);
+    TestTrue(TEXT("Resume at a chapter is accepted"), Machine.ResumeTour(14) == ELFFCommandResult::Accepted);
+    TestEqual(TEXT("Resumes at the chapter's step"), Machine.GetIndex(), 14);
+    TestTrue(TEXT("That's Game"), Machine.GetTourStep() == ELFFTourStep::Game);
+    Machine.SwitchToMode(ELFFSimulationMode::FreeExplore);
+    TestTrue(TEXT("Resume at a missing step is rejected"), Machine.ResumeTour(23) == ELFFCommandResult::RejectedAtEnd);
+    TestTrue(TEXT("A rejected resume stays in Free explore"), Machine.GetMode() == ELFFSimulationMode::FreeExplore);
+
+    // Restart lands in the Guided tour.
+    Machine.Restart();
+    TestTrue(TEXT("Restart returns to the Guided tour"), Machine.GetMode() == ELFFSimulationMode::GuidedTour);
+    TestFalse(TEXT("Restart clears the bookmark"), Machine.GetBookmark().IsSet());
+
+    // Free explore straight from the welcome screen, then Resume tour starts the tour at step 1.
+    TestTrue(TEXT("Free explore from the welcome screen"), Machine.SwitchToMode(ELFFSimulationMode::FreeExplore) == ELFFCommandResult::Accepted);
+    TestFalse(TEXT("The tour hasn't started"), Machine.GetBookmark().bTourStarted);
+    TestTrue(TEXT("Start is a tour command"), Machine.Start() == ELFFCommandResult::RejectedInExplore);
+    TestTrue(TEXT("Resume tour starts the tour"), Machine.ResumeTour() == ELFFCommandResult::Accepted);
+    TestTrue(TEXT("The tour has started"), Machine.HasStarted());
+    TestEqual(TEXT("At step 1"), Machine.GetIndex(), 0);
+
+    FLFFJourneyStateMachine Empty;
+    Empty.Load(TArray<FLFFJourneyStep>());
+    TestTrue(TEXT("Empty: Free explore"), Empty.SwitchToMode(ELFFSimulationMode::FreeExplore) == ELFFCommandResult::RejectedEmpty);
+    return true;
+}
+
 #endif // WITH_DEV_AUTOMATION_TESTS

@@ -40,9 +40,9 @@ def people():
     # clear of the middle lane the two walkers use, facing back down the line.
     for i, side in enumerate((-1, 1)):
         out.append((f"SI_SecurityStaff{i + 1}", gx + side * 470, gy - 600, -90, "Staff", False))
-    # Inside the sensory room (SI_SensoryRoomProxy at (-7880, -4820), its frame the site's): left of CT_SensoryRoom's
-    # view, clear of the bean bags, facing the camera.
-    at, room_cam = (-8030, -4800), (-7880, -4500)
+    # Inside the sensory room (SI_SensoryRoomProxy at (-8027, 4379), turned 180 from the site's frame): left of
+    # CT_SensoryRoom's view, clear of the bean bags, facing the camera.
+    at, room_cam = (-7877, 4359), (-8027, 4059)
     out.append(("SI_SensoryStaff", *at, s.look((*at, 0), (*room_cam, 0))[1], "Staff", False, SENSORY_FLOOR_Z))
     return out
 

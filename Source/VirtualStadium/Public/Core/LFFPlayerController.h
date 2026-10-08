@@ -29,6 +29,8 @@ public:
 protected:
     virtual void BeginPlay() override;
     virtual void SetupInputComponent() override;
+    /** Free flight: adds the flight keys while Free explore can take them, and feeds the journey each frame. */
+    virtual void PlayerTick(float DeltaTime) override;
 
 private:
     void BuildInputObjects();
@@ -52,6 +54,11 @@ private:
     /** Tab (Shift+Tab goes back) and D-pad Down / Up: the HUD's focus ring (ULFFHUDWidget::MoveFocus). */
     void HandleFocusNext();
     void HandleFocusPrevious();
+    void HandleInputSwitchToTour();
+    void HandleInputSwitchToExplore();
+    void HandleInputFocusMySeat();
+    /** Reads this frame's flight input (value types: Axis2D move, Axis1D rise, bool fast, Axis2D look, Axis1D wheel). */
+    void TickFlight(float DeltaTime);
 
     UPROPERTY(Transient)
     TObjectPtr<UInputMappingContext> JourneyContext;
@@ -103,6 +110,45 @@ private:
 
     UPROPERTY(Transient)
     TObjectPtr<UInputAction> FocusPreviousAction;
+
+    /** T: Guided tour (Start on the welcome screen, Resume tour from Free explore). */
+    UPROPERTY(Transient)
+    TObjectPtr<UInputAction> SwitchToTourAction;
+
+    /** E: Free explore. Two keys, one meaning each, so pressing either twice is harmless. */
+    UPROPERTY(Transient)
+    TObjectPtr<UInputAction> SwitchToExploreAction;
+
+    /** H: Free explore's My seat (the map turns to the seat's level, the camera goes to the seat). */
+    UPROPERTY(Transient)
+    TObjectPtr<UInputAction> FocusMySeatAction;
+
+    /**
+     * Free flight's keys, in their own context (IMC_LFF_Fly, priority 1), added only while Free explore can fly and
+     * removed for the tour, a modal or a pause. While it's on it takes its keys from the journey context: W A S D and the
+     * arrows move, E / Space / Page Up rise, Q / C / Page Down sink, Shift is faster, the wheel steps forward and back,
+     * and a drag with either mouse button over the 3D view looks around. Keys held when it's added are ignored until
+     * released, so the E that opened Free explore doesn't also lift the camera.
+     */
+    UPROPERTY(Transient)
+    TObjectPtr<UInputMappingContext> FlyContext;
+
+    UPROPERTY(Transient)
+    TObjectPtr<UInputAction> FlyMoveAction;
+
+    UPROPERTY(Transient)
+    TObjectPtr<UInputAction> FlyRiseAction;
+
+    UPROPERTY(Transient)
+    TObjectPtr<UInputAction> FlyFastAction;
+
+    UPROPERTY(Transient)
+    TObjectPtr<UInputAction> FlyLookAction;
+
+    UPROPERTY(Transient)
+    TObjectPtr<UInputAction> FlyWheelAction;
+
+    bool bFlyContextOn = false;
 
     UPROPERTY(Transient)
     TObjectPtr<ULFFHUDWidget> HUDWidget;

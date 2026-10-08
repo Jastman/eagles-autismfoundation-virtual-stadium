@@ -7,6 +7,7 @@
 #include "InputAction.h"
 #include "InputCoreTypes.h"
 #include "InputMappingContext.h"
+#include "InputModifiers.h"
 #include "Journey/LFFJourneySubsystem.h"
 #include "UI/LFFHUDWidget.h"
 #include "VirtualStadium.h"
@@ -85,6 +86,14 @@ void ALFFPlayerController::SetupInputComponent()
     EnhancedInput->BindAction(ToggleCrowdAction, ETriggerEvent::Started, this, &ALFFPlayerController::HandleToggleCrowd);
     EnhancedInput->BindAction(FocusNextAction, ETriggerEvent::Started, this, &ALFFPlayerController::HandleFocusNext);
     EnhancedInput->BindAction(FocusPreviousAction, ETriggerEvent::Started, this, &ALFFPlayerController::HandleFocusPrevious);
+    EnhancedInput->BindAction(SwitchToTourAction, ETriggerEvent::Started, this, &ALFFPlayerController::HandleInputSwitchToTour);
+    EnhancedInput->BindAction(SwitchToExploreAction, ETriggerEvent::Started, this, &ALFFPlayerController::HandleInputSwitchToExplore);
+    EnhancedInput->BindAction(FocusMySeatAction, ETriggerEvent::Started, this, &ALFFPlayerController::HandleInputFocusMySeat);
+    // Flight actions are read each frame (TickFlight); binding them makes the input component track their values.
+    for (UInputAction* Action : { FlyMoveAction.Get(), FlyRiseAction.Get(), FlyFastAction.Get(), FlyLookAction.Get(), FlyWheelAction.Get() })
+    {
+        EnhancedInput->BindActionValue(Action);
+    }
 }
 
 UInputAction* ALFFPlayerController::MakeAction(const TCHAR* Name)
@@ -116,6 +125,18 @@ void ALFFPlayerController::BuildInputObjects()
     ToggleCrowdAction = MakeAction(TEXT("IA_LFF_ToggleCrowd"));
     FocusNextAction = MakeAction(TEXT("IA_LFF_FocusNext"));
     FocusPreviousAction = MakeAction(TEXT("IA_LFF_FocusPrevious"));
+    SwitchToTourAction = MakeAction(TEXT("IA_LFF_SwitchToTour"));
+    SwitchToExploreAction = MakeAction(TEXT("IA_LFF_SwitchToExplore"));
+    FocusMySeatAction = MakeAction(TEXT("IA_LFF_FocusMySeat"));
+    FlyMoveAction = MakeAction(TEXT("IA_LFF_FlyMove"));
+    FlyMoveAction->ValueType = EInputActionValueType::Axis2D;
+    FlyRiseAction = MakeAction(TEXT("IA_LFF_FlyRise"));
+    FlyRiseAction->ValueType = EInputActionValueType::Axis1D;
+    FlyFastAction = MakeAction(TEXT("IA_LFF_FlyFast"));
+    FlyLookAction = MakeAction(TEXT("IA_LFF_FlyLook"));
+    FlyLookAction->ValueType = EInputActionValueType::Axis2D;
+    FlyWheelAction = MakeAction(TEXT("IA_LFF_FlyWheel"));
+    FlyWheelAction->ValueType = EInputActionValueType::Axis1D;
 
     JourneyContext = NewObject<UInputMappingContext>(this, TEXT("IMC_LFF_Journey"));
 
@@ -160,6 +181,92 @@ void ALFFPlayerController::BuildInputObjects()
     JourneyContext->MapKey(FocusNextAction, EKeys::Tab);
     JourneyContext->MapKey(FocusNextAction, EKeys::Gamepad_DPad_Down);
     JourneyContext->MapKey(FocusPreviousAction, EKeys::Gamepad_DPad_Up);
+
+    JourneyContext->MapKey(SwitchToTourAction, EKeys::T);
+    JourneyContext->MapKey(SwitchToExploreAction, EKeys::E);
+    JourneyContext->MapKey(FocusMySeatAction, EKeys::H);
+
+    // Free flight: Move is (right, forward). A key on the forward axis is swizzled onto Y; backward and left are negated.
+    FlyContext = NewObject<UInputMappingContext>(this, TEXT("IMC_LFF_Fly"));
+    auto MapMove = [this](const FKey& Key, const bool bForwardAxis, const bool bNegate)
+    {
+        FEnhancedActionKeyMapping& Mapping = FlyContext->MapKey(FlyMoveAction, Key);
+        if (bForwardAxis)
+        {
+            Mapping.Modifiers.Add(NewObject<UInputModifierSwizzleAxis>(FlyContext));
+        }
+        if (bNegate)
+        {
+            Mapping.Modifiers.Add(NewObject<UInputModifierNegate>(FlyContext));
+        }
+    };
+    for (const FKey& Key : { EKeys::W, EKeys::Up }) { MapMove(Key, true, false); }
+    for (const FKey& Key : { EKeys::S, EKeys::Down }) { MapMove(Key, true, true); }
+    for (const FKey& Key : { EKeys::D, EKeys::Right }) { MapMove(Key, false, false); }
+    for (const FKey& Key : { EKeys::A, EKeys::Left }) { MapMove(Key, false, true); }
+    for (const FKey& Key : { EKeys::E, EKeys::SpaceBar, EKeys::PageUp })
+    {
+        FlyContext->MapKey(FlyRiseAction, Key);
+    }
+    for (const FKey& Key : { EKeys::Q, EKeys::C, EKeys::PageDown })
+    {
+        FlyContext->MapKey(FlyRiseAction, Key).Modifiers.Add(NewObject<UInputModifierNegate>(FlyContext));
+    }
+    FlyContext->MapKey(FlyFastAction, EKeys::LeftShift);
+    FlyContext->MapKey(FlyFastAction, EKeys::RightShift);
+    // Mouse deltas reach the game only while the viewport has capture: during a press on the 3D view, never over the UI.
+    FlyContext->MapKey(FlyLookAction, EKeys::Mouse2D);
+    FlyContext->MapKey(FlyWheelAction, EKeys::MouseWheelAxis);
+}
+
+void ALFFPlayerController::PlayerTick(const float DeltaTime)
+{
+    Super::PlayerTick(DeltaTime);
+    TickFlight(DeltaTime);
+}
+
+void ALFFPlayerController::TickFlight(const float DeltaTime)
+{
+    ULFFJourneySubsystem* Journey = GetJourney();
+    UEnhancedInputLocalPlayerSubsystem* InputSubsystem = IsLocalController()
+        ? ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()) : nullptr;
+    if (Journey == nullptr || InputSubsystem == nullptr || FlyContext == nullptr)
+    {
+        return;
+    }
+
+    const bool bWant = Journey->CanFly();
+    if (bWant != bFlyContextOn)
+    {
+        if (bWant)
+        {
+            FModifyContextOptions Options;
+            Options.bIgnoreAllPressedKeysUntilRelease = true;
+            InputSubsystem->AddMappingContext(FlyContext, 1, Options);
+        }
+        else
+        {
+            InputSubsystem->RemoveMappingContext(FlyContext);
+        }
+        bFlyContextOn = bWant;
+    }
+
+    FVector2D Move = FVector2D::ZeroVector, Look = FVector2D::ZeroVector;
+    float Rise = 0.0f, Wheel = 0.0f;
+    bool bFast = false;
+    if (bFlyContextOn)
+    {
+        if (const UEnhancedPlayerInput* PlayerInput = InputSubsystem->GetPlayerInput())
+        {
+            Move = PlayerInput->GetActionValue(FlyMoveAction).Get<FVector2D>();
+            Rise = PlayerInput->GetActionValue(FlyRiseAction).Get<float>();
+            bFast = PlayerInput->GetActionValue(FlyFastAction).Get<bool>();
+            Look = PlayerInput->GetActionValue(FlyLookAction).Get<FVector2D>();
+            Wheel = PlayerInput->GetActionValue(FlyWheelAction).Get<float>();
+        }
+    }
+    // Called every frame, idle too, so flight eases to a stop and the dev shots' scripted push runs.
+    Journey->FlyTick(Move, FMath::Clamp(Rise, -1.0f, 1.0f), Look, Wheel, bFast, DeltaTime);
 }
 
 ULFFJourneySubsystem* ALFFPlayerController::GetJourney() const
@@ -304,4 +411,33 @@ void ALFFPlayerController::HandleFocusPrevious()
     {
         HUDWidget->MoveFocus(-1);
     }
+}
+
+void ALFFPlayerController::HandleInputSwitchToTour()
+{
+    if (ULFFJourneySubsystem* Journey = GetJourney())
+    {
+        Journey->SwitchToMode(ELFFSimulationMode::GuidedTour);
+    }
+}
+
+void ALFFPlayerController::HandleInputSwitchToExplore()
+{
+    if (ULFFJourneySubsystem* Journey = GetJourney())
+    {
+        Journey->SwitchToMode(ELFFSimulationMode::FreeExplore);
+    }
+}
+
+void ALFFPlayerController::HandleInputFocusMySeat()
+{
+    // H means My seat only in Free explore; in the tour the seat is a step, reached with Next.
+    ULFFJourneySubsystem* Journey = GetJourney();
+    if (Journey == nullptr || Journey->GetMode() != ELFFSimulationMode::FreeExplore)
+    {
+        return;
+    }
+    // The map turns to the seat's level and the rig lands exactly on CT_SeatFieldView's pose, behind the usual short fade
+    // (an instant cut in Calm Mode). A bare jump with no fade is the disorienting kind ACCESSIBILITY.md §3 rules out.
+    Journey->GoToMySeat();
 }

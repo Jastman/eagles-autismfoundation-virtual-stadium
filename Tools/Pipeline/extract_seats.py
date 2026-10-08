@@ -5,7 +5,7 @@
 
 Each chair in the CGTrader model is its own loose part of about 50 triangles. Every loose part of a SM_LFF_Seats*
 chunk (the chunks from Tools/Pipeline/prepare_stadium.py, already in the site frame) that is chair-sized becomes one
-seat: its centre on the floor (the part's lowest point) and the direction it faces, toward the nearest point of the
+seat: its horizontal centre, chair underside (not floor), and the direction it faces, toward the nearest point of the
 field, as seats in a bowl do. Output is in the Unreal site frame (LFF_SiteRoot local): cm, +X toward the east stand,
 +Y toward the south end (the chunks' Blender frame has +Y north), Z up, turf at 0.
 """
@@ -77,5 +77,5 @@ for f in sorted(glob.glob(os.path.join(a.chunks, "SM_LFF_Seats*.fbx"))):
 
 os.makedirs(os.path.dirname(a.out), exist_ok=True)
 with open(a.out, "w") as fh:
-    json.dump({"frame": "LFF_SiteRoot local, cm; [x, y, floor z, yaw deg]", "seats": seats}, fh)
+    json.dump({"frame": "LFF_SiteRoot local, cm; [x, y, chair underside z, yaw deg]", "seats": seats}, fh)
 print(f"wrote {len(seats)} seats to {a.out}")

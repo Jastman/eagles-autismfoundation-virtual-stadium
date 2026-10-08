@@ -8,7 +8,8 @@ import os
 import urllib.error
 import urllib.request
 
-URL = "http://127.0.0.1:8000/mcp"
+# UNREAL_MCP_URL points at another port (an editor started with -ModelContextProtocolPort=N).
+URL = os.environ.get("UNREAL_MCP_URL", "http://127.0.0.1:8000/mcp")
 _HEADERS = {"Content-Type": "application/json", "Accept": "application/json, text/event-stream"}
 _session_id = None
 
@@ -52,3 +53,24 @@ def call(toolset, tool, arguments=None):
     if isinstance(value, str) and value.strip().startswith(("{", "[")):
         value = json.loads(value)
     return value
+
+
+def run_python(code):
+    """Runs Python inside the editor (the server's execute_python_code tool, without its pre-run save-all sweep).
+    Returns the tool's text output. Raises McpError if the tool reports an error."""
+    _, response = _post({"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {
+        "name": "execute_python_code", "arguments": {"code": code, "auto_save": False}}}, _session())
+    if "error" in response:
+        raise McpError(f"execute_python_code: {response['error']}")
+    result = response["result"]
+    text = "\n".join(c.get("text", "") for c in result.get("content", []))
+    if result.get("isError"):
+        raise McpError(f"execute_python_code: {text}")
+    try:
+        report = json.loads(text)
+    except ValueError:
+        return text
+    # The tool reports a Python exception as success: false, not as an MCP error.
+    if not report.get("success", True):
+        raise McpError(f"execute_python_code failed: {json.dumps(report, indent=1)[:4000]}")
+    return report.get("output", "")

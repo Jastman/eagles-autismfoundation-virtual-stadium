@@ -60,6 +60,62 @@ enum class ELFFJourneyPhase : uint8
     AtStep
 };
 
+/**
+ * Guided tour (the day, step by step) or Free explore (the map, at your own pace). Switching never loses the tour's
+ * place: Free explore can't move the step, and Resume tour returns to it (Docs/UI_MODES_SPEC.md §2).
+ */
+UENUM(BlueprintType)
+enum class ELFFSimulationMode : uint8
+{
+    GuidedTour,
+    FreeExplore
+};
+
+/**
+ * The five chapters of the day, one node each on the timeline arc. A step belongs to the last chapter whose first step
+ * is at or before it (ALFFGameMode::TourStepFirstSteps); Breaks and help (steps 19-23) are part of Game.
+ */
+UENUM(BlueprintType)
+enum class ELFFTourStep : uint8
+{
+    Arrival,
+    Gates,
+    Plaza,
+    ToMySeat,
+    Game
+};
+
+constexpr int32 LFFTourStepCount = static_cast<int32>(ELFFTourStep::Game) + 1;
+
+/** The stadium map's levels, from the ground up. The map's level tabs list them top to bottom, as they stack. */
+UENUM(BlueprintType)
+enum class ELFFMapLevel : uint8
+{
+    Field,
+    LowerConcourse,
+    Club,
+    Suites,
+    UpperDeck
+};
+
+constexpr int32 LFFMapLevelCount = static_cast<int32>(ELFFMapLevel::UpperDeck) + 1;
+
+/** What a map marker is. Each kind has its own icon or glyph, so markers never differ by colour alone. */
+UENUM(BlueprintType)
+enum class ELFFAmenity : uint8
+{
+    SensoryRoom,
+    QuietZone,
+    GuestServices,
+    Restroom,
+    Food
+};
+
+constexpr int32 LFFAmenityCount = static_cast<int32>(ELFFAmenity::Food) + 1;
+
+/** One bit per ELFFAmenity: the categories shown on the map. Sensory rooms and quiet zones are on by default. */
+constexpr int32 LFFDefaultAmenityMask = (1 << static_cast<int32>(ELFFAmenity::SensoryRoom)) | (1 << static_cast<int32>(ELFFAmenity::QuietZone));
+
 UENUM(BlueprintType)
 enum class ELFFCommandResult : uint8
 {
@@ -70,7 +126,11 @@ enum class ELFFCommandResult : uint8
     RejectedAtStart,
     RejectedAtEnd,
     RejectedDisabledByStep,
-    RejectedPaused
+    RejectedPaused,
+    /** Next, Back, Start and jumps belong to the tour; Free explore can't move the step. */
+    RejectedInExplore,
+    /** Already in that mode. */
+    RejectedSameMode
 };
 
 /**
@@ -123,6 +183,10 @@ struct VIRTUALSTADIUM_API FLFFJourneyStep : public FTableRowBase
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Journey")
     TArray<FName> LabelsToShow;
 
+    /** Places (DT_LFF_Amenities row names) whose callouts stand on the model during this step of the Guided tour. */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Journey")
+    TArray<FName> PlacesToShow;
+
     /** Optional ambient bed for this step; empty uses the game mode's AmbientBed. Plays only when sound is on. */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Journey")
     TSoftObjectPtr<USoundBase> AudioBed;
@@ -161,6 +225,87 @@ struct VIRTUALSTADIUM_API FLFFJourneyStep : public FTableRowBase
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Journey")
     bool bBackEnabled = true;
+};
+
+/**
+ * One row of DT_LFF_Amenities: a place on the Free explore map. The row name is the amenity id.
+ * Source of truth: SourceData/Journey/LFF_Amenities.json (reimport, never hand-edit the table).
+ * A row with no VerificationSource is shown in the editor and dropped in packaged builds (Docs/UI_MODES_SPEC.md D6):
+ * a wrong sensory-room pin could send someone the wrong way.
+ */
+USTRUCT(BlueprintType)
+struct VIRTUALSTADIUM_API FLFFAmenityMarker : public FTableRowBase
+{
+    GENERATED_BODY()
+
+    /** Filled from the Data Table row name at load time. Not authored. */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Map")
+    FName AmenityId = NAME_None;
+
+    /** 2-4 words, plain: "Sensory room", "Guest Services". */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Map")
+    FText Label;
+
+    /** One short line on where it is, in the words the signs use: "West Lower Suite Level". */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Map")
+    FText Note;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Map")
+    ELFFAmenity Category = ELFFAmenity::GuestServices;
+
+    /** The plate it's drawn on. */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Map")
+    ELFFMapLevel Level = ELFFMapLevel::LowerConcourse;
+
+    /** Where it is in LFF_SiteRoot's frame, cm: +X across the field toward the east stand, +Y toward the south end, +Z up. */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Map")
+    FVector Location = FVector::ZeroVector;
+
+    /** An actor in the level tagged this marks the place: its position replaces Location when the journey loads, so the
+     *  marker follows the actor when it's moved. None, or no such actor: Location. */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Map")
+    FName LocationActorTag = NAME_None;
+
+    /** Show me goes here. Must match exactly one ALFFCameraTarget::TargetId; none means the marker has no Show me. */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Map")
+    FName CameraTargetId = NAME_None;
+
+    /** Who confirmed the location, and when. */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Map")
+    FString VerificationSource;
+};
+
+/**
+ * One level of the stadium in Free explore: its height band on the model (highlighted when the level is picked) and the
+ * overview the camera eases to. Heights are in LFF_SiteRoot's frame, cm above the turf, measured from the model's floor
+ * slabs (ALFFGameMode::LevelViews).
+ */
+USTRUCT(BlueprintType)
+struct VIRTUALSTADIUM_API FLFFLevelView
+{
+    GENERATED_BODY()
+
+    /** The level's main floor: the overview looks at it. */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Map")
+    float FloorZ = 0.0f;
+
+    /** The band the highlight tints, bottom and top. */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Map")
+    float MinZ = 0.0f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Map")
+    float MaxZ = 0.0f;
+
+    /** The overview: how far from the stadium centre, how steeply it looks down, and from which heading (0 looks along +X,
+     *  from the west stand, the seat's side). */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Map")
+    float ViewDistance = 26000.0f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Map")
+    float ViewPitchDegrees = -35.0f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Map")
+    float ViewYawDegrees = 20.0f;
 };
 
 /** Visitor choices for this session. Held in memory only; nothing is written to disk (LEDGER D11). */
@@ -226,6 +371,53 @@ struct VIRTUALSTADIUM_API FLFFJourneySnapshot
 
     UPROPERTY(BlueprintReadOnly, Category = "Journey")
     ELFFJourneyPhase Phase = ELFFJourneyPhase::Empty;
+
+    /** In Free explore, StepIndex and TourStep are where Resume tour goes back to. */
+    UPROPERTY(BlueprintReadOnly, Category = "Journey")
+    ELFFSimulationMode Mode = ELFFSimulationMode::GuidedTour;
+
+    /** The chapter of StepIndex: the current node on the timeline arc ("my place" in Free explore). */
+    UPROPERTY(BlueprintReadOnly, Category = "Journey")
+    ELFFTourStep TourStep = ELFFTourStep::Arrival;
+
+    /** First step (0-based) of each ELFFTourStep, in order (ALFFGameMode::TourStepFirstSteps). */
+    UPROPERTY(BlueprintReadOnly, Category = "Journey")
+    TArray<int32> TourStepFirstSteps;
+
+    /** Free explore, no modal, not paused: Resume tour can be pressed. */
+    UPROPERTY(BlueprintReadOnly, Category = "Journey")
+    bool bCanResumeTour = false;
+
+    /** The level picked in Free explore (its callouts show). Kept across mode switches; reset by Start again. */
+    UPROPERTY(BlueprintReadOnly, Category = "Map")
+    ELFFMapLevel MapLevel = ELFFMapLevel::LowerConcourse;
+
+    /** The picked level is highlighted on the model (after a level button, until the tour resumes). */
+    UPROPERTY(BlueprintReadOnly, Category = "Map")
+    bool bLevelHighlight = false;
+
+    /** One bit per ELFFAmenity shown on the map. */
+    UPROPERTY(BlueprintReadOnly, Category = "Map", meta = (Bitmask, BitmaskEnum = "/Script/VirtualStadium.ELFFAmenity"))
+    int32 AmenityMask = LFFDefaultAmenityMask;
+
+    /** The marker picked on the map (its card shows Show me). None when nothing is picked. */
+    UPROPERTY(BlueprintReadOnly, Category = "Map")
+    FName SelectedAmenityId = NAME_None;
+
+    /** Guided tour: the current step's PlacesToShow, named on the model. Empty in Free explore and before the tour starts. */
+    UPROPERTY(BlueprintReadOnly, Category = "Map")
+    TArray<FName> TourPlaces;
+
+    /** Where the camera is: the last camera target it went to ("You are here"). */
+    UPROPERTY(BlueprintReadOnly, Category = "Map")
+    FName ViewTargetId = NAME_None;
+
+    /** The visitor's seat: its camera target and the level it's on (ALFFGameMode). */
+    UPROPERTY(BlueprintReadOnly, Category = "Map")
+    FName MySeatTargetId = NAME_None;
+
+    UPROPERTY(BlueprintReadOnly, Category = "Map")
+    ELFFMapLevel MySeatLevel = ELFFMapLevel::LowerConcourse;
 
     UPROPERTY(BlueprintReadOnly, Category = "Journey")
     int32 StepIndex = INDEX_NONE;

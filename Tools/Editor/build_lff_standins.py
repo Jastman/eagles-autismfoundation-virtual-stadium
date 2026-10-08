@@ -9,7 +9,7 @@ targets (it only moves LBL_Plaza up out of the caption's way).
 
 Everything is Illustrative (LEDGER D9): simple, cheap shapes so a step isn't an empty plaza. No photoreal interiors.
 Session 3 adds the moving pieces (ALFFCueActor: three gate proxies, the arriving car, the eagle's pass, soft
-fireworks), the popcorn cart and sensory trailer built to the brief, 10 parked cars, and a low crowd of 15 plain
+fireworks), the popcorn cart built to the brief, 10 parked cars, and a low crowd of 15 plain
 stand-in people (tag LFF_Crowd; no jerseys, nobody in the bowl). The cars are City Sample Vehicles (seven car models;
 no trucks, vans or buses); people are still primitives until the crowd pass (Docs/KNOWN_LIMITATIONS.md). Poses are in the local stadium frame (Tools/Editor/build_lff_stadium_level.py): +X across the field
 toward the east stand, +Y along it toward the south end, cm. Heights are traced onto the model, so props sit on it.
@@ -176,6 +176,23 @@ class Prop:
         set_props(c, values)
         return c
 
+    def model(self, key, at, yaw=0.0, overrides=None):
+        """One of the imported prop models (MODELS), scaled, turned by `yaw` and placed so its footprint's centre
+        sits at `at` with its lowest point on at's z. `overrides` maps slot index -> material ref."""
+        path, scale, (cx, cy, zmin) = MODELS[key]
+        c_, s_ = math.cos(math.radians(yaw)), math.sin(math.radians(yaw))
+        ox, oy = scale * (cx * c_ - cy * s_), scale * (cx * s_ + cy * c_)
+        slots = None
+        if overrides:
+            slots = [None] * (max(overrides) + 1)
+            for i, mat in overrides.items():
+                slots[i] = mat
+        comp = self.mesh(path, slots)
+        set_props(comp, {"RelativeLocation": dict(zip("xyz", (at[0] - ox, at[1] - oy, at[2] - scale * zmin))),
+                         "RelativeRotation": {"pitch": 0, "yaw": yaw, "roll": 0},
+                         "RelativeScale3D": {"x": scale, "y": scale, "z": scale}})
+        return comp
+
     def logo(self, mi, at, width, height):
         """A logo (a masked MI) on the engine's 1 m plane, facing +X. The plane maps its texture once; the cubes
         from add_cube map one repeat per metre, which crops a small panel. Yaw -90 / roll 90 turns the plane's face
@@ -257,8 +274,27 @@ GLOW = "/Game/LFF/Materials/MI_LFF_FireworkGlow.MI_LFF_FireworkGlow"
 LOGO_EAF = "/Game/LFF/Logos/MI_LFF_Logo_EAF.MI_LFF_Logo_EAF"
 LOGO_WAWA = "/Game/LFF/Logos/MI_LFF_Logo_Wawa.MI_LFF_Logo_Wawa"
 LOGO_MIDFIELD = "/Game/LFF/Logos/MI_LFF_LogoDecal_Eagles.MI_LFF_LogoDecal_Eagles"
-# Lettering colours (FColor, sRGB). KultureCity green, near-black, white.
-SAV_GREEN, INK, WHITE = (120, 200, 60), (20, 20, 22), (245, 245, 240)
+# Lettering colour (FColor, sRGB): near-black.
+INK = (20, 20, 22)
+
+# Prop models from Assets/*.gltf (Tools/Editor/import_lff_props.py): mesh, uniform scale to real size, and the
+# mesh's own footprint centre (x, y) and lowest z, in its units (the files came in at different scales and pivots).
+# Each faces the viewer after the yaw its function gives it.
+PROPS = "/Game/LFF/Props"
+MODELS = {
+    # 32 x 21 x 27 cm, its wide face toward -Y. Slot 1 is the bag's plastic (alpha 0 in the file): M_LFF_ClearBag.
+    "Bag": (f"{PROPS}/Bag/SM_LFF_Bag.SM_LFF_Bag", 1.0, (2, -10, 1)),
+    # A bike-rack barrier, along X. At 0.103 a section is 2.75 m long and 1.1 m tall: four to an 11 m lane line.
+    "Barrier": (f"{PROPS}/Barrier/SM_LFF_Barrier.SM_LFF_Barrier", 0.103, (-6, 0, -153)),
+    # A walk-through metal detector, walked through along X. At 0.08: 2.3 m tall, 1.03 m wide.
+    "MetalDetector": (f"{PROPS}/MetalDetector/SM_LFF_MetalDetector.SM_LFF_MetalDetector", 0.08, (1116, -1028, -61)),
+    # A concession stand at real size: 15.2 m long, 3.6 m tall, its counters toward -Y.
+    "Concession": (f"{PROPS}/Concession/SM_LFF_Concession.SM_LFF_Concession", 1.0, (45, -115, -8)),
+    # The Sensory Activation Vehicle, tongue toward -Y, door side toward +X. Its side wrap is the real trailer's,
+    # from the reference photo (Tools/Pipeline/prepare_sav_wrap.py). At 0.065 the body is 4.1 m long and 1.9 m tall
+    # on 0.76 m wheels, as in the photo (5.4 m with the tongue).
+    "SensoryVehicle": (f"{PROPS}/SensoryVehicle/SM_LFF_SensoryVehicle.SM_LFF_SensoryVehicle", 0.065, (484, -1660, -90)),
+}
 
 
 # City Sample Vehicles (Fab, /Game/CitySampleVehicles): the five everyday cars. Not the vans, trucks, garbage truck,
@@ -406,13 +442,17 @@ def metahuman(label, x, y, yaw, look, tee="Green", moving=None, z=None, folder=F
 def security_checkpoint(gx, gy):
     """Step 05: one walk-through arch at the end of each lane of the line, and two people who walk through the middle
     one, one at a time, when the camera arrives (cue SecurityWalk): the line's front two, set up by queue_people."""
-    arches = Prop("SI_SecurityArches", gx, gy - 650, yaw=90)  # openings run along +Y: the line walks straight in
-    for ax in (-300, 0, 300):  # the lane centres between the stanchion lines (SI_QueueStanchions)
-        arches.box((60, 20, 210), (0, ax - 55, 105), "Grey")
-        arches.box((60, 20, 210), (0, ax + 55, 105), "Grey")
-        arches.box((60, 130, 22), (0, ax, 221), "Grey")
+    security_arches(gx, gy)
     sign("LBL_Security", "Security", gx, gy - 650, 360, (gx - 700, gy - 1500, 300), 40)
     target("CT_Security", (gx - 700, gy - 1500), (gx, gy - 650, 150))
+
+
+def security_arches(gx, gy):
+    """Step 05: a walk-through metal detector at the end of each lane."""
+    arches = Prop("SI_SecurityArches", gx, gy - 650, yaw=90)  # openings run along +Y: the line walks straight in
+    for ax in (-300, 0, 300):  # the lane centres between the barrier lines (SI_QueueStanchions)
+        arches.model("MetalDetector", (0, ax, 0))
+    return arches
 
 
 def bag_check_target(gx, gy):
@@ -507,17 +547,11 @@ def clear_bag_material():
 
 
 def clear_bag_table(gx, gy):
-    """Step 06: the bag check table and a clear bag on it: see-through walls (M_LFF_ClearBag), dark handles, a wallet
-    and a phone inside so it reads as a bag."""
+    """Step 06: the bag check table and the clear bag model on it (a wallet, phone and headphones inside), its
+    plastic in M_LFF_ClearBag."""
     table = Prop("SI_BagTable", gx + 750, gy - 650, face=(gx + 100, gy - 1450))
     table.box((70, 180, 85), (0, 0, 42), "Grey")
-    table.box((16, 36, 30), (0, -40, 100), "ClearBag")      # the bag (stood on the table, 85 cm)
-    table.box((4, 12, 8), (0, -46, 90), "Blue")               # a wallet inside
-    table.box((2, 7, 14), (2, -32, 93), "Dark")               # a phone inside
-    for hx in (-6, 6):                                        # two handles over the top
-        for hy in (-48, -32):
-            table.box((1.5, 1.5, 11), (hx, hy, 120), "Dark")
-        table.box((1.5, 18, 1.5), (hx, -40, 126), "Dark")
+    table.model("Bag", (0, -40, 85), yaw=90, overrides={1: MATS["ClearBag"]})  # stood on the table, wide face out
     return table
 
 
@@ -584,35 +618,48 @@ def popcorn_cart(x, y, face):
 
 
 def sensory_trailer(x, y, face):
-    """Sensory Activation Vehicle (from the brief's photo description): a black trailer with green lettering,
-    SENSORY ACTIVATION VEHICLE / MOBILE SENSORY SPACE / KultureCity. The mascot art isn't in the project, so the
-    side carries lettering only. Nothing on it moves."""
+    """Sensory Activation Vehicle: the trailer model (MODELS) in the real trailer's wrap (lettering, the green MOBILE
+    SENSORY SPACE stripe, the KultureCity, CHOP and Eagles Autism Foundation logos, the door's EAF panel), door side
+    toward the camera, and the white rooftop air conditioner from the photo. Nothing on it moves."""
     v = Prop("SI_SensoryTrailer", x, y, face=face)
-    v.box((250, 800, 280), (0, 0, 200), "Dark")                  # black trailer body
-    v.box((252, 802, 10), (0, 0, 345), "Grey")                   # roof edge
-    v.box((80, 120, 30), (0, 150, 365), "Grey")                  # roof unit
-    for wy in (-70, 70):
-        for wx in (-115, 115):
-            v.cyl(38, 24, (wx, wy, 38), "Dark", rot=(90, 0, 0))
-    v.box((40, 220, 18), (0, -505, 55), "Grey")                  # tongue
-    v.cyl(6, 50, (0, -600, 30), "Grey")                          # jack
-    v.box((3, 100, 210), (126, 280, 175), "Grey")                # door
-    v.box((70, 110, 16), (160, 280, 36), "Grey")                 # step
-    painted_text(v, "SENSORY ACTIVATION VEHICLE", (128, -70, 285), 32, SAV_GREEN, "TXT_SAV_Title")
-    painted_text(v, "MOBILE SENSORY SPACE", (128, -70, 245), 22, SAV_GREEN, "TXT_SAV_Sub")
-    painted_text(v, "KultureCity", (128, -70, 200), 26, WHITE, "TXT_SAV_KultureCity")
+    v.model("SensoryVehicle", (0, 0, 0))
+    v.box((70, 75, 26), (0, 83, 246), "Paint")        # rooftop AC, a little behind the middle (roof at 233 cm)
+    for gy in (-22, -11, 0, 11, 22):                   # its grille
+        v.box((72, 4, 14), (0, 83 + gy, 246), "Grey")
     return v
 
 
-def stanchion_line(p, x, y0, y1, step=250):
-    """Posts with a belt between them, in prop-local coordinates (the prop is placed at its line's start)."""
-    n = int(round(abs(y1 - y0) / step))
-    for i in range(n + 1):
-        y = y0 + (y1 - y0) * i / n
-        p.cyl(4, 95, (x, y, 47), "Dark")
-        p.cyl(17, 3, (x, y, 1.5), "Dark")
-        if i:
-            p.box((2, abs(y1 - y0) / n, 6), (x, y - (y1 - y0) / n / 2, 88), "Blue")
+SAV_AT, SAV_FACE = (-8300, -20400), (-7950, -21350)  # the trailer, and the point its door side faces
+SAV_CAM = (-8055, -21065)                             # 7 m out on that line: the 4.1 m trailer fills the frame
+
+
+def sensory_vehicle_target():
+    return target("CT_SensoryVehicle", SAV_CAM, (*SAV_AT, 130))
+
+
+def queue_barriers(gx, gy):
+    """Step 04: the line's four lane lines at the Pepsi Plaza entry, each four bike-rack barrier sections end to end."""
+    queue = Prop("SI_QueueStanchions", gx, gy - 1900)
+    for x in (-450, -150, 150, 450):
+        for i in range(4):
+            queue.model("Barrier", (x, 137.5 + i * 275, 0), yaw=90)
+    return queue
+
+
+def food_stand():
+    """Step 22: the concession stand model, under the LBL_Food sign, its counters facing the concourse."""
+    stand = Prop("SI_FoodCounter", -7320, -1200, yaw=180)
+    stand.model("Concession", (0, 0, 0), yaw=90)
+    return stand
+
+
+def food_sign():
+    """Moves the original LBL_Food (build_lff_stadium_level.py) to just in front of the stand's front (1.35 m out
+    from its centre) and above its 3.6 m roof, facing CT_Food."""
+    food = next(a for a in call(SC, "find_actors", {"name": "LBL_Food", "tag": "LBL_Food", "collision_channels": []}))
+    fz = ground(-7320, -1200) + 420
+    call(AT, "set_actor_transform", {"actor": food, "worldspace": False,
+                                     "xform": xform((-7480, -1200, fz), (0, look((-7480, -1200, fz), (-8350, -2300, 0))[1], 0))})
 
 
 def midfield_logo():
@@ -698,9 +745,7 @@ def main():
 
     # --- 04-08. The Pepsi Plaza entry, north of the plaza: line, security, the gate, clear bags, ticket. ---------
     gx, gy = PLAZA_GATE
-    queue = Prop("SI_QueueStanchions", gx, gy - 1900)
-    for x in (-450, -150, 150, 450):
-        stanchion_line(queue, x, 0, 1100)
+    queue_barriers(gx, gy)
     for i, (qx, qy, shirt, pants) in enumerate(((-300, -1700, "Blue", "Dark"), (-300, -1450, "Grey", "Midnight"),
                                                 (0, -1600, "Bone", "Dark"), (0, -1300, "Midnight", "Grey"),
                                                 (300, -1750, "Red", "Dark"), (300, -1500, "Silver", "Midnight"))):
@@ -739,12 +784,12 @@ def main():
         counts["people"] += 1
     target("CT_Popcorn", pop_cam, (*pop_at, 220))
 
-    sav_at, sav_cam = (-8300, -20400), (-7950, -21350)
-    sensory_trailer(*sav_at, face=sav_cam)
+    sav_at = SAV_AT
+    sensory_trailer(*sav_at, face=SAV_FACE)
     for i, (px, py, shirt, pants) in enumerate(((-7500, -20750, "Grey", "Dark"), (-8950, -20950, "Midnight", "Grey"))):
         person(f"SI_CrowdSAV{i + 1}", px, py, look((px, py, 0), (*sav_at, 0))[1], shirt, pants)
         counts["people"] += 1
-    target("CT_SensoryVehicle", sav_cam, (*sav_at, 190))
+    sensory_vehicle_target()
 
     # --- 12-14. Club gates at 11:00, inner stadium gates at 11:30 (flares are viewed from there too). ----------
     cx, cy = CLUB_GATE
@@ -784,19 +829,21 @@ def main():
     sign("LBL_GuestServices", "Guest Services<br>Sections 121 · 136 · 206 · 226", *gs_at, 330, (*gs_cam, 300), 30, lines=2)
     target("CT_GuestServices", gs_cam, (*gs_at, 150))
 
-    door_at, door_cam = (-7450, -4300), (-8350, -5400)
-    door = Prop("SI_SensoryRoomDoor", *door_at, yaw=180)  # a free-standing portal facing out onto the concourse
+    # The sensory room sits at "Actor - Sensory Room Location" (placed by hand, 2026-10-07): SI_SensoryRoomProxy (the room,
+    # hand-built, centre (-8027, 4379), turned 180 so its doorway faces Guest Services) and CP_ConcourseToSensoryRoom (the
+    # route in) are in the level, not here. These pieces keep their old places relative to the room.
+    door_at, room_cam = (-8457, 3859), (-8027, 4059)
+    door = Prop("SI_SensoryRoomDoor", *door_at, yaw=0)  # a free-standing portal beside the doorway
     door.box((20, 20, 230), (0, -75, 115), "Grey")
     door.box((20, 20, 230), (0, 75, 115), "Grey")
     door.box((20, 170, 20), (0, 0, 240), "Grey")
     door.box((6, 130, 220), (-4, 0, 110), "Blue")
     door.box((4, 8, 30), (-9, -45, 105), "Silver")
-    sign("LBL_SensoryRoom", "Sensory Room<br>West Lower Suite Level", -7470, -4300, 320, (*door_cam, 300), 28, lines=2)
-    target("CT_SensoryRoom", door_cam, (-7450, -4300, 150))
+    # On the room's back wall, facing the camera inside the doorway; the camera looks in and a little down (12 degrees).
+    sign("LBL_SensoryRoom", "Sensory Room<br>West Lower Suite Level", -8027, 4754, 305, (*room_cam, 463), 28, lines=2)
+    target("CT_SensoryRoom", room_cam, (-8027, 4959, -27))
 
-    counter = Prop("SI_FoodCounter", -7320, -1200, yaw=180)  # under the existing LBL_Food sign
-    counter.box((60, 300, 105), (0, 0, 52), "Red")
-    counter.box((70, 320, 6), (0, 0, 108), "Bone")
+    food_stand()  # under the existing LBL_Food sign
     target("CT_Food", (-8350, -2300), (-7320, -1200, 170))
 
     staff_at, staff_cam = STAFF_AT, STAFF_CAM
@@ -810,11 +857,8 @@ def main():
     call(AT, "set_actor_transform", {"actor": plaza, "worldspace": False,
                                      "xform": xform((-4600, -18200, pz), (0, look((-4600, -18200, pz), (-9300, -21900, 0))[1], 0))})
 
-    # ...and the original food sign off the concourse wall (it was partly inside it), over the new counter.
-    food = next(a for a in call(SC, "find_actors", {"name": "LBL_Food", "tag": "LBL_Food", "collision_channels": []}))
-    fz = ground(-7320, -1200) + 260
-    call(AT, "set_actor_transform", {"actor": food, "worldspace": False,
-                                     "xform": xform((-7360, -1200, fz), (0, look((-7360, -1200, fz), (-8350, -2300, 0))[1], 0))})
+    # ...and the original food sign off the concourse wall (it was partly inside it), over the concession stand.
+    food_sign()
 
     call(AS, "save_assets", {"asset_paths": [LEVEL]})
     print(f"placed stand-ins, labels and targets; level saved. {counts['cars']} parked cars + 1 arriving, "

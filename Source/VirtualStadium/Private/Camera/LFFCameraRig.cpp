@@ -16,6 +16,8 @@ ALFFCameraRig::ALFFCameraRig()
     if (UCameraComponent* Camera = GetCameraComponent())
     {
         Camera->SetConstraintAspectRatio(false);
+        Camera->bOverrideAspectRatioAxisConstraint = true;
+        Camera->SetAspectRatioAxisConstraint(AspectRatio_MaintainXFOV);
         Camera->SetFieldOfView(70.0f);
     }
 }
@@ -133,6 +135,30 @@ void ALFFCameraRig::BeginTransition(
         break;
     }
     }
+}
+
+bool ALFFCameraRig::IsBusy() const
+{
+    const UWorld* World = GetWorld();
+    const bool bFading = World != nullptr
+        && (World->GetTimerManager().IsTimerActive(FadeOutTimer) || World->GetTimerManager().IsTimerActive(FadeInTimer));
+    return bEasing || bPathing || bOrbiting || bOrbitEasing || FollowTarget.IsValid() || bFading;
+}
+
+void ALFFCameraRig::SetPostProcessBlendable(UObject* Blendable, const float Weight)
+{
+    UCameraComponent* Camera = GetCameraComponent();
+    if (Camera == nullptr || Blendable == nullptr)
+    {
+        return;
+    }
+    TArray<FWeightedBlendable>& Blendables = Camera->PostProcessSettings.WeightedBlendables.Array;
+    FWeightedBlendable* Entry = Blendables.FindByPredicate([Blendable](const FWeightedBlendable& Item) { return Item.Object == Blendable; });
+    if (Entry == nullptr)
+    {
+        Entry = &Blendables.Add_GetRef(FWeightedBlendable(Weight, Blendable));
+    }
+    Entry->Weight = Weight;
 }
 
 void ALFFCameraRig::SnapTo(const FTransform& TargetTransform, const float TargetFieldOfView)

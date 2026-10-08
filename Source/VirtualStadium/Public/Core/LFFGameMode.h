@@ -6,6 +6,7 @@
 #include "LFFGameMode.generated.h"
 
 class UDataTable;
+class UMaterialInterface;
 class USoundBase;
 
 /**
@@ -30,6 +31,90 @@ public:
 
     UPROPERTY(EditDefaultsOnly, Category = "Journey")
     FLFFVisitorSettings DefaultVisitorSettings;
+
+    /**
+     * First step (0-based) of each ELFFTourStep, in order: Arrival, Gates, Plaza, To my seat, Game. These are steps 1, 5,
+     * 8, 11 and 15 of SourceData/Journey/LFF_GoldenPath.json; Breaks and help (19-23) are part of Game. The arc and the
+     * sidebar eyebrow read these through the snapshot, so update them here if steps are added.
+     */
+    UPROPERTY(EditDefaultsOnly, Category = "Journey")
+    TArray<int32> TourStepFirstSteps = { 0, 4, 7, 10, 14 };
+
+    /** Free explore's My seat button goes here: the view from Section 111, Row 10, Seat 8. */
+    UPROPERTY(EditDefaultsOnly, Category = "Explore")
+    FName MySeatTargetId = TEXT("CT_SeatFieldView");
+
+    /** The seat's map level (lower bowl, reached from the lower concourse). Free explore opens on it the first time. */
+    UPROPERTY(EditDefaultsOnly, Category = "Explore")
+    ELFFMapLevel MySeatLevel = ELFFMapLevel::LowerConcourse;
+
+    /** The My seat callout and card. */
+    UPROPERTY(EditDefaultsOnly, Category = "Explore")
+    FText MySeatLabel;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Explore")
+    FText MySeatNote;
+
+    /** Free explore's places (row struct LFFAmenityMarker), imported from SourceData/Journey/LFF_Amenities.json. */
+    UPROPERTY(EditDefaultsOnly, Category = "Explore")
+    TSoftObjectPtr<UDataTable> AmenityTable = TSoftObjectPtr<UDataTable>(FSoftObjectPath(TEXT("/Game/LFF/Data/DT_LFF_Amenities.DT_LFF_Amenities")));
+
+    /** Packaged builds drop places with no VerificationSource; on keeps them (internal review builds only). The editor shows them. */
+    UPROPERTY(EditDefaultsOnly, Category = "Explore")
+    bool bShowUnverifiedAmenities = false;
+
+    /**
+     * One per ELFFMapLevel, in that order. Floor heights come from the model's own floor slabs (site frame, cm above the
+     * turf): the main concourse deck at 7.7 m with the grade walkway under it at 1.6 m, the club concourse at 17.2 m, the
+     * two suite levels at 21.8 and 26.7 m, the upper concourse at 31.2 m (upper seats to 48 m).
+     */
+    UPROPERTY(EditDefaultsOnly, Category = "Explore")
+    TArray<FLFFLevelView> LevelViews;
+
+    /** The picked level's highlight: a post-process tint over its height band, inside the stadium's footprint. */
+    UPROPERTY(EditDefaultsOnly, Category = "Explore")
+    TSoftObjectPtr<UMaterialInterface> LevelHighlightMaterial = TSoftObjectPtr<UMaterialInterface>(FSoftObjectPath(TEXT("/Game/LFF/UI/Materials/M_LFF_LevelHighlight.M_LFF_LevelHighlight")));
+
+    /** The stadium's footprint for the highlight (half-widths, cm), so the city tiles at the same height stay untouched. */
+    UPROPERTY(EditDefaultsOnly, Category = "Explore")
+    FVector2D StadiumFootprintRadii = FVector2D(13000.0, 14000.0);
+
+    /** KELLY #69BE28 at 35%: the level shows through its tint. Everything else in the stadium dims a little. */
+    UPROPERTY(EditDefaultsOnly, Category = "Explore")
+    FLinearColor LevelHighlightColor = FLinearColor(0.141f, 0.514f, 0.021f, 1.0f);
+
+    UPROPERTY(EditDefaultsOnly, Category = "Explore", meta = (ClampMin = "0.1", ClampMax = "0.6"))
+    float LevelHighlightOpacity = 0.35f;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Explore", meta = (ClampMin = "0.0", ClampMax = "0.5"))
+    float LevelDimOutside = 0.3f;
+
+    /** Free flight: cruise speed (cm/s), Shift's multiplier, mouse-look degrees per pixel of drag, the ease into and out of
+     *  moving (seconds), and the space you can fly in (site frame: radius from the centre, lowest and highest Z). */
+    UPROPERTY(EditDefaultsOnly, Category = "Explore", meta = (ClampMin = "100.0"))
+    float FlySpeed = 1200.0f;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Explore", meta = (ClampMin = "1.0", ClampMax = "5.0"))
+    float FlyFastMultiplier = 3.0f;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Explore", meta = (ClampMin = "0.02", ClampMax = "1.0"))
+    float FlyLookDegreesPerPixel = 0.15f;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Explore", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+    float FlyEaseSeconds = 0.3f;
+
+    /** One mouse-wheel notch moves this far, eased. */
+    UPROPERTY(EditDefaultsOnly, Category = "Explore")
+    float FlyWheelStep = 1500.0f;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Explore")
+    float FlyBoundsRadius = 60000.0f;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Explore")
+    float FlyMinZ = 150.0f;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Explore")
+    float FlyMaxZ = 30000.0f;
 
     UPROPERTY(EditDefaultsOnly, Category = "Copy")
     FText IntroTitle;

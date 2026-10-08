@@ -5,9 +5,10 @@
 #include "LFFKaraokeDecorator.generated.h"
 
 /**
- * The spoken word on the caption card: <w>word</> in the card's rich text. The word keeps the card's own font and
- * colour (so nothing reflows and the text contrast never drops) and gets a soft tinted highlight behind it plus a solid
- * underline across its foot, so the marker never depends on colour alone. No animation: it moves word to word.
+ * The spoken word on the caption card: <w>word</> in the card's rich text. The word stays an ordinary text run in the
+ * card's own font and colour (so the lines break exactly as they do without it, nothing reflows, and the text contrast
+ * never drops) and gets a soft tinted highlight behind it plus a solid underline across its foot, so the marker never
+ * depends on colour alone. No animation: it moves word to word.
  */
 UCLASS()
 class VIRTUALSTADIUM_API ULFFKaraokeDecorator : public URichTextBlockDecorator

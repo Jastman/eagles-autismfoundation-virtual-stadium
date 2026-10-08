@@ -190,15 +190,19 @@ class Builder:
                         {"HorizontalAlignment": "HAlign_Fill", "VerticalAlignment": "VAlign_Fill"})
 
     def button(self, name, label_name, label, parent, primary=False, min_w=180, min_h=RAIL_H, size=T_CONTROL, slot=None,
-               style=None):
+               style=None, wrap=False):
         """SizeBox (minimum size) > Button (not focusable; the HUD runs its own focus ring) > label."""
         box = self.add("SizeBox", f"{name}Size", parent, {"bOverride_MinDesiredWidth": True, "MinDesiredWidth": min_w,
                                                           "bOverride_MinDesiredHeight": True, "MinDesiredHeight": min_h}, slot)
         b = self.add("Button", name, box, {"IsFocusable": False, "WidgetStyle": style or (PRIMARY_STYLE if primary else SECONDARY_STYLE),
                                            "BackgroundColor": WHITE},
                      {"HorizontalAlignment": "HAlign_Fill", "VerticalAlignment": "VAlign_Fill"})
-        self.text(label_name, label, b, size, "Bold", color=ON_KELLY if primary else INK,
-                  slot={"HorizontalAlignment": "HAlign_Center", "VerticalAlignment": "VAlign_Center"})
+        text = self.text(label_name, label, b, size, "Bold", color=ON_KELLY if primary else INK,
+                         justify="Center" if wrap else None,
+                         slot={"HorizontalAlignment": "HAlign_Fill" if wrap else "HAlign_Center",
+                               "VerticalAlignment": "VAlign_Center"})
+        if wrap:
+            set_props(text, {"AutoWrapText": True})
         return b
 
     def toggle_row(self, name, label_name, label, parent, slot=None, min_w=440):
@@ -593,6 +597,11 @@ def build(rebuild):
 
 
 if __name__ == "__main__":
+    # The two-mode HUD (Tools/Editor/build_wbp_lff_modes.py) replaced this one: WBP_LFF_HUD now binds Welcome, the sidebar
+    # panels and the switchers, so rebuilding it here would leave a HUD that can't compile. Only WBP_LFF_Settings is still
+    # built by this script's code (and reused as it is).
+    if "--legacy" not in sys.argv[1:]:
+        raise SystemExit("The HUD is built by Tools/Editor/build_wbp_lff_modes.py now. Pass --legacy to run this old builder anyway.")
     if "--extend" in sys.argv[1:]:
         extend()
     else:

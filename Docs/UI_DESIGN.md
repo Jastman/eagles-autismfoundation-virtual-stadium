@@ -1,67 +1,77 @@
-# HUD design: "Chapters" (2026-10-02)
+# HUD design: Scene-first stadium guide (2026-10-07)
 
-The fourth UI pass, and a structural redesign. It replaces both the paper-light theme (`UI_AUDIT.md`) and the first "night field" pass, which changed colours and type but kept the old cards. Widgets are built by `Tools/Editor/build_wbp_lff_ui.py`; the C++ contract is in `JOURNEY_SCHEMA.md`. If anything here conflicts with `ACCESSIBILITY.md`, `ACCESSIBILITY.md` wins.
+The active presentation replaces the permanent sidebar and central chapter arc with two compact corner groups. The direction comes from the supplied clean, scene-led Apple Park reference: the stadium is the experience; controls and information stay at its edges. Eagles identity, factual journey copy and existing interaction semantics are preserved.
 
-## Brief
-- Eagles colours. Desktop Mac and Windows now, desktop and mobile web later.
-- **Accessibility first**, for autistic and neurodiverse visitors: predictable, calm, easy to read.
-- Clean and minimal. A real reimagining, modelled on the references:
-  - three Three.js scene pieces posted on X ("Aegean", "Stillwater", an ocean scene);
-  - sael.net/plane-of-focus.
-- No "illustration" / "simulation" / disclaimer copy anywhere in the UI (the user's call, 2026-10-02).
+Build the saved widgets with `Tools/Editor/build_wbp_lff_modes.py`. The native binding contract is in `JOURNEY_SCHEMA.md`. `ACCESSIBILITY.md` takes precedence. The earlier sidebar/arc proposal remains in `UI_MODES_SPEC.md` as history, not implementation guidance.
 
-## The structure we took from the references
-| Reference pattern | Here |
-|---|---|
-| No boxes: titles sit on the scene | The step is a **caption on the scene**, lower left, on a soft dark field with no hard edge (`T_LFF_Fog`, a 9-slice with a 132 px feathered rim). |
-| Eyebrow over a big title ("01 / Under the lemon tree") | `02 / Gates open · 10:00 AM` in kelly over a 44 px title and 26 px body. |
-| One chapter bar at the bottom ("01 Lemon courtyard · 02 Little harbor …") | The **chapter bar**: Back, six chapter chips, Next. The current chip is raised and light and says "2 of 3"; done chapters say "Done"; later ones say "4 steps". Click a chip to go to its first step. |
-| Wordmark top left, small labelled controls top right | EAF logo, a hairline, "Game day guide / Lincoln Financial Field". Voice and Settings as a pill cluster on the right. |
-| Keycap hints along the bottom (Stillwater) | `← Back  → Next  Tab Move  S Settings  P Pause` in the credits band on the right. Settings rows show their own number key. |
-| Title screen with the scene beside it | The splash is a headline on a soft field at the left with Standard / Calm and **Start your day [Enter]**; the stadium orbits on the right. |
-| Panels over the scene, not instead of it | Settings is a **right-hand sheet** over a light dim; the scene and your place stay visible on the left. Paused and Start again? are words in the middle of a dimmed scene. |
+## Composition
 
-**Not taken** (they fail the project rules): 10–12 px type, letterspaced all caps, thin weights, icon-only buttons, see-through text backgrounds, serif display titles.
-
-## Chapters
-`ULFFJourneyPanel::Chapters` (editable class default), against the 23 steps in `SourceData/Journey/LFF_GoldenPath.json`:
-
-| # | Chapter | Steps (1-based) |
+| Region | Contents | Behavior |
 |---|---|---|
-| 01 | Getting there | 1–4 |
-| 02 | Gates open | 5–7 |
-| 03 | The plaza | 8–10 |
-| 04 | To my seat | 11–14 |
-| 05 | The game | 15–18 |
-| 06 | Breaks and help | 19–23 (the last step's eyebrow reads "Enjoy the game") |
+| Upper left | EAF wordmark, guide name and venue | Identity-only card; no mode switch here. |
+| Below identity | Step, title/body, optional preview, ticket and finale | Guided tour only. Scrollable caption; the day timeline is disclosed by a labelled button. |
+| Upper right | Guided tour, Explore, Settings; Voice, Calm Mode, Crowd | One persistent control dock. Labels and On/Off state remain explicit. |
+| Below controls | Five chapter chips, then Back/Next | Guided tour only. Chips wrap into a grid on narrower views and with Large text. |
+| Below controls | My seat, Resume tour, flight guidance, places | Explore only. Place categories are immediate; level controls expand on demand. |
+| Stadium | Spatial place markers and My seat | Opaque name chips; avoid visible panel bounds and one another. |
+| Bottom edge | Cesium and Google attribution | Clear of both corner groups and spatial controls. |
 
-Smaller chunks ("2 of 3") are easier to hold than "Step 6 of 23", and the whole day stays visible. If steps are added, update `FirstStep` there.
+At the reference logical size, the information group is at most 480 units wide and controls 540, with 24-unit edge padding. Each is capped at 43% of the actual logical viewport width. Large text gives the caption up to 600 units while respecting that cap. Height limits and scrolling keep long content reachable rather than shrinking type.
 
-## Tokens (1080p)
-| Token | Value | Use | Contrast |
-|---|---|---|---|
-| `SURFACE` | `#072A2F` | The soft fields (at 90–94%), the bar, the sheet | n/a |
-| `RAISED` | `#0F3B41` | Secondary buttons, Off rows, keycaps | n/a |
-| `INK` | `#F4F2EC` | Main text | 13.6:1 on SURFACE |
-| `INK_MUTED` | `#B8C7C8` | Secondary text | 8.7:1 |
-| `KELLY` | `#69BE28` | Next / Start, eyebrows, chapter numbers, the spoken word | 6.5:1 as text; dark text on it 6.5:1 |
-| High contrast | Fields, bar and sheet go `#000000` | Settings > High contrast | INK on black 18.8:1 |
+The stadium renders across the whole viewport. There is no permanent 600-unit sidebar, separate bottom navigation rail, central arc or split scene-rendering rectangle. Legacy asset names (`SidebarHeader`, `TimelineArc`) remain so existing references stay valid.
 
-Text on a soft field starts 104–120 px in from its edge, where the field is at full strength, so contrast holds whatever the camera shows. Field text also has a soft 1 px shadow.
+## Welcome
 
-**Type:** Atkinson Hyperlegible (Braille Institute, SIL OFL; `SourceData/UI/Fonts`). Headline 64, caption title 44, body 26, controls 22, labels 18 (the floor). Eyebrows are bold with slight letter spacing, sentence case.
+Before choosing a mode, the stadium remains visible with an Eagles midnight-green (`#004C54`) fade concentrated in the lower-left corner. There is no full-screen veil, central card or patterned overlay. The EAF white logo and Five Below Foundation logo from `Assets/Logos/` sit above **GAMEDAY VISUAL SCHEDULE**.
 
-**Shape:** fields have no edge; the bar, chips and Settings rows are 16–30 px rounded rectangles; standalone buttons are pills. Hit targets are 64 px (Start 76).
+**Guided Tour**, **Explore**, and the **Calm Mode** switch share the lower-left action row. The entire illustrated pill is the toggle, with **Calm Mode** below and explicit On/Off text inside its thumb. Off shows cheering fans; On shows empty stadium seats, with no sun/moon imagery. The dedicated `WBP_LFF_CalmToggle` mirrors the journey's boolean Calm Mode state and plays its 240 ms eased `CalmTransition` UMG animation forward or reverse. Reversing mid-transition continues from the current position. Less movement, initialization and off-screen/modal updates snap to the correct endpoint. This deliberate switch transition is the only motion retained when enabling Calm Mode; there is no idle or looping animation. High contrast hides the illustrations while preserving the outlined switch, thumb, label and state.
 
-## Karaoke (voice on)
-The spoken word gets a soft kelly highlight behind it and a solid 4 px kelly underline. Its font and colour don't change and nothing reflows; it steps word to word with no animation. `ULFFKaraokeDecorator` (`<w>word</>`).
+Hovering the toggle or selecting it with the keyboard/controller focus ring shows: “Limits sounds, animations, and movement throughout the experience.” The hint is in a canvas overlay, excluded from layout measurement, so the mode buttons never grow or move on hover. It hides while a modal is open. Existing Calm Mode behavior is unchanged: sounds and narration are silenced, camera moves become instant, and crowd/intensity animation is suppressed.
 
-## Keyboard focus
-Tab / Shift+Tab (D-pad Down / Up) move a two-tone ring (light ring, dark halo) through the buttons on screen, chapter chips included. Enter presses it; a modal keeps it inside. See `ACCESSIBILITY.md` §1, "As built".
+Settings stays at the bottom right. Controls wrap on narrower logical viewports, with a separate Settings row to avoid overlap. The bottom attribution band remains clear. High contrast replaces the gradient with solid black.
 
-## Motion
-Panels fade in over 0.25 s (instant with Less movement or Calm Mode). Nothing slides, pulses or flashes.
+For a welcome-only rebuild, run `python3 Tools/Pipeline/prepare_welcome_ui.py`, then `python3 Tools/Editor/build_wbp_lff_modes.py --welcome-only` with PIE stopped and MCP running. This imports only the welcome textures and rebuilds only `WBP_LFF_Welcome`; other HUD trees, amenities and world assets are untouched.
 
-## Assets
-- `Tools/Pipeline/prepare_ui_fog.py` writes `T_LFF_Fog`, `T_LFF_FadeTop`, `T_LFF_FadeBottom` and `T_LFF_FadeSide` to `SourceData/UI`.
-- `Tools/Editor/import_ui_fog.py` imports them into `/Game/LFF/UI/Icons` as UI textures (run it in the editor before `build_wbp_lff_ui.py`).
+## Explore
+
+- Category toggles show that kind's mapped locations across all levels. Guest Services includes sections 121, 136, 206 and 226 without first choosing Upper deck.
+- Enabling a category frames its visible anchors, stem tops and My seat in the unobstructed part of the viewport. Framing accounts for horizontal FOV, aspect ratio and the actual corner-panel geometry.
+- Level buttons retain explicit framing/highlighting. Manual flight and authored navigation clear automatic category-framing intent.
+- Selecting a marker exposes its detail card. Show me uses an authored camera when one exists; otherwise it frames the mapped location, not a fabricated interior.
+- Quiet zones and restrooms have no mapped rows and remain disabled, labelled **Not mapped**.
+- The saved amenities table has seven development rows. Existing packaged-build verification rules still exclude rows with no verification source; this redesign does not certify those facilities.
+
+## Tour and accessibility
+
+The five chapters are Arrival (steps 1-4), Gates (5-7), Plaza (8-10), To my seat (11-14), and Game (15-23). Boundaries come from `ALFFGameMode::TourStepFirstSteps`; the panel supplies their names. A chip shows its name and progress, not a redundant number line.
+
+Tour/Explore switching preserves the exact tour bookmark. Resume tour restores it. Narration reads the unchanged title and body; the karaoke highlight and underline do not reflow text. Timeline marks, ticket frames, intensity previews, finale actions, pause/restart confirmation and Settings are retained.
+
+All interactive targets are at least 64 logical units. Labels have an 18-unit floor and wrap when necessary. Text sits on opaque surfaces. Large text expands the caption without reducing control sizes; High contrast makes surfaces black.
+
+Tab/Shift+Tab and controller D-pad Down/Up traverse visible, enabled controls; Enter/A activates the ringed control. Focus follows the caption, dock, chapters, navigation, places and spatial markers. Settings, Pause and restart confirmation trap this traversal. Offscreen focused controls scroll into view without animation.
+
+## Tokens
+
+| Token | Value | Use |
+|---|---|---|
+| `SURFACE` | `#072A2F` | Opaque information and control surfaces |
+| `RAISED` | `#0F3B41` | Secondary controls |
+| `INK` | `#F4F2EC` | Main text |
+| `INK_MUTED` | `#B8C7C8` | Supporting text |
+| `KELLY` | `#69BE28` | Primary action, active state and spoken-word highlight |
+| High contrast | `#000000` | Surface override |
+
+Atkinson Hyperlegible remains the project font. Caption title is 32, body 24, primary navigation 22, compact mode controls and labels 18. Light selected chips use dark text; state never depends on color alone.
+
+Panels use the existing short fade, instant with Less movement or Calm Mode. No attention-seeking UI pulses or flashing. The prior user decision to omit on-screen disclaimer copy remains unchanged; verification metadata and packaging safeguards remain in the data model.
+
+## Crowd presentation
+
+Nearby seats use bounded, individually animated fans: six existing MetaHuman appearances, seated idle/clap, standing idle/cheer/clap, independent phases and rates, and occasional timer-driven gestures. The current 48-candidate cap at 70% occupancy yields 34 detailed fans, mostly seated. Middle distance uses Mass; the far bowl and Mass-cap overflow use instanced billboards.
+
+Actor roots sit on measured stadium treads, not the chair undersides stored in `seats.json`. The sidecar covers 56,643 of 56,707 source seats; 64 unmeasured seats are reported and excluded, never assigned guessed heights. Only the visitor's immediate camera space is cleared, not a large cone of nearby rows.
+
+Crowd Off and Calm Mode hide detailed fans, stop their gesture timers and disable skinned-component ticks. Less movement immediately freezes visible detailed fans; turning it off restores independent idle and gesture timing. Engine crowd assets are not modified.
+
+Reproduction and safe crowd-only configuration are documented in `LOCAL_AGENT_SETUP.md`.

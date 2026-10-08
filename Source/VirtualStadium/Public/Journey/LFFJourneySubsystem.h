@@ -13,6 +13,7 @@ class ALFFCueActor;
 class ALFFGameMode;
 class UAudioComponent;
 class UBoxComponent;
+class UMaterialInstanceDynamic;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FLFFOnJourneyChanged, const FLFFJourneySnapshot&, Snapshot);
 /** The word of the card (title, then body, split at spaces) the voice is reading, or INDEX_NONE when it isn't. */
@@ -49,9 +50,82 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Journey")
     void Back();
 
-    /** A timeline mark: straight to that step. Ignored if the step doesn't exist, before Start, paused or in a modal. */
+    /**
+     * A timeline mark or arc node: straight to that step. Ignored if the step doesn't exist, before Start, paused or in
+     * a modal. In Free explore it resumes the tour there, or at the bookmark if the node is the chapter you left.
+     */
     UFUNCTION(BlueprintCallable, Category = "Journey")
     void JumpToStep(int32 StepIndex);
+
+    /**
+     * The Guided tour / Explore switch (keys T and E). Free explore keeps the camera where it is, stops the tour's voice
+     * and preview, and bookmarks the step. Guided tour is ResumeTour(), or Start on the welcome screen.
+     * Ignored in a modal or while paused.
+     */
+    UFUNCTION(BlueprintCallable, Category = "Journey")
+    void SwitchToMode(ELFFSimulationMode NewMode);
+
+    /** Free explore -> the bookmarked step, with a fade-cut (a cut in Calm Mode); the card is read again on arrival. */
+    UFUNCTION(BlueprintCallable, Category = "Journey")
+    void ResumeTour();
+
+    /** Free explore (key H): the map turns to the seat's level and the camera fade-cuts to the seat's view. */
+    UFUNCTION(BlueprintCallable, Category = "Journey")
+    void GoToMySeat();
+
+    /** Free explore's Show me: the camera fade-cuts to a camera target (a cut in Calm Mode). The tour's place doesn't change. */
+    UFUNCTION(BlueprintCallable, Category = "Map")
+    void ShowTarget(FName CameraTargetId);
+
+    /** Uses the authored interior view when present, otherwise frames this mapped place. Never fabricates an interior. */
+    UFUNCTION(BlueprintCallable, Category = "Map")
+    void FocusAmenity(FName AmenityId);
+
+    /** Actual viewport and opaque corner-panel geometry, supplied by the HUD after layout. */
+    void SetMapViewportFrame(const FVector2D& Size, const FBox2D& SafeRect, float StemHeight);
+
+    /**
+     * Free explore's level buttons: picks the level (its callouts show), highlights its height band on the model and eases
+     * the camera to the level's overview (a fade-cut with less movement, a cut in Calm Mode). Picking it again re-frames it.
+     */
+    UFUNCTION(BlueprintCallable, Category = "Map")
+    void SetMapLevel(ELFFMapLevel Level);
+
+    /** Free explore: shows or hides one kind of marker. */
+    UFUNCTION(BlueprintCallable, Category = "Map")
+    void ToggleAmenity(ELFFAmenity Amenity);
+
+    UFUNCTION(BlueprintCallable, Category = "Map")
+    void HideAllAmenities();
+
+    /** Free explore: picks a marker (its card shows Show me). None clears the pick. */
+    UFUNCTION(BlueprintCallable, Category = "Map")
+    void SelectAmenity(FName AmenityId);
+
+    ELFFSimulationMode GetMode() const { return Machine.GetMode(); }
+
+    /** LFF_SiteRoot's world transform (read at start and on each visit to Free explore): the frame places are written in. */
+    const FTransform& GetSiteFrame() const { return SiteFrame; }
+
+    /** Free explore's places from DT_LFF_Amenities, in table order (unverified ones dropped in packaged builds). */
+    const TArray<FLFFAmenityMarker>& GetAmenities() const { return Amenities; }
+
+    /** A place by id, the seat included (MySeatAmenityId, at CT_SeatFieldView). False if there's no such place. */
+    bool GetAmenity(FName AmenityId, FLFFAmenityMarker& OutAmenity) const;
+
+    /** The seat's id among the places: its callout and card work like any other's, and it can't be toggled off. */
+    static const FName MySeatAmenityId;
+
+    /**
+     * Free explore's free flight, once a frame from the player controller. Move is (right, forward) from -1 to 1, Rise is
+     * up or down, LookDelta is the mouse drag in pixels (only while a button is held over the 3D view), Dolly is wheel
+     * notches. Waits while a move or fade is running; eases into and out of moving (at once with less movement). Stays in
+     * the site's flyable space. No roll, ever.
+     */
+    void FlyTick(const FVector2D& Move, float Rise, const FVector2D& LookDelta, float Dolly, bool bFast, float DeltaSeconds);
+
+    /** Free flight can take input now (Free explore, no modal, not paused). */
+    bool CanFly() const { return CanUseMap(); }
 
     /** Voice reads each card (Title, then Body). Needs Sound on; ignored while Sound is off or Calm Mode is on. */
     UFUNCTION(BlueprintCallable, Category = "Journey")
@@ -127,8 +201,9 @@ public:
     FLFFOnVoiceWord OnVoiceWord;
 
 #if !UE_BUILD_SHIPPING
-    /** Dev only (console LFF.Shots 1 2 18 [quit]): starts the journey, visits those steps (1-based) and saves a
-     *  screenshot of each, HUD included, ShotDelaySeconds after the jump. For offscreen checks of the scene. */
+    /** Dev only (console LFF.Shots welcome 1 9 explore tour 18 [quit]): saves a screenshot, HUD included, after each token,
+     *  ShotDelaySeconds later: "welcome" as the app opens (first only), a number visits that step (1-based; starts the tour
+     *  if needed), "explore" switches to Free explore, "tour" resumes the tour. For offscreen checks of the scene and HUD. */
     void StartShots(const TArray<FString>& Args);
 #endif
 
@@ -141,8 +216,23 @@ private:
     ALFFCameraRig* FindOrSpawnRig();
     ALFFCameraTarget* FindTarget(FName TargetId) const;
 
-    /** Moves the camera to the current step. bForceFade is used for restart so the jump back is calm. */
+    /** Moves the camera to the current step. bForceFade is used for restart and Resume tour so the jump back is calm. */
     void MoveCameraToCurrentStep(bool bForceFade);
+    /** Resume tour at the bookmark (INDEX_NONE) or at a step (an arc node). */
+    void ResumeTourAt(int32 StepIndex);
+    bool IsExploring() const { return Machine.GetMode() == ELFFSimulationMode::FreeExplore; }
+    /** The map's own commands: Free explore only, never in a modal or while paused. */
+    bool CanUseMap() const { return IsExploring() && !IsModalOpen() && !Machine.IsPaused(); }
+    void ResetMap();
+    void LoadAmenities();
+    void RefreshSiteFrame();
+    /** The picked level's post-process highlight: on in Free explore after a level button, off otherwise. */
+    void ApplyLevelHighlight();
+    /** Eases the camera to a level's overview (FLFFLevelView), looking at its floor. */
+    void FlyToLevel(ELFFMapLevel Level);
+    /** Eases the camera out until every place now on the map (the kinds that are on) is in view. */
+    void FramePlacesShown();
+    void FrameMapPoints(const TArray<FVector>& Points);
     void SnapCameraToCurrentStep();
     /** Start: glides along the splash orbit into the first step's wide shot (or moves there like any step). */
     void MoveCameraToFirstStep();
@@ -213,6 +303,29 @@ private:
     bool bTargetMissing = false;
     bool bJourneyMissing = false;
     bool bPreviewOn = false;
+    /** The Free explore map: kept across mode switches, reset by Start again. */
+    ELFFMapLevel MapLevel = ELFFMapLevel::LowerConcourse;
+    int32 AmenityMask = LFFDefaultAmenityMask;
+    FName SelectedAmenityId = NAME_None;
+    /** False until the first visit to Free explore, which opens the map on the seat's level. */
+    bool bMapOpened = false;
+    bool bLevelHighlight = false;
+    TArray<FLFFAmenityMarker> Amenities;
+    FTransform SiteFrame = FTransform::Identity;
+    FVector2D MapViewportSize = FVector2D::ZeroVector;
+    FBox2D MapSafeRect = FBox2D(ForceInit);
+    float MapStemHeight = 2500.0f;
+    bool bMapAutoFramed = false;
+    bool bLoggedFramingUnavailable = false;
+    FVector FlyVelocity = FVector::ZeroVector;
+    /** Wheel distance still to travel, cm (eased out over a few frames). */
+    float FlyDollyLeft = 0.0f;
+    bool bLoggedHighlightMissing = false;
+
+    UPROPERTY(Transient)
+    TObjectPtr<UMaterialInstanceDynamic> LevelHighlight;
+    /** The last camera target the camera went to: the current step's, My seat or a Show me. */
+    FName ViewTargetId = NAME_None;
     /** The camera has reached the current step (arrival cues and the voice wait for this). */
     bool bArrived = false;
     bool bVoicePlaying = false;
@@ -265,7 +378,10 @@ private:
     FTimerHandle ExteriorTimer;
 #if !UE_BUILD_SHIPPING
     void NextShot();
-    TArray<int32> ShotSteps;
+    TArray<FString> ShotQueue;
+    FString ShotName;
+    /** "fly": a scripted push forward through the same FlyTick path, for the offscreen checks. */
+    float ShotFlySecondsLeft = 0.0f;
     bool bShotsQuit = false;
     bool bShotTaken = false;
     FTimerHandle ShotTimer;

@@ -8,13 +8,17 @@
 #include "Components/Image.h"
 #include "Components/RichTextBlock.h"
 #include "Components/OverlaySlot.h"
+#include "Components/PanelWidget.h"
 #include "Engine/DataTable.h"
 #include "Components/ScaleBox.h"
 #include "Components/SizeBox.h"
 #include "Components/TextBlock.h"
+#include "Components/UniformGridPanel.h"
+#include "Components/UniformGridSlot.h"
 #include "Components/VerticalBox.h"
 #include "Components/VerticalBoxSlot.h"
 #include "Components/Widget.h"
+#include "Components/WrapBox.h"
 #include "Engine/Texture2D.h"
 #include "Engine/World.h"
 #include "Framework/Application/SlateApplication.h"
@@ -24,6 +28,8 @@
 #include "Misc/Paths.h"
 #include "Styling/SlateTypes.h"
 #include "TimerManager.h"
+#include "VirtualStadium.h"
+#include "Widgets/SWidget.h"
 
 #define LOCTEXT_NAMESPACE "LFFHUD"
 
@@ -71,7 +77,7 @@ namespace
     }
 
     /** A chapter chip: the current one is a raised light chip; the others are clear, with an outline on hover. */
-    FButtonStyle ChapterStyle(const bool bCurrent, const FLinearColor& CurrentFill, const FLinearColor& Outline)
+    FButtonStyle ChapterStyle(const bool bCurrent, const FLinearColor& CurrentFill, const FLinearColor& Outline, const bool bCompact = false)
     {
         const FLinearColor Clear(0.0f, 0.0f, 0.0f, 0.0f);
         auto Chip = [](const FLinearColor& Fill, const FLinearColor& Line, const float Width)
@@ -86,8 +92,9 @@ namespace
         Style.SetHovered(bCurrent ? Chip(CurrentFill, Outline, 2.0f) : Chip(HoverFill, Outline, 2.0f));
         Style.SetPressed(bCurrent ? Chip(CurrentFill, Outline, 2.0f) : Chip(FLinearColor(Outline.R, Outline.G, Outline.B, 0.16f), Outline, 2.0f));
         Style.SetDisabled(bCurrent ? Chip(CurrentFill, CurrentFill, 1.0f) : Chip(Clear, Clear, 0.0f));
-        Style.SetNormalPadding(FMargin(18.0f, 8.0f));
-        Style.SetPressedPadding(FMargin(18.0f, 9.0f, 18.0f, 7.0f));
+        const float Side = bCompact ? 8.0f : 18.0f;
+        Style.SetNormalPadding(FMargin(Side, 8.0f));
+        Style.SetPressedPadding(FMargin(Side, 9.0f, Side, 7.0f));
         return Style;
     }
 
@@ -228,8 +235,9 @@ void ULFFJourneyPanel::BuildVoiceButton()
     PRAGMA_DISABLE_DEPRECATION_WARNINGS
     Button->IsFocusable = false;
     PRAGMA_ENABLE_DEPRECATION_WARNINGS
-    // The same look as its neighbour: Settings in the header, else the card's Preview button.
-    if (UButton* Template = SettingsButton != nullptr ? SettingsButton.Get() : PreviewButton.Get())
+    // The same look as its neighbour: Settings in the header, the card's Preview button, or the sidebar footer's Calm Mode.
+    UButton* Template = SettingsButton != nullptr ? SettingsButton.Get() : PreviewButton != nullptr ? PreviewButton.Get() : CalmModeButton.Get();
+    if (Template != nullptr)
     {
         Button->SetStyle(Template->GetStyle());
         Button->SetBackgroundColor(Template->GetBackgroundColor());
@@ -245,7 +253,7 @@ void ULFFJourneyPanel::BuildVoiceButton()
     UTextBlock* LabelTemplate = Cast<UTextBlock>(GetWidgetFromName(TEXT("SettingsLabel")));
     if (LabelTemplate == nullptr)
     {
-        LabelTemplate = StepNumberText.Get();
+        LabelTemplate = StepNumberText != nullptr ? StepNumberText.Get() : CalmModeLabel.Get();
     }
     if (LabelTemplate != nullptr)
     {
@@ -253,10 +261,11 @@ void ULFFJourneyPanel::BuildVoiceButton()
         Font.LetterSpacing = 0;
         Label->SetFont(Font);
     }
-    const FSlateColor IconInk = LabelTemplate != nullptr && LabelTemplate == GetWidgetFromName(TEXT("SettingsLabel"))
+    const FSlateColor IconInk = LabelTemplate != nullptr && (LabelTemplate == GetWidgetFromName(TEXT("SettingsLabel")) || TitleText == nullptr)
         ? LabelTemplate->GetColorAndOpacity()
         : (TitleText != nullptr ? TitleText->GetColorAndOpacity() : FSlateColor(FLinearColor::White));
     Label->SetColorAndOpacity(IconInk);
+    Label->SetAutoWrapText(true);
     Icon->SetColorAndOpacity(IconInk.GetSpecifiedColor());
     Label->SetText(LOCTEXT("VoiceLabelOff", "Voice: Off"));
     if (UHorizontalBoxSlot* IconSlot = Content->AddChildToHorizontalBox(Icon))
@@ -267,6 +276,7 @@ void ULFFJourneyPanel::BuildVoiceButton()
     if (UHorizontalBoxSlot* LabelSlot = Content->AddChildToHorizontalBox(Label))
     {
         LabelSlot->SetVerticalAlignment(VAlign_Center);
+        LabelSlot->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
     }
     Button->SetContent(Content);
     VoiceIconLabel = Label;
@@ -276,7 +286,11 @@ void ULFFJourneyPanel::BuildVoiceButton()
     if (Slot != nullptr)
     {
         Slot->SetVerticalAlignment(VAlign_Center);
-        Slot->SetPadding(bInCluster ? FMargin(0.0f, 0.0f, 12.0f, 0.0f) : FMargin(12.0f, 0.0f, 0.0f, 0.0f));
+        Slot->SetPadding(bInCluster ? FMargin(0.0f) : FMargin(12.0f, 0.0f, 0.0f, 0.0f));
+        if (bInCluster)
+        {
+            Slot->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
+        }
     }
     Button->OnClicked.AddUniqueDynamic(this, &ULFFJourneyPanel::HandleVoiceIconClicked);
     VoiceIconButton = Button;
@@ -451,6 +465,16 @@ void ULFFJourneyPanel::ApplySnapshot(const FLFFJourneySnapshot& Snapshot)
 {
     const bool bModal = Snapshot.bSettingsOpen || Snapshot.bRestartConfirmOpen;
 
+    // The chapter boundaries come from the game mode (one source for the arc, the eyebrow and Resume tour); the names stay
+    // the panel's own. A blueprint that overrides Chapters with a different count keeps its own boundaries.
+    if (Snapshot.TourStepFirstSteps.Num() == Chapters.Num())
+    {
+        for (int32 Index = 0; Index < Chapters.Num(); ++Index)
+        {
+            Chapters[Index].FirstStep = Snapshot.TourStepFirstSteps[Index];
+        }
+    }
+
     ApplyText(TitleText.Get(), Snapshot.Title);
     ApplyText(BodyText.Get(), Snapshot.Body);
     if (TitleRich != nullptr)
@@ -482,7 +506,8 @@ void ULFFJourneyPanel::ApplySnapshot(const FLFFJourneySnapshot& Snapshot)
                                                  : LOCTEXT("VoiceIconOff", "Voice is off. Turn it on (key 5)"));
     }
     ApplyText(ProgressText.Get(), Snapshot.ProgressText);
-    ApplyText(StepNumberText.Get(), Chapters.Num() > 0 ? ChapterEyebrow(Snapshot) : StepNumber(Snapshot));
+    // The arc names the chapter; the card says which step and, when the step has one, the example time.
+    ApplyText(StepNumberText.Get(), StepNumber(Snapshot));
     ApplyText(DisclaimerText.Get(), Snapshot.DisclaimerText);
     ApplyText(DisclaimerLineText.Get(), Snapshot.DisclaimerLine);
     ApplyText(DisclaimerChipText.Get(), ChipText(Snapshot.DisclaimerLevel));
@@ -543,7 +568,25 @@ void ULFFJourneyPanel::ApplySnapshot(const FLFFJourneySnapshot& Snapshot)
     ApplyModeButton(StandardButton.Get(), StandardLabel.Get(), !Snapshot.Settings.bCalmMode);
     ApplyModeButton(CalmButton.Get(), CalmLabel.Get(), Snapshot.Settings.bCalmMode);
     // The Settings toggles: On is filled, Off is plain, so the state never rests on the word alone.
-    ApplyModeButton(CalmModeButton.Get(), CalmModeLabel.Get(), Snapshot.Settings.bCalmMode);
+    if (GetWidgetFromName(TEXT("CalmModeActiveScene")) != nullptr)
+    {
+        if (CalmModeButton != nullptr)
+        {
+#if WITH_ACCESSIBILITY
+            if (TSharedPtr<SWidget> SlateButton = CalmModeButton->GetCachedWidget())
+            {
+                SlateButton->SetAccessibleBehavior(EAccessibleBehavior::Custom,
+                    FText::Format(LOCTEXT("WelcomeCalmState", "Calm Mode: {0}"),
+                        OnOffWord(Snapshot.Settings.bCalmMode)));
+            }
+#endif
+            Enable(CalmModeButton.Get(), !bModal && !Snapshot.bPaused);
+        }
+    }
+    else
+    {
+        ApplyModeButton(CalmModeButton.Get(), CalmModeLabel.Get(), Snapshot.Settings.bCalmMode);
+    }
     ApplyModeButton(ReducedMotionButton.Get(), ReducedMotionLabel.Get(), Snapshot.Settings.IsReducedMotionEffective());
     ApplyModeButton(SoundButton.Get(), SoundLabel.Get(), Snapshot.Settings.IsSoundEffective());
     ApplyModeButton(LargeTextButton.Get(), LargeTextLabel.Get(), Snapshot.Settings.bLargeText);
@@ -552,6 +595,16 @@ void ULFFJourneyPanel::ApplySnapshot(const FLFFJourneySnapshot& Snapshot)
     ApplyModeButton(CrowdButton.Get(), CrowdLabel.Get(), Snapshot.Settings.IsCrowdShown());
     Enable(StandardButton.Get(), !bModal);
     Enable(CalmButton.Get(), !bModal);
+    // Guided tour | Explore: the current mode is the light chip. The welcome screen's two cards are equal until one is picked.
+    const bool bExplore = Snapshot.Mode == ELFFSimulationMode::FreeExplore;
+    const bool bInSession = Snapshot.bStarted || bExplore;
+    ApplyModeButton(TourModeButton.Get(), TourModeLabel.Get(), bInSession && !bExplore);
+    ApplyModeButton(ExploreModeButton.Get(), ExploreModeLabel.Get(), bInSession && bExplore);
+    Enable(TourModeButton.Get(), !bModal && !Snapshot.bPaused);
+    Enable(ExploreModeButton.Get(), !bModal && !Snapshot.bPaused);
+    ApplyText(ResumeTourLabel.Get(), ResumeText(Snapshot));
+    Enable(ResumeTourButton.Get(), Snapshot.bCanResumeTour);
+    Enable(MySeatButton.Get(), bExplore && !bModal && !Snapshot.bPaused);
     // Finale: the caption card moves to the centre of the screen with Start Over and Learn More on it.
     if (FinaleActions != nullptr && TextScale != nullptr)
     {
@@ -636,6 +689,12 @@ void ULFFJourneyPanel::ApplySnapshot(const FLFFJourneySnapshot& Snapshot)
         ApplyPips(Snapshot.StepIndex);
     }
 
+    if (ULFFJourneyPanel* Toggle = Cast<ULFFJourneyPanel>(GetWidgetFromName(TEXT("CalmToggle"))))
+    {
+        Toggle->ApplySnapshot(Snapshot);
+    }
+
+    NativeOnSnapshot(Snapshot);
     OnSnapshotChanged(Snapshot);
 
     // Disclaimer copy (badge, line, chip, sentence) is no longer part of the HUD (2026-10-02, the user's call). A blueprint
@@ -702,6 +761,49 @@ void ULFFJourneyPanel::CollectSurfaces()
     }
 }
 
+void ULFFJourneyPanel::LayoutWelcome(const FVector2D& ViewportSize)
+{
+    USizeBox* Width = Cast<USizeBox>(GetWidgetFromName(TEXT("WelcomeWidth")));
+    if (Width == nullptr)
+    {
+        return;
+    }
+
+    const float AvailableWidth = FMath::Clamp(static_cast<float>(ViewportSize.X - 96.0), 320.0f, 1060.0f);
+    Width->SetWidthOverride(AvailableWidth);
+    if (UOverlaySlot* Slot = Cast<UOverlaySlot>(Width->Slot))
+    {
+        // On narrow views Settings occupies its own bottom row, never the mode controls' hit targets.
+        Slot->SetPadding(FMargin(48.0f, 24.0f, 48.0f, ViewportSize.X < 1460.0 ? 208.0f : 112.0f));
+    }
+    if (UWrapBox* Actions = Cast<UWrapBox>(GetWidgetFromName(TEXT("WelcomeActions"))))
+    {
+        Actions->SetWrapSize(AvailableWidth);
+    }
+    if (UTextBlock* Headline = Cast<UTextBlock>(GetWidgetFromName(TEXT("WelcomeHeadline"))))
+    {
+        Headline->SetWrapTextAt(AvailableWidth);
+        FSlateFontInfo Font = Headline->GetFont();
+        Font.Size = FMath::Clamp(FMath::FloorToInt(AvailableWidth / 14.0f), 36, 72);
+        Headline->SetFont(Font);
+    }
+}
+
+void ULFFJourneyPanel::UpdateWelcomeHint(const UButton* NavigationFocus, const bool bParentVisible)
+{
+    if (ULFFJourneyPanel* Toggle = Cast<ULFFJourneyPanel>(GetWidgetFromName(TEXT("CalmToggle"))))
+    {
+        Toggle->UpdateWelcomeHint(NavigationFocus, bParentVisible && IsVisible());
+    }
+    if (UBorder* Info = Cast<UBorder>(GetWidgetFromName(TEXT("CalmModeInfo"))))
+    {
+        const bool bShown = bParentVisible && !bModalOrPaused && GetIsEnabled() && IsVisible() && CalmModeButton != nullptr
+            && CalmModeButton->GetIsEnabled()
+            && (CalmModeButton->IsHovered() || NavigationFocus == CalmModeButton.Get());
+        Info->SetVisibility(bShown ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Collapsed);
+    }
+}
+
 void ULFFJourneyPanel::ApplySurfaces(const bool bHighContrast)
 {
     for (int32 Index = 0; Index < SurfaceBorders.Num(); ++Index)
@@ -720,6 +822,10 @@ void ULFFJourneyPanel::ApplySurfaces(const bool bHighContrast)
             Color.A = FMath::Max(Color.A, HighContrastScrimAlpha);
         }
         Scrim->SetBrushColor(Color);
+    }
+    if (UWidget* Fade = GetWidgetFromName(TEXT("WelcomeCornerFade")))
+    {
+        Fade->SetVisibility(bHighContrast ? ESlateVisibility::Collapsed : ESlateVisibility::HitTestInvisible);
     }
 }
 
@@ -813,7 +919,9 @@ void ULFFJourneyPanel::RebuildTimeline(const TArray<FLFFTimelineMark>& Marks)
         Box->SetContent(Button);
 
         UTextBlock* Label = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass());
+        // The label's own lines ("10:00 AM", "Plaza gates"), never re-wrapped.
         Label->SetText(Marks[Index].Label);
+        Label->SetAutoWrapText(false);
         Label->SetJustification(ETextJustify::Center);
         if (MarkFont != nullptr)
         {
@@ -826,10 +934,17 @@ void ULFFJourneyPanel::RebuildTimeline(const TArray<FLFFTimelineMark>& Marks)
         Handler->Panel = this;
         Button->OnClicked.AddDynamic(Handler, &ULFFTimelineMarkHandler::HandleClicked);
 
-        if (UHorizontalBoxSlot* MarkSlot = TimelineMarks->AddChildToHorizontalBox(Box))
+        // A bar runs left to right; the schedule column runs top to bottom, each mark the column's full width.
+        UPanelSlot* MarkSlot = TimelineMarks->AddChild(Box);
+        if (UHorizontalBoxSlot* RowSlot = Cast<UHorizontalBoxSlot>(MarkSlot))
         {
-            MarkSlot->SetVerticalAlignment(VAlign_Center);
-            MarkSlot->SetPadding(FMargin(Index == 0 ? 0.0f : MarkGap, 0.0f, 0.0f, 0.0f));
+            RowSlot->SetVerticalAlignment(VAlign_Center);
+            RowSlot->SetPadding(FMargin(Index == 0 ? 0.0f : MarkGap, 0.0f, 0.0f, 0.0f));
+        }
+        else if (UVerticalBoxSlot* ColumnSlot = Cast<UVerticalBoxSlot>(MarkSlot))
+        {
+            ColumnSlot->SetHorizontalAlignment(HAlign_Fill);
+            ColumnSlot->SetPadding(FMargin(0.0f, Index == 0 ? 0.0f : MarkGap, 0.0f, 0.0f));
         }
 
         MarkSteps.Add(Marks[Index].StepIndex);
@@ -841,17 +956,19 @@ void ULFFJourneyPanel::RebuildTimeline(const TArray<FLFFTimelineMark>& Marks)
 
 void ULFFJourneyPanel::ApplyTimeline(const int32 CurrentIndex)
 {
-    // Only the current step's mark is emphasized; on untimed steps none is.
+    // Only the current step's mark is the light chip; on untimed steps none is, and the muted marks above show how far
+    // the day has got.
     for (int32 Index = 0; Index < MarkSteps.Num(); ++Index)
     {
         const bool bCurrent = MarkSteps[Index] == CurrentIndex;
+        const bool bDone = CurrentIndex != INDEX_NONE && MarkSteps[Index] < CurrentIndex;
         if (UButton* Button = MarkButtons[Index].Get())
         {
             Button->SetStyle(MarkStyle(bCurrent, TimelineCurrentFill, TimelineOtherText));
         }
         if (UTextBlock* Label = MarkLabels[Index].Get())
         {
-            Label->SetColorAndOpacity(FSlateColor(bCurrent ? TimelineCurrentText : TimelineOtherText));
+            Label->SetColorAndOpacity(FSlateColor(bCurrent ? TimelineCurrentText : bDone ? TimelineDoneText : TimelineOtherText));
         }
     }
 }
@@ -869,27 +986,43 @@ int32 ULFFJourneyPanel::ChapterOf(const int32 StepIndex) const
     return Found;
 }
 
-FText ULFFJourneyPanel::ChapterEyebrow(const FLFFJourneySnapshot& Snapshot) const
+void ULFFJourneyPanel::ChapterPlace(const int32 Chapter, const FLFFJourneySnapshot& Snapshot, int32& OutPlace, int32& OutCount) const
 {
-    if (Snapshot.bStarted && Snapshot.bAtEnd)
+    OutPlace = 0;
+    OutCount = 1;
+    if (!Chapters.IsValidIndex(Chapter))
     {
-        // The last step closes the day rather than belonging to a chapter.
-        return LOCTEXT("ChapterFinale", "Enjoy the game");
+        return;
+    }
+    const int32 First = Chapters[Chapter].FirstStep;
+    const int32 End = Chapter + 1 < Chapters.Num() ? Chapters[Chapter + 1].FirstStep : Snapshot.StepCount;
+    OutCount = FMath::Max(End - First, 1);
+    OutPlace = FMath::Clamp(Snapshot.StepIndex - First + 1, 1, OutCount);
+}
+
+FText ULFFJourneyPanel::ResumeText(const FLFFJourneySnapshot& Snapshot) const
+{
+    if (!Snapshot.bStarted)
+    {
+        return LOCTEXT("StartTour", "Start the tour");
     }
     const int32 Chapter = ChapterOf(Snapshot.StepIndex);
     if (Chapter == INDEX_NONE)
     {
-        return StepNumber(Snapshot);
+        return LOCTEXT("ResumeTour", "Resume tour");
     }
-    // "02 / Gates open", then the example clock when the step has one.
-    FNumberFormattingOptions TwoDigits;
-    TwoDigits.MinimumIntegralDigits = 2;
-    const FText Heading = FText::Format(LOCTEXT("ChapterEyebrow", "{0} / {1}"), FText::AsNumber(Chapter + 1, &TwoDigits), Chapters[Chapter].Name);
-    return Snapshot.ClockText.IsEmpty() ? Heading : FText::Format(LOCTEXT("ChapterEyebrowClock", "{0}  ·  {1}"), Heading, Snapshot.ClockText);
+    int32 Place = 0, Count = 1;
+    ChapterPlace(Chapter, Snapshot, Place, Count);
+    return FText::Format(LOCTEXT("ResumeTourAt", "Resume tour · {0}, {1} of {2}"), Chapters[Chapter].Name, FText::AsNumber(Place), FText::AsNumber(Count));
 }
 
 void ULFFJourneyPanel::RebuildChapters()
 {
+    if (!ChapterMarks->IsA<UHorizontalBox>() && !ChapterMarks->IsA<UUniformGridPanel>())
+    {
+        UE_LOG(LogVirtualStadium, Error, TEXT("ChapterMarks must be a HorizontalBox or UniformGridPanel on %s."), *GetName());
+        return;
+    }
     ChapterMarks->ClearChildren();
     ChapterButtons.Reset();
     ChapterNumbers.Reset();
@@ -921,13 +1054,20 @@ void ULFFJourneyPanel::RebuildChapters()
     {
         // Every chip is the same width, so the bar never changes shape from step to step.
         USizeBox* Box = WidgetTree->ConstructWidget<USizeBox>(USizeBox::StaticClass());
-        Box->SetWidthOverride(ChapterChipWidth);
+        if (CompactChapterChips)
+        {
+            Box->SetMinDesiredWidth(64.0f);
+        }
+        else
+        {
+            Box->SetWidthOverride(ChapterChipWidth);
+        }
         Box->SetMinDesiredHeight(MarkMinHeight);
         UButton* Button = WidgetTree->ConstructWidget<UButton>(UButton::StaticClass());
         PRAGMA_DISABLE_DEPRECATION_WARNINGS
         Button->IsFocusable = false;
         PRAGMA_ENABLE_DEPRECATION_WARNINGS
-        Button->SetStyle(ChapterStyle(false, ChapterCurrentFill, ChapterText));
+        Button->SetStyle(ChapterStyle(false, ChapterCurrentFill, ChapterText, CompactChapterChips));
         Box->SetContent(Button);
 
         // Three lines: the number, the name, and where you are in it ("2 of 4", "Done", "4 steps").
@@ -936,9 +1076,12 @@ void ULFFJourneyPanel::RebuildChapters()
         FNumberFormattingOptions TwoDigits;
         TwoDigits.MinimumIntegralDigits = 2;
         Number->SetText(FText::AsNumber(Index + 1, &TwoDigits));
-        UTextBlock* Name = MakeLine(Stack, 20, TEXT("Bold"));
+        Number->SetVisibility(CompactChapterChips ? ESlateVisibility::Collapsed : ESlateVisibility::HitTestInvisible);
+        UTextBlock* Name = MakeLine(Stack, CompactChapterChips ? 18 : 20, TEXT("Bold"));
         Name->SetText(Chapters[Index].Name);
+        Name->SetAutoWrapText(CompactChapterChips);
         UTextBlock* Progress = MakeLine(Stack, 18, TEXT("Regular"));
+        Progress->SetAutoWrapText(CompactChapterChips);
         Button->SetContent(Stack);
 
         ULFFTimelineMarkHandler* Handler = NewObject<ULFFTimelineMarkHandler>(this);
@@ -946,10 +1089,21 @@ void ULFFJourneyPanel::RebuildChapters()
         Handler->Panel = this;
         Button->OnClicked.AddDynamic(Handler, &ULFFTimelineMarkHandler::HandleClicked);
 
-        if (UHorizontalBoxSlot* ChipSlot = ChapterMarks->AddChildToHorizontalBox(Box))
+        if (UUniformGridPanel* Grid = Cast<UUniformGridPanel>(ChapterMarks))
         {
-            ChipSlot->SetVerticalAlignment(VAlign_Fill);
-            ChipSlot->SetPadding(FMargin(Index == 0 ? 0.0f : MarkGap, 0.0f, 0.0f, 0.0f));
+            Grid->AddChildToUniformGrid(Box, Index / 3, Index % 3);
+        }
+        else if (UHorizontalBox* Row = Cast<UHorizontalBox>(ChapterMarks))
+        {
+            if (UHorizontalBoxSlot* ChipSlot = Row->AddChildToHorizontalBox(Box))
+            {
+                ChipSlot->SetVerticalAlignment(VAlign_Fill);
+                ChipSlot->SetPadding(FMargin(Index == 0 ? 0.0f : MarkGap, 0.0f, 0.0f, 0.0f));
+                if (CompactChapterChips)
+                {
+                    ChipSlot->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
+                }
+            }
         }
         ChapterButtons.Add(Button);
         ChapterNumbers.Add(Number);
@@ -959,21 +1113,39 @@ void ULFFJourneyPanel::RebuildChapters()
     }
 }
 
+void ULFFJourneyPanel::LayoutChapters(const float AvailableWidth, const bool bLargeText)
+{
+    UUniformGridPanel* Grid = Cast<UUniformGridPanel>(ChapterMarks);
+    if (!CompactChapterChips || Grid == nullptr)
+    {
+        return;
+    }
+    const float CellWidth = bLargeText ? 128.0f : 100.0f;
+    const int32 Columns = AvailableWidth >= CellWidth * 5.0f ? 5 : AvailableWidth >= CellWidth * 3.0f ? 3 : 2;
+    for (int32 Index = 0; Index < Grid->GetChildrenCount(); ++Index)
+    {
+        if (UUniformGridSlot* Slot = Cast<UUniformGridSlot>(Grid->GetChildAt(Index)->Slot))
+        {
+            Slot->SetRow(Index / Columns);
+            Slot->SetColumn(Index % Columns);
+        }
+    }
+}
+
 void ULFFJourneyPanel::ApplyChapters(const FLFFJourneySnapshot& Snapshot)
 {
     const int32 Current = Snapshot.bStarted ? ChapterOf(Snapshot.StepIndex) : INDEX_NONE;
     const bool bModal = Snapshot.bSettingsOpen || Snapshot.bRestartConfirmOpen || Snapshot.bPaused;
     for (int32 Index = 0; Index < ChapterButtons.Num(); ++Index)
     {
-        const int32 First = Chapters[Index].FirstStep;
-        const int32 End = Index + 1 < Chapters.Num() ? Chapters[Index + 1].FirstStep : Snapshot.StepCount;
-        const int32 Count = FMath::Max(End - First, 1);
+        int32 Place = 0, Count = 1;
+        ChapterPlace(Index, Snapshot, Place, Count);
         const bool bCurrent = Index == Current;
         const bool bDone = Current != INDEX_NONE && Index < Current;
 
         if (UButton* Button = ChapterButtons[Index].Get())
         {
-            Button->SetStyle(ChapterStyle(bCurrent, ChapterCurrentFill, ChapterText));
+            Button->SetStyle(ChapterStyle(bCurrent, ChapterCurrentFill, ChapterText, CompactChapterChips));
             Enable(Button, Snapshot.bStarted && !bModal);
             Button->SetToolTipText(FText::Format(LOCTEXT("ChapterTip", "Go to {0}"), Chapters[Index].Name));
         }
@@ -981,7 +1153,7 @@ void ULFFJourneyPanel::ApplyChapters(const FLFFJourneySnapshot& Snapshot)
         FText Progress;
         if (bCurrent)
         {
-            Progress = FText::Format(LOCTEXT("ChapterHere", "{0} of {1}"), FText::AsNumber(Snapshot.StepIndex - First + 1), FText::AsNumber(Count));
+            Progress = FText::Format(LOCTEXT("ChapterHere", "{0} of {1}"), FText::AsNumber(Place), FText::AsNumber(Count));
         }
         else if (bDone)
         {
@@ -1130,6 +1302,10 @@ void ULFFJourneyPanel::BindButtons()
     if (CalmButton != nullptr) { CalmButton->OnClicked.AddUniqueDynamic(this, &ULFFJourneyPanel::HandleCalmClicked); }
     if (FinaleStartOverButton != nullptr) { FinaleStartOverButton->OnClicked.AddUniqueDynamic(this, &ULFFJourneyPanel::HandleNextClicked); }
     if (FinaleLearnMoreButton != nullptr) { FinaleLearnMoreButton->OnClicked.AddUniqueDynamic(this, &ULFFJourneyPanel::HandleLearnMoreClicked); }
+    if (TourModeButton != nullptr) { TourModeButton->OnClicked.AddUniqueDynamic(this, &ULFFJourneyPanel::HandleTourModeClicked); }
+    if (ExploreModeButton != nullptr) { ExploreModeButton->OnClicked.AddUniqueDynamic(this, &ULFFJourneyPanel::HandleExploreModeClicked); }
+    if (ResumeTourButton != nullptr) { ResumeTourButton->OnClicked.AddUniqueDynamic(this, &ULFFJourneyPanel::HandleResumeTourClicked); }
+    if (MySeatButton != nullptr) { MySeatButton->OnClicked.AddUniqueDynamic(this, &ULFFJourneyPanel::HandleMySeatClicked); }
 }
 
 void ULFFJourneyPanel::ReturnFocusToGame() const
@@ -1253,6 +1429,30 @@ void ULFFJourneyPanel::HandleCalmClicked()
 void ULFFJourneyPanel::HandleLearnMoreClicked()
 {
     if (ULFFJourneySubsystem* Journey = GetJourney()) { Journey->OpenLearnMore(); }
+    ReturnFocusToGame();
+}
+
+void ULFFJourneyPanel::HandleTourModeClicked()
+{
+    if (ULFFJourneySubsystem* Journey = GetJourney()) { Journey->SwitchToMode(ELFFSimulationMode::GuidedTour); }
+    ReturnFocusToGame();
+}
+
+void ULFFJourneyPanel::HandleExploreModeClicked()
+{
+    if (ULFFJourneySubsystem* Journey = GetJourney()) { Journey->SwitchToMode(ELFFSimulationMode::FreeExplore); }
+    ReturnFocusToGame();
+}
+
+void ULFFJourneyPanel::HandleResumeTourClicked()
+{
+    if (ULFFJourneySubsystem* Journey = GetJourney()) { Journey->ResumeTour(); }
+    ReturnFocusToGame();
+}
+
+void ULFFJourneyPanel::HandleMySeatClicked()
+{
+    if (ULFFJourneySubsystem* Journey = GetJourney()) { Journey->GoToMySeat(); }
     ReturnFocusToGame();
 }
 
