@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "map": "/Game/LFF/Levels/L_LFF_Stadium",
+  "max_added_walkers": 24,
+  "max_added_waiting": 24,
+  "minimum_spacing_cm": 125,
+  "walk_speed_cm_per_second": 85,
+  "animation_distance_cm": 6500,
+  "walk_clip": "/MetaHumanCrowdContent/Animations/AS_MH_Neutral_Walk_Loop_F",
+  "walking": [
+    {"id": "Concourse1", "template": "SI_ConcourseWalker1", "use_cue_start": true, "count": 3},
+    {"id": "Concourse2", "template": "SI_ConcourseWalker2", "use_cue_start": true, "count": 3},
+    {"id": "Concourse3", "template": "SI_ConcourseWalker3", "use_cue_start": true, "count": 3},
+    {"id": "Concourse4", "template": "SI_ConcourseWalker4", "use_cue_start": true, "count": 3},
+    {"id": "Plaza1", "template": "SI_CrowdPlaza1", "end_template": "SI_CrowdPlaza3", "count": 5},
+    {"id": "Plaza2", "template": "SI_CrowdPlaza2", "end_template": "SI_CrowdPlaza4", "count": 5}
+  ],
+  "waiting": [
+    {"id": "Security1", "from_template": "SI_CrowdLine1", "to_actor": "SI_SecurityArches", "to_component": "Mesh3", "count": 8},
+    {"id": "Security2", "from_template": "SI_CrowdLine3", "to_actor": "SI_SecurityArches", "to_component": "Mesh2", "count": 8},
+    {"id": "Security3", "from_template": "SI_CrowdLine5", "to_actor": "SI_SecurityArches", "to_component": "Mesh1", "count": 8}
+  ]
+}

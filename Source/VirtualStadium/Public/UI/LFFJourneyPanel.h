@@ -69,6 +69,15 @@ public:
     void ApplySnapshot(const FLFFJourneySnapshot& Snapshot);
 
     void LayoutChapters(float AvailableWidth, bool bLargeText);
+    void LayoutTimeline(float AvailableWidth);
+    /** Idempotently opens/closes the actual narrative drawer; unavailable timelines remain collapsed. */
+    void SetTimelineOpen(bool bOpen);
+
+    /** Retains the narrative's animation/bindings when the HUD moves the phone into the viewport overlay. */
+    UWidget* GetTicketPhone() const { return TicketPhone.Get(); }
+
+    /** One delegate for both pointer clicks and the HUD's custom keyboard activation. */
+    void RegisterButtonFeedback(UButton* Button);
 
     void LayoutWelcome(const FVector2D& ViewportSize);
     void UpdateWelcomeHint(const UButton* NavigationFocus, bool bParentVisible = true);
@@ -497,6 +506,15 @@ private:
     UFUNCTION()
     void HandleTimelineToggleClicked();
     void ApplyTimelineDrawer();
+    void PrepareTimelineLayout();
+
+    UFUNCTION()
+    void HandleUIClickFeedback();
+
+    UPROPERTY(Transient)
+    TObjectPtr<UPanelWidget> TimelineLayout;
+
+    float TimelineWidth = 440.0f;
 
     /** Each toggle's own look, remembered the first time it is touched. */
     TMap<TWeakObjectPtr<UButton>, FButtonStyle> ToggleBaseStyles;

@@ -1,55 +1,71 @@
 {
-	"FileVersion": 3,
-	"EngineAssociation": "5.8",
-	"Category": "Games",
-	"Description": "Prototype-friendly Cesium for Unreal starter project for an accessible virtual stadium schedule experience.",
-	"Modules": [
-		{
-			"Name": "VirtualStadium",
-			"Type": "Runtime",
-			"LoadingPhase": "Default"
-		}
-	],
-	"Plugins": [
-		{
-			"Name": "CesiumForUnreal",
-			"Enabled": true
-		},
-		{
-			"Name": "ModelContextProtocol",
-			"Enabled": true
-		},
-		{
-			"Name": "Terminal",
-			"Enabled": true
-		},
-		{
-			"Name": "EditorToolset",
-			"Enabled": true
-		},
-		{
-			"Name": "UMGToolSet",
-			"Enabled": true
-		},
-		{
-			"Name": "AutomationTestToolset",
-			"Enabled": true
-		},
-		{
-			"Name": "MetaHumanCrowdContent",
-			"Enabled": true
-		},
-		{
-			"Name": "MassGameplay",
-			"Enabled": true
-		},
-		{
-			"Name": "ChaosClothAsset",
-			"Enabled": true
-		},
-		{
-			"Name": "VibeUE",
-			"Enabled": true
-		}
-	]
+    "FileVersion": 3,
+    "EngineAssociation": "5.8",
+    "Category": "Games",
+    "Description": "Prototype-friendly Cesium for Unreal starter project for an accessible virtual stadium schedule experience.",
+    "Modules": [
+        {
+            "Name": "VirtualStadium",
+            "Type": "Runtime",
+            "LoadingPhase": "Default"
+        }
+    ],
+    "Plugins": [
+        {
+            "Name": "CesiumForUnreal",
+            "Enabled": true
+        },
+        {
+            "Name": "AndroidFileServer",
+            "Enabled": false
+        },
+        {
+            "Name": "ModelContextProtocol",
+            "Enabled": false
+        },
+        {
+            "Name": "Terminal",
+            "Enabled": false
+        },
+        {
+            "Name": "EditorToolset",
+            "Enabled": false
+        },
+        {
+            "Name": "UMGToolSet",
+            "Enabled": false
+        },
+        {
+            "Name": "AutomationTestToolset",
+            "Enabled": false
+        },
+        {
+            "Name": "MetaHumanCrowdContent",
+            "Enabled": true
+        },
+        {
+            "Name": "MetaHumanCrowd",
+            "Enabled": true
+        },
+        {
+            "Name": "MetaHumanCharacter",
+            "Enabled": true
+        },
+        {
+            "Name": "HairStrands",
+            "Enabled": true
+        },
+        {
+            "Name": "MassGameplay",
+            "Enabled": true
+        },
+        {
+            "Name": "ChaosClothAsset",
+            "Enabled": true
+        },
+        {
+            "Name": "VibeUE",
+            "Enabled": false
+        }
+    ]
 }

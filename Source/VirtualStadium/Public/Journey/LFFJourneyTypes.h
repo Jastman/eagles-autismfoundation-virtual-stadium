@@ -28,7 +28,8 @@ enum class ELFFTransitionProfile : uint8
 /**
  * Optional sensory preview on a loud or bright step. Never autoplays: the visitor picks "Soft" first.
  * Sound plays a short muffled sample; Lights is a slow brightness pulse that never flickers; Anthem is one slow
- * pass of the bald eagle with soft fireworks (the step's Preview-triggered scene cues). Calm Mode hides all three.
+ * pass of the bald eagle with soft fireworks. Anthem autoplays on arrival in Standard; Soft replays it. Its audio is
+ * limited to the visible flight and needs Sound on. Calm Mode hides all three.
  */
 UENUM(BlueprintType)
 enum class ELFFIntensityPreview : uint8
@@ -191,7 +192,7 @@ struct VIRTUALSTADIUM_API FLFFJourneyStep : public FTableRowBase
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Journey")
     TSoftObjectPtr<USoundBase> AudioBed;
 
-    /** Offers "Preview this? Off / Soft" on this step. Off on every arrival. */
+    /** Offers Off / Soft on this step. Anthem also plays on arrival in Standard; Soft explicitly replays it. */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Journey")
     ELFFIntensityPreview IntensityPreview = ELFFIntensityPreview::None;
 
@@ -211,7 +212,7 @@ struct VIRTUALSTADIUM_API FLFFJourneyStep : public FTableRowBase
 
     /**
      * ALFFCueActor ids this step plays: arrival cues (a gate opening, the car rolling in) play once the camera
-     * arrives and stay done on later steps; preview cues (the eagle, fireworks) play only when Soft is picked.
+     * arrives and stay done on later steps; anthem cues (the eagle, fireworks) play on arrival in Standard or via Soft.
      */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Journey")
     TArray<FName> SceneCues;

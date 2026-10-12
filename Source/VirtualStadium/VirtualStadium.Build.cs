@@ -5,6 +5,9 @@ public class VirtualStadium : ModuleRules
     public VirtualStadium(ReadOnlyTargetRules Target) : base(Target)
     {
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
+        // cesium-native's async headers (used by the tile request retry layer) need C++20 and exceptions.
+        CppStandard = CppStandardVersion.Cpp20;
+        bEnableExceptions = true;
 
         PublicDependencyModuleNames.AddRange(
             new[]
@@ -23,5 +26,25 @@ public class VirtualStadium : ModuleRules
                 "ChaosClothAssetEngine"
             }
         );
+
+        PrivateDependencyModuleNames.Add("CesiumRuntime");
+
+        if (Target.bBuildEditor)
+        {
+            PrivateDependencyModuleNames.AddRange(
+                new[]
+                {
+                    "MetaHumanCharacterPalette",
+                    "MetaHumanCrowd",
+                    "MetaHumanCrowdEditor",
+                    "HairStrandsCore",
+                    "MeshDescription",
+                    "StaticMeshDescription",
+                    "SkeletalMeshDescription",
+                    "AssetRegistry",
+                    "UnrealEd"
+                }
+            );
+        }
     }
 }

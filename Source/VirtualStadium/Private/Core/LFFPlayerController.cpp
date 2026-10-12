@@ -2,7 +2,9 @@
 
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "EnhancedPlayerInput.h"
 #include "Engine/LocalPlayer.h"
+#include "Engine/GameViewportClient.h"
 #include "Engine/World.h"
 #include "InputAction.h"
 #include "InputCoreTypes.h"
@@ -10,6 +12,7 @@
 #include "InputModifiers.h"
 #include "Journey/LFFJourneySubsystem.h"
 #include "UI/LFFHUDWidget.h"
+#include "UnrealClient.h"
 #include "VirtualStadium.h"
 
 ALFFPlayerController::ALFFPlayerController()
@@ -37,8 +40,9 @@ void ALFFPlayerController::BeginPlay()
     }
 
     FInputModeGameAndUI InputMode;
-    InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
-    InputMode.SetHideCursorDuringCapture(false);
+    // Relative drag input must not run out of room at the desktop edge. Only the 3D viewport captures; UI keeps its cursor.
+    InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::LockOnCapture);
+    InputMode.SetHideCursorDuringCapture(true);
     SetInputMode(InputMode);
 
     if (UClass* WidgetClass = HUDWidgetClass.LoadSynchronous())
@@ -185,6 +189,7 @@ void ALFFPlayerController::BuildInputObjects()
     JourneyContext->MapKey(SwitchToTourAction, EKeys::T);
     JourneyContext->MapKey(SwitchToExploreAction, EKeys::E);
     JourneyContext->MapKey(FocusMySeatAction, EKeys::H);
+    JourneyContext->MapKey(FlyLookAction, EKeys::Mouse2D);
 
     // Free flight: Move is (right, forward). A key on the forward axis is swizzled onto Y; backward and left are negated.
     FlyContext = NewObject<UInputMappingContext>(this, TEXT("IMC_LFF_Fly"));
@@ -214,8 +219,6 @@ void ALFFPlayerController::BuildInputObjects()
     }
     FlyContext->MapKey(FlyFastAction, EKeys::LeftShift);
     FlyContext->MapKey(FlyFastAction, EKeys::RightShift);
-    // Mouse deltas reach the game only while the viewport has capture: during a press on the 3D view, never over the UI.
-    FlyContext->MapKey(FlyLookAction, EKeys::Mouse2D);
     FlyContext->MapKey(FlyWheelAction, EKeys::MouseWheelAxis);
 }
 
@@ -256,15 +259,32 @@ void ALFFPlayerController::TickFlight(const float DeltaTime)
     bool bFast = false;
     if (bFlyContextOn)
     {
-        if (const UEnhancedPlayerInput* PlayerInput = InputSubsystem->GetPlayerInput())
+        if (const UEnhancedPlayerInput* EnhancedInput = InputSubsystem->GetPlayerInput())
         {
-            Move = PlayerInput->GetActionValue(FlyMoveAction).Get<FVector2D>();
-            Rise = PlayerInput->GetActionValue(FlyRiseAction).Get<float>();
-            bFast = PlayerInput->GetActionValue(FlyFastAction).Get<bool>();
-            Look = PlayerInput->GetActionValue(FlyLookAction).Get<FVector2D>();
-            Wheel = PlayerInput->GetActionValue(FlyWheelAction).Get<float>();
+            Move = EnhancedInput->GetActionValue(FlyMoveAction).Get<FVector2D>();
+            Rise = EnhancedInput->GetActionValue(FlyRiseAction).Get<float>();
+            bFast = EnhancedInput->GetActionValue(FlyFastAction).Get<bool>();
+            Wheel = EnhancedInput->GetActionValue(FlyWheelAction).Get<float>();
         }
     }
+    const UGameViewportClient* ViewportClient = GetWorld()->GetGameViewport();
+    const FViewport* Viewport = ViewportClient != nullptr ? ViewportClient->Viewport : nullptr;
+    const bool bDragging = Journey->CanLookAround() && Viewport != nullptr && Viewport->HasFocus()
+        && Viewport->HasMouseCapture()
+        && (IsInputKeyDown(EKeys::LeftMouseButton) || IsInputKeyDown(EKeys::RightMouseButton));
+    if (bDragging && bWasLooking)
+    {
+        if (const UEnhancedPlayerInput* EnhancedInput = InputSubsystem->GetPlayerInput())
+        {
+            Look = EnhancedInput->GetActionValue(FlyLookAction).Get<FVector2D>();
+        }
+    }
+    else
+    {
+        // Capture/release can warp the cursor. Never turn that first sample or a lost capture into camera motion.
+        Journey->ResetLookInput();
+    }
+    bWasLooking = bDragging;
     // Called every frame, idle too, so flight eases to a stop and the dev shots' scripted push runs.
     Journey->FlyTick(Move, FMath::Clamp(Rise, -1.0f, 1.0f), Look, Wheel, bFast, DeltaTime);
 }

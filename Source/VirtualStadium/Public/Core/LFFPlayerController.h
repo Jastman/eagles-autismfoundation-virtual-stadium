@@ -29,7 +29,7 @@ public:
 protected:
     virtual void BeginPlay() override;
     virtual void SetupInputComponent() override;
-    /** Free flight: adds the flight keys while Free explore can take them, and feeds the journey each frame. */
+    /** Adds Explore-only flight keys and feeds captured viewport look in both modes each frame. */
     virtual void PlayerTick(float DeltaTime) override;
 
 private:
@@ -126,9 +126,9 @@ private:
     /**
      * Free flight's keys, in their own context (IMC_LFF_Fly, priority 1), added only while Free explore can fly and
      * removed for the tour, a modal or a pause. While it's on it takes its keys from the journey context: W A S D and the
-     * arrows move, E / Space / Page Up rise, Q / C / Page Down sink, Shift is faster, the wheel steps forward and back,
-     * and a drag with either mouse button over the 3D view looks around. Keys held when it's added are ignored until
-     * released, so the E that opened Free explore doesn't also lift the camera.
+     * arrows move, E / Space / Page Up rise, Q / C / Page Down sink, Shift is faster, the wheel steps forward and back.
+     * Mouse look belongs to the journey context so arrived tour steps can also look around without flying.
+     * Keys held when this context is added are ignored until released, so the E that opened Free explore doesn't also lift.
      */
     UPROPERTY(Transient)
     TObjectPtr<UInputMappingContext> FlyContext;
@@ -149,6 +149,11 @@ private:
     TObjectPtr<UInputAction> FlyWheelAction;
 
     bool bFlyContextOn = false;
+    bool bWasLooking = false;
+
+#if WITH_DEV_AUTOMATION_TESTS
+    friend struct FLFFPlayerControllerTestAccess;
+#endif
 
     UPROPERTY(Transient)
     TObjectPtr<ULFFHUDWidget> HUDWidget;

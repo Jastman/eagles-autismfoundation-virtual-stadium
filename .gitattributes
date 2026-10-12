@@ -1,5 +1,17 @@
+* text=auto eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.sh text eol=lf
+*.uasset -text
+*.umap -text
+*.wav -text
+*.png -text
+*.ttf -text
+
 # Git LFS: the imported CGTrader stadium (ADR-0004), ~770 MB of licensed binary content.
 # Small project assets (levels, UI, data) stay in regular git.
 Content/LFF/Stadium/** filter=lfs diff=lfs merge=lfs -text
 # Epic CitySample vehicle content (~7.4 GB of .uasset/.umap)
 Content/CitySampleVehicles/** filter=lfs diff=lfs merge=lfs -text
+# Fitted MetaHuman hair cards (~209 MB); new binary assets, no history migration.
+Content/LFF/People/Hair/** filter=lfs diff=lfs merge=lfs -text

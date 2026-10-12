@@ -75,6 +75,7 @@ void ALFFCueActor::Tick(const float DeltaSeconds)
         return;
     }
 
+    const float PreviousElapsed = Elapsed;
     Elapsed += DeltaSeconds;
     const float Moving = Elapsed - PlayDelaySeconds;
     if (Moving < 0.0f)
@@ -91,12 +92,22 @@ void ALFFCueActor::Tick(const float DeltaSeconds)
     const float Linear = FMath::Clamp(Moving / FMath::Max(PlaySeconds, 0.01f), 0.0f, 1.0f);
     // Ease-out cubic: it arrives gently and settles, with no bounce or overshoot.
     const float Alpha = bLinear ? Linear : 1.0f - FMath::Pow(1.0f - Linear, 3.0f);
-    ApplyAlpha(Alpha, Moving);
+    if (!TryAdvanceCue(Alpha, Moving))
+    {
+        Elapsed = PreviousElapsed;
+        return;
+    }
 
     if (Linear >= 1.0f)
     {
         Finish();
     }
+}
+
+bool ALFFCueActor::TryAdvanceCue(const float Alpha, const float MovingSeconds)
+{
+    ApplyAlpha(Alpha, MovingSeconds);
+    return true;
 }
 
 void ALFFCueActor::Finish()
@@ -161,9 +172,9 @@ void ALFFCueActor::PlayLoopOn(USkeletalMeshComponent* Mesh, UAnimationAsset* Ani
     }
 }
 
-void ALFFCueActor::SetCueHidden(const bool bHidden)
+void ALFFCueActor::SetCueHidden(const bool bCueHidden)
 {
-    SetActorHiddenInGame(bHidden);
+    SetActorHiddenInGame(bCueHidden);
 
     TArray<AActor*> Attached;
     GetAttachedActors(Attached, true, true);
@@ -171,7 +182,7 @@ void ALFFCueActor::SetCueHidden(const bool bHidden)
     {
         if (Child != nullptr)
         {
-            Child->SetActorHiddenInGame(bHidden);
+            Child->SetActorHiddenInGame(bCueHidden);
         }
     }
 }

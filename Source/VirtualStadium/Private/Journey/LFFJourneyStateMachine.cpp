@@ -212,12 +212,16 @@ ELFFCommandResult FLFFJourneyStateMachine::SwitchToMode(const ELFFSimulationMode
         return ResumeTour();
     }
 
-    // Index is never written in Free explore. The bookmark makes the place explicit, and Resume tour reads it, so a
-    // move from before the switch (it lands on this same step) can't change where the tour picks up.
+    // Keep the destination as the bookmark, but retire travel and its arrival callbacks: Explore takes control now.
     Bookmark.StepIndex = Index;
     Bookmark.TourStep = TourStepOf(Index);
     Bookmark.bTourStarted = HasStarted();
     Mode = ELFFSimulationMode::FreeExplore;
+    if (Phase == ELFFJourneyPhase::Transitioning)
+    {
+        Phase = ELFFJourneyPhase::AtStep;
+    }
+    ++TransitionId;
     return ELFFCommandResult::Accepted;
 }
 
@@ -307,6 +311,20 @@ ELFFCommandResult FLFFJourneyStateMachine::BeginMoveTo(const int32 NewIndex)
 
 namespace LFFJourneyRules
 {
+    float QuietZoneGain(const float OutsideDistance, const float BlendDistance, const float InsideGain)
+    {
+        const float Inside = FMath::Clamp(InsideGain, 0.0f, 1.0f);
+        if (OutsideDistance <= 0.0f)
+        {
+            return Inside;
+        }
+        if (BlendDistance <= KINDA_SMALL_NUMBER)
+        {
+            return 1.0f;
+        }
+        return FMath::Lerp(Inside, 1.0f, FMath::SmoothStep(0.0f, BlendDistance, OutsideDistance));
+    }
+
     FVector ClampFlyPosition(const FVector& SiteLocation, const float Radius, const float MinZ, const float MaxZ)
     {
         FVector2D Across(SiteLocation.X, SiteLocation.Y);
@@ -451,7 +469,7 @@ namespace LFFJourneyRules
             return false;
         }
 
-        // Lights and Anthem are visual only; the Sound sample needs Sound on.
+        // Lights and Anthem visuals can still play silently; their separate audio obeys Sound on.
         return Kind != ELFFIntensityPreview::Sound || Settings.IsSoundEffective();
     }
 

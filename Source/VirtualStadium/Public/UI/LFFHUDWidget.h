@@ -7,12 +7,15 @@
 
 class UBorder;
 class UButton;
+class UCanvasPanel;
+class UOverlay;
 class ULFFJourneyPanel;
 class ULFFCalloutLayer;
 class ULFFJourneySubsystem;
 class ULFFMapPanel;
 class ULFFTimelineArc;
 class USizeBox;
+class UScaleBox;
 class UWidget;
 class UWidgetSwitcher;
 
@@ -51,6 +54,8 @@ public:
     bool ActivateFocus();
 
     void ClearFocus();
+    /** Used by the non-Shipping LFF.UI.Timeline capture command. */
+    bool SetDayTimelineOpen(bool bOpen);
 
 protected:
     virtual void NativeOnInitialized() override;
@@ -86,7 +91,8 @@ protected:
     UPROPERTY(meta = (BindWidget))
     TObjectPtr<ULFFJourneyPanel> SidebarHeader;
 
-    /** WBP_LFF_Narrative: caption, expandable day timeline, previews, ticket phone and finale actions. */
+    /** WBP_LFF_Narrative: caption, expandable day timeline, previews and finale actions.
+     *  Its ticket phone is moved into the viewport overlay at initialization. */
     UPROPERTY(meta = (BindWidget))
     TObjectPtr<ULFFJourneyPanel> Narrative;
 
@@ -164,6 +170,16 @@ private:
 
     /** Returns true if the panel went from hidden to shown. */
     static bool ShowPanel(ULFFJourneyPanel* Panel, bool bShown, bool bInstant);
+    void BuildTicketPresentation(UOverlay* Root);
+    void LayoutTicketPresentation(const FGeometry& HUDGeometry);
+
+    UPROPERTY(Transient)
+    TObjectPtr<UCanvasPanel> TicketPresentation;
+
+    UPROPERTY(Transient)
+    TObjectPtr<UScaleBox> TicketScale;
+
+    bool bShowTicketPresentation = false;
 
     TWeakObjectPtr<ULFFJourneySubsystem> BoundJourney;
     int32 LastStepIndex = INDEX_NONE;

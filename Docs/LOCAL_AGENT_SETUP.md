@@ -2,6 +2,11 @@
 
 Status: Draft, 2026-09-28. The engine-side details in §1 and §2 were **verified on the Mac workstation on 2026-09-28** by reading the installed plugin descriptors and the Unreal MCP plugin source (UE 5.8.3 Launcher build, CL 58210709). Items still marked (VERIFY) haven't been checked yet.
 
+October 12 synchronization update: the shared project now includes the newer
+Windows work. Follow `README.md` for Git/LFS workstation synchronization and
+`WINDOWS_BUILD.md` for current Windows requirements. The Mac-specific paths and
+earlier verification below are historical, not Windows install settings.
+
 ## Why this is needed
 
 The cloud Claude Code session that wrote this repo has no Unreal Engine, no GPU and no Windows. Unreal MCP runs **inside the Unreal Editor process** and listens on `localhost` (reported as `http://127.0.0.1:8000/mcp`, VERIFY). A cloud container can't reach a `localhost` server on your workstation. Verified: the default URL is `http://127.0.0.1:8000/mcp`, and the engine's HTTP server binds to `localhost` by default (`HttpServerConfig.h`).
@@ -21,7 +26,10 @@ Don't expose the editor's MCP port to the internet with a tunnel just so the clo
 | Recommended toolsets | `EditorToolset`, `UMGToolSet` (for `WBP_LFF_HUD`) and `AutomationTestToolset` (runs `LFF.*` tests). Don't enable `AllToolsets`: it pulls in 21 toolsets (GAS, MetaHuman, Niagara and more) and widens what the agent can touch. | Recommendation |
 | Source build needed? | **No.** Everything above ships in the Launcher build. | Verified |
 
-Enable the plugins **through Edit → Plugins in the editor**. Don't hand-edit plugin names into `VirtualStadium.uproject`. The editor writes the correct internal names, and those `.uproject` changes should then be committed.
+Optional editor tooling is disabled in the shared `VirtualStadium.uproject`.
+If needed locally, enable it **through Edit → Plugins in the editor** after
+installing the corresponding plugins. Do not include local tooling enablement
+in a synchronization commit; preserve shared runtime/content plugin changes.
 
 ## 2. Connect Claude Code to Unreal MCP
 
@@ -48,7 +56,7 @@ These are the standard UE entry points. The install paths are the Launcher defau
 - **Unreal can't cross-compile Mac from Windows or Windows from Mac**, so each platform's package has to be built on that OS.
 - Save each log under `Saved/Logs/` (git-ignored). Paste the pass/fail result and the first error into `Docs/LEDGER.md` §9.
 
-### macOS (current workstation)
+### macOS
 ```bash
 UE_ROOT="/Users/Shared/Epic Games/UE_5.8"
 PROJ="$PWD/VirtualStadium.uproject"
@@ -65,7 +73,12 @@ PROJ="$PWD/VirtualStadium.uproject"
   -clientconfig=Development -build -cook -stage -pak -archive -archivedirectory="$PWD/Saved/Packaged" -utf8output
 ```
 
-### Windows (needs a Windows PC)
+### Windows
+
+For the current shared project, use the root `WINDOWS_BUILD.md` and
+`BuildWindows.cmd`. A Git/LFS clone is preferable to a handoff when editing on
+both computers; the export below deliberately omits repository tools/docs and
+most source media and does not synchronize subsequent edits back to the repo.
 
 For a build-only handoff from the Mac, save all assets first, then run
 `python3 Tools/Packaging/prepare_windows_handoff.py`. It creates a new

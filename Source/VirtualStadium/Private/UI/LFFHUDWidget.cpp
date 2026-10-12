@@ -3,20 +3,63 @@
 #include "Blueprint/WidgetTree.h"
 #include "Components/Border.h"
 #include "Components/Button.h"
+#include "Components/CanvasPanel.h"
+#include "Components/CanvasPanelSlot.h"
 #include "Components/Overlay.h"
 #include "Components/OverlaySlot.h"
 #include "Components/SizeBox.h"
+#include "Components/ScaleBox.h"
 #include "Components/RichTextBlock.h"
 #include "Components/ScrollBox.h"
 #include "Components/TextBlock.h"
 #include "Components/WidgetSwitcher.h"
 #include "Engine/World.h"
+#include "HAL/IConsoleManager.h"
 #include "Journey/LFFJourneySubsystem.h"
 #include "UI/LFFCalloutLayer.h"
 #include "UI/LFFJourneyPanel.h"
 #include "UI/LFFMapPanel.h"
 #include "UI/LFFTimelineArc.h"
+#include "UI/LFFUILayout.h"
+#include "UObject/UObjectIterator.h"
 #include "VirtualStadium.h"
+
+#if !UE_BUILD_SHIPPING
+namespace
+{
+    FAutoConsoleCommandWithWorldAndArgs GLFFTimelineCaptureCommand(
+        TEXT("LFF.UI.Timeline"),
+        TEXT("Open (1) or close (0) the actual day timeline for display captures. Requires the HUD on screen."),
+        FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
+        {
+            if (Args.Num() != 1 || (Args[0] != TEXT("1") && Args[0] != TEXT("0")))
+            {
+                UE_LOG(LogVirtualStadium, Warning, TEXT("Usage: LFF.UI.Timeline 1 (open) or LFF.UI.Timeline 0 (close)."));
+                return;
+            }
+            bool bFound = false;
+            for (TObjectIterator<ULFFHUDWidget> It; It; ++It)
+            {
+                if (It->GetWorld() == World && It->IsInViewport())
+                {
+                    bFound |= It->SetDayTimelineOpen(Args[0] == TEXT("1"));
+                }
+            }
+            UE_LOG(LogVirtualStadium, Log, TEXT("LFF.UI.Timeline %s: %s"), *Args[0],
+                bFound ? TEXT("applied to the active HUD (drawer visible during a started tour).") : TEXT("no active narrative HUD."));
+        }));
+}
+#endif
+
+bool ULFFHUDWidget::SetDayTimelineOpen(const bool bOpen)
+{
+    if (Narrative == nullptr)
+    {
+        return false;
+    }
+    Narrative->SetTimelineOpen(bOpen);
+    return true;
+}
 
 void ULFFHUDWidget::NativeOnInitialized()
 {
@@ -49,6 +92,7 @@ void ULFFHUDWidget::NativeOnInitialized()
         return;
     }
 
+    BuildTicketPresentation(Root);
     // Last child of the root overlay, so it draws over every panel. It never takes clicks.
     // SizeBox > dark halo > light ring. The halo sits outside the ring, on the stadium side.
     FocusRing = WidgetTree->ConstructWidget<USizeBox>(USizeBox::StaticClass(), TEXT("FocusRing"));
@@ -69,10 +113,10 @@ void ULFFHUDWidget::NativeOnInitialized()
     UBorder* Ring = MakeRing(TEXT("FocusRingOutline"), FocusRingColor, FocusRingWidth);
     Halo->SetContent(Ring);
     FocusRing->SetContent(Halo);
-    if (UOverlaySlot* Slot = Root->AddChildToOverlay(FocusRing))
+    if (UOverlaySlot* FocusRingSlot = Root->AddChildToOverlay(FocusRing))
     {
-        Slot->SetHorizontalAlignment(HAlign_Left);
-        Slot->SetVerticalAlignment(VAlign_Top);
+        FocusRingSlot->SetHorizontalAlignment(HAlign_Left);
+        FocusRingSlot->SetVerticalAlignment(VAlign_Top);
     }
     FocusRing->SetVisibility(ESlateVisibility::Collapsed);
 }
@@ -85,7 +129,7 @@ void ULFFHUDWidget::NativeTick(const FGeometry& MyGeometry, const float InDeltaT
     if (Journey != nullptr && Size.X > 1.0 && Size.Y > 1.0)
     {
         const bool bLarge = Journey->GetSnapshot().Settings.bLargeText;
-        if (!Size.Equals(LastLayoutSize, 1.0) || bLarge != bLastLargeText)
+        if (!Size.Equals(LastLayoutSize, 0.01) || bLarge != bLastLargeText)
         {
             LastLayoutSize = Size;
             bLastLargeText = bLarge;
@@ -93,18 +137,26 @@ void ULFFHUDWidget::NativeTick(const FGeometry& MyGeometry, const float InDeltaT
             {
                 Welcome->LayoutWelcome(Size);
             }
-            const float CaptionScale = bLarge ? 1.25f : 1.0f;
-            const float InfoWidth = FMath::Min(480.0f * CaptionScale, static_cast<float>(Size.X * 0.43));
-            const float ControlWidth = FMath::Min(540.0f, static_cast<float>(Size.X * 0.43));
+            const LFFUILayout::FCornerPanels Layout = LFFUILayout::CornerPanels(Size, bLarge);
+            const float InfoWidth = Layout.InformationWidth;
+            const float ControlWidth = Layout.ControlWidth;
             if (InformationSize != nullptr)
             {
                 InformationSize->SetWidthOverride(InfoWidth);
-                InformationSize->SetMaxDesiredHeight(FMath::Max(64.0, Size.Y - 112.0));
+                InformationSize->SetMaxDesiredHeight(Layout.MaximumHeight);
+                if (UOverlaySlot* CornerSlot = Cast<UOverlaySlot>(InformationSize->Slot))
+                {
+                    CornerSlot->SetPadding(FMargin(Layout.EdgeInset));
+                }
             }
             if (ControlSize != nullptr)
             {
                 ControlSize->SetWidthOverride(ControlWidth);
-                ControlSize->SetMaxDesiredHeight(FMath::Max(64.0, Size.Y - 112.0));
+                ControlSize->SetMaxDesiredHeight(Layout.MaximumHeight);
+                if (UOverlaySlot* CornerSlot = Cast<UOverlaySlot>(ControlSize->Slot))
+                {
+                    CornerSlot->SetPadding(FMargin(Layout.EdgeInset));
+                }
             }
             if (TimelineArc != nullptr)
             {
@@ -112,11 +164,11 @@ void ULFFHUDWidget::NativeTick(const FGeometry& MyGeometry, const float InDeltaT
             }
             if (USizeBox* Limit = Cast<USizeBox>(GetWidgetFromName(TEXT("NarrativeLimit"))))
             {
-                Limit->SetMaxDesiredHeight(FMath::Max(64.0, Size.Y - 228.0));
+                Limit->SetMaxDesiredHeight(Layout.NarrativeHeight);
             }
             if (Narrative != nullptr)
             {
-                const float TextWidth = FMath::Max(128.0f, (InfoWidth - 40.0f) / CaptionScale);
+                const float TextWidth = Layout.CaptionWidth;
                 if (USizeBox* Width = Cast<USizeBox>(Narrative->GetWidgetFromName(TEXT("CaptionWidth"))))
                 {
                     Width->SetWidthOverride(TextWidth);
@@ -132,6 +184,7 @@ void ULFFHUDWidget::NativeTick(const FGeometry& MyGeometry, const float InDeltaT
                         Text->SetWrapTextAt(TextWidth);
                     }
                 });
+                Narrative->LayoutTimeline(TextWidth);
             }
             if (ExploreMap != nullptr)
             {
@@ -159,10 +212,77 @@ void ULFFHUDWidget::NativeTick(const FGeometry& MyGeometry, const float InDeltaT
         const FBox2D Normalized = Safe.bIsValid ? FBox2D(Safe.Min / Size, Safe.Max / Size) : FBox2D(ForceInit);
         Journey->SetMapViewportFrame(Size, Normalized, Callouts != nullptr ? Callouts->GetStemHeight() : 2500.0f);
     }
+    LayoutTicketPresentation(MyGeometry);
     PlaceFocusRing();
     if (Welcome != nullptr)
     {
         Welcome->UpdateWelcomeHint(IsOnScreen(FocusedButton.Get()) ? FocusedButton.Get() : nullptr);
+    }
+}
+
+void ULFFHUDWidget::BuildTicketPresentation(UOverlay* Root)
+{
+    UWidget* Phone = Narrative != nullptr ? Narrative->GetTicketPhone() : nullptr;
+    if (Phone == nullptr || Root == nullptr || WidgetTree == nullptr || TicketPresentation != nullptr)
+    {
+        return;
+    }
+    TicketPresentation = WidgetTree->ConstructWidget<UCanvasPanel>(UCanvasPanel::StaticClass(), TEXT("TicketPresentation"));
+    TicketPresentation->SetClipping(EWidgetClipping::ClipToBounds);
+    if (UOverlaySlot* PresentationSlot = Root->AddChildToOverlay(TicketPresentation))
+    {
+        PresentationSlot->SetHorizontalAlignment(HAlign_Fill);
+        PresentationSlot->SetVerticalAlignment(VAlign_Fill);
+    }
+    TicketScale = WidgetTree->ConstructWidget<UScaleBox>(UScaleBox::StaticClass(), TEXT("TicketViewportScale"));
+    TicketScale->SetStretch(EStretch::ScaleToFit);
+    TicketScale->SetStretchDirection(EStretchDirection::DownOnly);
+    Phone->RemoveFromParent();
+    TicketScale->SetContent(Phone);
+    if (UCanvasPanelSlot* PhoneSlot = TicketPresentation->AddChildToCanvas(TicketScale))
+    {
+        PhoneSlot->SetAutoSize(false);
+        PhoneSlot->SetAnchors(FAnchors(0.0f, 0.0f));
+        PhoneSlot->SetAlignment(FVector2D::ZeroVector);
+    }
+    // The phone is scenery, not an input surface. Narrative still owns its ticket frames and motion timer.
+    TicketPresentation->SetVisibility(ESlateVisibility::Collapsed);
+}
+
+void ULFFHUDWidget::LayoutTicketPresentation(const FGeometry& HUDGeometry)
+{
+    if (TicketPresentation == nullptr || TicketScale == nullptr || !bShowTicketPresentation)
+    {
+        return;
+    }
+    auto BoundsOf = [&HUDGeometry](const UWidget* Widget)
+    {
+        if (Widget == nullptr || !Widget->IsVisible() || Widget->GetCachedGeometry().GetLocalSize().SizeSquared() <= 1.0)
+        {
+            return FBox2D(ForceInit);
+        }
+        const FGeometry& Geometry = Widget->GetCachedGeometry();
+        return FBox2D(HUDGeometry.AbsoluteToLocal(Geometry.GetAbsolutePosition()),
+            HUDGeometry.AbsoluteToLocal(Geometry.GetAbsolutePosition() + Geometry.GetAbsoluteSize()));
+    };
+    UWidget* Phone = Narrative->GetTicketPhone();
+    const FVector2D NaturalSize = Phone != nullptr ? Phone->GetDesiredSize() : FVector2D::ZeroVector;
+    // A collapsed saved widget may not have completed its first prepass yet.
+    const FVector2D Size = NaturalSize.X > 1.0 && NaturalSize.Y > 1.0 ? NaturalSize : FVector2D(240.0, 480.0);
+    const FBox2D Bounds = LFFUILayout::TicketBounds(HUDGeometry.GetLocalSize(),
+        BoundsOf(InformationSize.Get()), BoundsOf(ControlSize.Get()), Size);
+    if (Bounds.bIsValid)
+    {
+        if (UCanvasPanelSlot* PhoneSlot = Cast<UCanvasPanelSlot>(TicketScale->Slot))
+        {
+            PhoneSlot->SetPosition(Bounds.Min);
+            PhoneSlot->SetSize(Bounds.Max - Bounds.Min);
+        }
+        TicketPresentation->SetVisibility(ESlateVisibility::HitTestInvisible);
+    }
+    else
+    {
+        TicketPresentation->SetVisibility(ESlateVisibility::Collapsed);
     }
 }
 
@@ -391,6 +511,12 @@ void ULFFHUDWidget::HandleJourneyChanged(const FLFFJourneySnapshot& Snapshot)
     const bool bModal = Snapshot.bSettingsOpen || Snapshot.bRestartConfirmOpen || Snapshot.bPaused;
     const bool bWelcome = IsWelcome(Snapshot);
     const bool bExplore = Snapshot.Mode == ELFFSimulationMode::FreeExplore;
+    bShowTicketPresentation = Snapshot.bStarted && !bWelcome && !bExplore && !bModal
+        && Snapshot.bShowTicketPhone && !Snapshot.bTargetMissing;
+    if (TicketPresentation != nullptr)
+    {
+        TicketPresentation->SetVisibility(bShowTicketPresentation ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Collapsed);
+    }
 
     for (ULFFJourneyPanel* Panel : GetPanels())
     {

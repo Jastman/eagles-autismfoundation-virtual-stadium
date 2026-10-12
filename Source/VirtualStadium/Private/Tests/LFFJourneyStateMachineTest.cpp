@@ -189,7 +189,7 @@ bool FLFFJourneyRulesTest::RunTest(const FString& Parameters)
     TestFalse(TEXT("Crowd Off hides it"), CrowdOff.IsCrowdShown());
     TestFalse(TEXT("Calm Mode hides the crowd"), Calm.IsCrowdShown());
 
-    // The anthem preview is visual: it plays with Sound off, and Calm Mode locks it off.
+    // The anthem can still be seen with Sound off; its separate audio is muted, and Calm Mode locks both off.
     TestTrue(TEXT("Anthem preview plays with sound off"), CanPlayPreview(ELFFIntensityPreview::Anthem, Standard));
     TestFalse(TEXT("Calm Mode locks the anthem preview off"), CanPlayPreview(ELFFIntensityPreview::Anthem, Calm));
 
@@ -261,8 +261,9 @@ bool FLFFJourneyStateMachineModesTest::RunTest(const FString& Parameters)
     TestTrue(TEXT("The bookmark keeps its chapter"), Machine.GetBookmark().TourStep == ELFFTourStep::Plaza);
     TestTrue(TEXT("The bookmark knows the tour had started"), Machine.GetBookmark().bTourStarted);
     TestTrue(TEXT("Switching to the same mode is rejected"), Machine.SwitchToMode(ELFFSimulationMode::FreeExplore) == ELFFCommandResult::RejectedSameMode);
-    TestTrue(TEXT("The move from before the switch still lands"), Machine.NotifyTransitionFinished(InFlight));
-    TestTrue(TEXT("Landing doesn't leave Free explore"), Machine.GetMode() == ELFFSimulationMode::FreeExplore);
+    TestFalse(TEXT("Explore retires the old arrival callback"), Machine.NotifyTransitionFinished(InFlight));
+    TestTrue(TEXT("Explore is no longer stuck waiting on cancelled travel"), Machine.GetPhase() == ELFFJourneyPhase::AtStep);
+    TestTrue(TEXT("A retired finish doesn't leave Free explore"), Machine.GetMode() == ELFFSimulationMode::FreeExplore);
 
     // Free explore can't move the step.
     TestTrue(TEXT("Next is rejected in Free explore"), Machine.Next() == ELFFCommandResult::RejectedInExplore);

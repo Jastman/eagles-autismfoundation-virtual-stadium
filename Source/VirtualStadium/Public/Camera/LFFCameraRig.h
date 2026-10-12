@@ -31,6 +31,9 @@ public:
 
     void SnapTo(const FTransform& TargetTransform, float TargetFieldOfView);
 
+    /** Cancels all travel at the current pose, including a held fade. Used when the visitor takes control in Explore. */
+    void HoldPosition();
+
     /**
      * Follows Points (world space) from the current pose, eased in and out over Seconds, looking along the route.
      * Ends on TargetTransform, or with bCutAtEnd fades and cuts to it from the last point. Reports like an Ease.
@@ -114,6 +117,7 @@ private:
     float Elapsed = 0.0f;
     float Duration = 0.0f;
     uint32 ActiveTransitionId = 0;
+    uint32 TransitionSerial = 0;
     bool bEasing = false;
     bool bEasePaused = false;
 

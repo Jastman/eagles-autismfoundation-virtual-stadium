@@ -7,4 +7,6 @@ VIRTUALSTADIUM_API DECLARE_LOG_CATEGORY_EXTERN(LogVirtualStadium, Log, All);
 
 class FVirtualStadiumModule final : public FDefaultGameModuleImpl
 {
+public:
+    virtual void StartupModule() override;
 };

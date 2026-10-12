@@ -11,6 +11,7 @@ class ALFFCameraRig;
 class ALFFCameraTarget;
 class ALFFCueActor;
 class ALFFGameMode;
+class APostProcessVolume;
 class UAudioComponent;
 class UBoxComponent;
 class UMaterialInstanceDynamic;
@@ -59,7 +60,7 @@ public:
 
     /**
      * The Guided tour / Explore switch (keys T and E). Free explore keeps the camera where it is, stops the tour's voice
-     * and preview, and bookmarks the step. Guided tour is ResumeTour(), or Start on the welcome screen.
+     * and preview, cancels any tour move at the current pose, and bookmarks the step. Guided tour is ResumeTour(), or Start on the welcome screen.
      * Ignored in a modal or while paused.
      */
     UFUNCTION(BlueprintCallable, Category = "Journey")
@@ -85,8 +86,8 @@ public:
     void SetMapViewportFrame(const FVector2D& Size, const FBox2D& SafeRect, float StemHeight);
 
     /**
-     * Free explore's level buttons: picks the level (its callouts show), highlights its height band on the model and eases
-     * the camera to the level's overview (a fade-cut with less movement, a cut in Calm Mode). Picking it again re-frames it.
+     * Free explore's level buttons: picks the level, highlights its height band and fade-cuts to an oblique overview
+     * (a cut in Calm Mode). Picking it again re-frames it.
      */
     UFUNCTION(BlueprintCallable, Category = "Map")
     void SetMapLevel(ELFFMapLevel Level);
@@ -117,12 +118,21 @@ public:
     static const FName MySeatAmenityId;
 
     /**
-     * Free explore's free flight, once a frame from the player controller. Move is (right, forward) from -1 to 1, Rise is
+     * Camera input, once a frame from the player controller. Move is (right, forward) from -1 to 1, Rise is
      * up or down, LookDelta is the mouse drag in pixels (only while a button is held over the 3D view), Dolly is wheel
      * notches. Waits while a move or fade is running; eases into and out of moving (at once with less movement). Stays in
-     * the site's flyable space. No roll, ever.
+     * the site's flyable space. Tour steps accept look only, once their authored camera motion has finished.
+     * Mouse look is smoothed without multiplying pixel deltas by frame time. No roll, ever.
      */
     void FlyTick(const FVector2D& Move, float Rise, const FVector2D& LookDelta, float Dolly, bool bFast, float DeltaSeconds);
+
+    bool CanLookAround() const;
+    /** Capture loss and step changes discard pending look rather than moving a later view. */
+    void ResetLookInput();
+
+    /** Button feedback only. Sound off / Calm mode are silent; repeated presses never stack click sounds. */
+    UFUNCTION(BlueprintCallable, Category = "Journey")
+    void PlayUIClick();
 
     /** Free flight can take input now (Free explore, no modal, not paused). */
     bool CanFly() const { return CanUseMap(); }
@@ -170,7 +180,7 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Journey")
     void ToggleReducedMotion();
 
-    /** Off mutes every sound, UI included. On plays only the low ambient bed. Ignored while Calm Mode is on. */
+    /** Off mutes every sound, UI included. On restores ambience and enabled narration, not a cancelled anthem. */
     UFUNCTION(BlueprintCallable, Category = "Journey")
     void ToggleSound();
 
@@ -203,7 +213,8 @@ public:
 #if !UE_BUILD_SHIPPING
     /** Dev only (console LFF.Shots welcome 1 9 explore tour 18 [quit]): saves a screenshot, HUD included, after each token,
      *  ShotDelaySeconds later: "welcome" as the app opens (first only), a number visits that step (1-based; starts the tour
-     *  if needed), "explore" switches to Free explore, "tour" resumes the tour. For offscreen checks of the scene and HUD. */
+     *  if needed), "explore" switches to Free explore, "tour" resumes the tour. "size:1920x1080" resizes the live viewport
+     *  without changing its step or mode. For offscreen checks of the scene and HUD. */
     void StartShots(const TArray<FString>& Args);
 #endif
 
@@ -228,9 +239,9 @@ private:
     void RefreshSiteFrame();
     /** The picked level's post-process highlight: on in Free explore after a level button, off otherwise. */
     void ApplyLevelHighlight();
-    /** Eases the camera to a level's overview (FLFFLevelView), looking at its floor. */
+    /** Fade-cuts to a level's oblique overview (FLFFLevelView), looking at its floor. */
     void FlyToLevel(ELFFMapLevel Level);
-    /** Eases the camera out until every place now on the map (the kinds that are on) is in view. */
+    /** Fade-cuts to an oblique fit of every visible place, within the actual HUD-safe rectangle. */
     void FramePlacesShown();
     void FrameMapPoints(const TArray<FVector>& Points);
     void SnapCameraToCurrentStep();
@@ -263,6 +274,9 @@ private:
     void PlayAnthemFireworks();
     /** Stops the sequence; bRestoreCamera cuts back to the step's pose (Calm Mode or pause turned on mid-flight). */
     void StopAnthemSequence(bool bRestoreCamera);
+    void StartAnthemAudio();
+    void StopAnthemAudio();
+    void UpdateAnthemAudio();
     void ScheduleVoice();
     void StartVoice();
     /** Stops the voice at once. bReapplyAudio restores the bed from its duck. */
@@ -285,6 +299,10 @@ private:
      * second against the live camera, so glides in and out switch them where the walls already hide the lot.
      */
     void UpdateExteriorVisibility();
+    /** Room ambience follows the actual camera, never the bookmarked step or a selected marker. */
+    void UpdateRoomAudio();
+    float GetRoomCrowdGain() const;
+    void StopActivePreview();
     /** Every step arrives with its preview Off. */
     void ResetPreview();
     bool IsPathBlocked(const FVector& From, const FVector& To) const;
@@ -318,6 +336,9 @@ private:
     bool bMapAutoFramed = false;
     bool bLoggedFramingUnavailable = false;
     FVector FlyVelocity = FVector::ZeroVector;
+    FVector2D PendingLookDegrees = FVector2D::ZeroVector;
+    FRotator LastLookRotation = FRotator::ZeroRotator;
+    bool bLookSmoothingActive = false;
     /** Wheel distance still to travel, cm (eased out over a few frames). */
     float FlyDollyLeft = 0.0f;
     bool bLoggedHighlightMissing = false;
@@ -337,6 +358,9 @@ private:
     TWeakObjectPtr<ALFFCueActor> AnthemEagle;
     float AnthemFlightLeft = 0.0f;
     FTimerHandle AnthemTimer;
+    FTimerHandle AnthemAudioStartTimer;
+    FTimerHandle AnthemAudioEndTimer;
+    FTimerHandle AnthemAudioWatchTimer;
     bool bLoggedCrowdShown = true;
     bool bExteriorHidden = false;
     /** The crowd spawners auto-spawn on BeginPlay, so they start shown. */
@@ -355,11 +379,21 @@ private:
     UPROPERTY(Transient)
     TObjectPtr<UAudioComponent> BedAudio;
 
+    /** Retain the outgoing bed so a mute, pause teardown or rapid retarget can stop it too. */
+    UPROPERTY(Transient)
+    TObjectPtr<UAudioComponent> FadingBedAudio;
+
     UPROPERTY(Transient)
     TObjectPtr<UAudioComponent> PreviewAudio;
 
     UPROPERTY(Transient)
     TObjectPtr<UAudioComponent> VoiceAudio;
+
+    UPROPERTY(Transient)
+    TObjectPtr<UAudioComponent> AnthemAudio;
+
+    UPROPERTY(Transient)
+    TObjectPtr<UAudioComponent> UIClickAudio;
 
     UPROPERTY(Transient)
     TArray<TObjectPtr<ALFFCueActor>> CueActors;
@@ -370,12 +404,25 @@ private:
     UPROPERTY(Transient)
     TArray<TObjectPtr<UBoxComponent>> InteriorBoxes;
 
+    UPROPERTY(Transient)
+    TArray<TObjectPtr<APostProcessVolume>> QuietVolumes;
+
+    UPROPERTY(Transient)
+    TArray<TObjectPtr<UBoxComponent>> QuietBoxes;
+
+    float RoomCrowdGain = 1.0f;
+    float AppliedBedVolume = -1.0f;
+    float FadingBedBaseVolume = 1.0f;
+    float AppliedAnthemVolume = -1.0f;
     /** The first step listing each cue id: its gate is closed before that step and open after it. */
     TMap<FName, int32> FirstCueIndex;
     TArray<FLFFTimelineMark> TimelineMarks;
     FTimerHandle VoiceTimer;
     FTimerHandle PreviewCueTimer;
     FTimerHandle ExteriorTimer;
+#if WITH_DEV_AUTOMATION_TESTS
+    friend struct FLFFJourneyRuntimeTestAccess;
+#endif
 #if !UE_BUILD_SHIPPING
     void NextShot();
     TArray<FString> ShotQueue;

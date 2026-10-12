@@ -39,8 +39,8 @@ struct VIRTUALSTADIUM_API FLFFJourneyStateMachine
     ELFFCommandResult Resume();
 
     /**
-     * Free explore bookmarks the tour's step and chapter and holds them; the phase is left alone, so a move already in
-     * flight still lands (on the bookmarked step). Guided tour is ResumeTour(). Rejected while paused.
+     * Free explore bookmarks the tour's step and chapter and holds them, retiring any tour transition so an arrival
+     * callback can't restart tour cues after the visitor takes control. Guided tour is ResumeTour(). Rejected while paused.
      */
     ELFFCommandResult SwitchToMode(ELFFSimulationMode NewMode);
     /**
@@ -104,7 +104,7 @@ namespace LFFJourneyRules
     VIRTUALSTADIUM_API ELFFTransitionProfile ResolveMove(ELFFTransitionProfile Authored, const FLFFVisitorSettings& Settings, bool bPathBlocked);
     /** "Preview this?" shows on intensity steps unless Calm Mode is on. */
     VIRTUALSTADIUM_API bool ShouldShowPreviewControls(ELFFIntensityPreview Kind, const FLFFVisitorSettings& Settings);
-    /** Soft can play: never in Calm Mode, and a Sound preview only when Sound is on. */
+    /** Soft can play: never in Calm Mode, and a Sound preview only when Sound is on. Anthem visuals can stay silent. */
     VIRTUALSTADIUM_API bool CanPlayPreview(ELFFIntensityPreview Kind, const FLFFVisitorSettings& Settings);
     /**
      * World labels stay out of the caption card's way: hidden if behind the camera or in the lower third of the
@@ -126,4 +126,6 @@ namespace LFFJourneyRules
     VIRTUALSTADIUM_API bool ShouldPlayVoice(const FLFFVisitorSettings& Settings, bool bStarted, bool bPreviewOn);
     /** Linear gain for a level change in dB (the bed ducks under the voice by a few dB). */
     VIRTUALSTADIUM_API float DecibelsToGain(float Decibels);
+    /** Full quieting inside a bounded room, smoothly returning to normal across its outside blend distance. */
+    VIRTUALSTADIUM_API float QuietZoneGain(float OutsideDistance, float BlendDistance, float InsideGain);
 }

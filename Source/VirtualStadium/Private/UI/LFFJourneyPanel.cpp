@@ -11,6 +11,8 @@
 #include "Components/PanelWidget.h"
 #include "Engine/DataTable.h"
 #include "Components/ScaleBox.h"
+#include "Components/ScaleBoxSlot.h"
+#include "Components/ScrollBoxSlot.h"
 #include "Components/SizeBox.h"
 #include "Components/TextBlock.h"
 #include "Components/UniformGridPanel.h"
@@ -19,12 +21,14 @@
 #include "Components/VerticalBoxSlot.h"
 #include "Components/Widget.h"
 #include "Components/WrapBox.h"
+#include "Components/WrapBoxSlot.h"
 #include "Engine/Texture2D.h"
 #include "Engine/World.h"
 #include "Framework/Application/SlateApplication.h"
 #include "HAL/PlatformTime.h"
 #include "Journey/LFFJourneySubsystem.h"
 #include "UI/LFFKaraokeDecorator.h"
+#include "UI/LFFUILayout.h"
 #include "Misc/Paths.h"
 #include "Styling/SlateTypes.h"
 #include "TimerManager.h"
@@ -130,6 +134,16 @@ namespace
 
     const TCHAR* UIFontPath = TEXT("/Game/LFF/UI/Fonts/F_LFF_Atkinson.F_LFF_Atkinson");
 
+    void SetLogoSampling(UTexture2D* Texture)
+    {
+        if (Texture != nullptr && Texture->GetPathName().StartsWith(TEXT("/Game/LFF/UI/Icons/T_LFF_Logo_EAF"))
+            && Texture->Filter != TF_Bilinear)
+        {
+            Texture->Filter = TF_Bilinear;
+            Texture->UpdateResource();
+        }
+    }
+
     FText PreviewNote(const FLFFJourneySnapshot& Snapshot)
     {
         if (Snapshot.IntensityPreview == ELFFIntensityPreview::Sound)
@@ -151,8 +165,8 @@ namespace
         if (Snapshot.IntensityPreview == ELFFIntensityPreview::Anthem)
         {
             return Snapshot.bPreviewOn
-                ? LOCTEXT("PreviewAnthemPlaying", "The eagle flies over once, with soft fireworks.")
-                : LOCTEXT("PreviewAnthemOffer", "Soft shows the eagle flying over once, with soft fireworks. No flashing, no sound.");
+                ? LOCTEXT("PreviewAnthemPlaying", "The eagle flies over once, with soft fireworks. The anthem plays when Sound is on.")
+                : LOCTEXT("PreviewAnthemOffer", "Soft replays the eagle's flight with soft fireworks. No flashing. The anthem plays when Sound is on.");
         }
 
         return FText::GetEmpty();
@@ -198,15 +212,27 @@ void ULFFJourneyPanel::NativeOnInitialized()
 {
     Super::NativeOnInitialized();
 
+    if (WidgetTree != nullptr)
+    {
+        WidgetTree->ForEachWidget([this](UWidget* Widget)
+        {
+            RegisterButtonFeedback(Cast<UButton>(Widget));
+            if (const UImage* Image = Cast<UImage>(Widget))
+            {
+                SetLogoSampling(Cast<UTexture2D>(Image->GetBrush().GetResourceObject()));
+            }
+        });
+    }
+    PrepareTimelineLayout();
     // Before the Slate widgets exist: a panel inserted into a built box is drawn last, whatever its index.
     BuildFinaleLogo();
     BuildVoiceButton();
     BuildKaraokeText();
     if (LearnMorePanel != nullptr)
     {
-        if (UOverlaySlot* Slot = Cast<UOverlaySlot>(LearnMorePanel->Slot))
+        if (UOverlaySlot* LearnMoreSlot = Cast<UOverlaySlot>(LearnMorePanel->Slot))
         {
-            Slot->SetPadding(FMargin(0.0f, 0.0f, LearnMoreRightGap, 0.0f));
+            LearnMoreSlot->SetPadding(FMargin(0.0f, 0.0f, LearnMoreRightGap, 0.0f));
         }
     }
 }
@@ -282,16 +308,17 @@ void ULFFJourneyPanel::BuildVoiceButton()
     VoiceIconLabel = Label;
     // In the header cluster it goes first (left of Settings); on the old caption header, last.
     const bool bInCluster = Header->GetFName() == TEXT("VoiceSlot");
-    UHorizontalBoxSlot* Slot = bInCluster ? Cast<UHorizontalBoxSlot>(Header->InsertChildAt(0, Box)) : Header->AddChildToHorizontalBox(Box);
-    if (Slot != nullptr)
+    UHorizontalBoxSlot* VoiceSlot = bInCluster ? Cast<UHorizontalBoxSlot>(Header->InsertChildAt(0, Box)) : Header->AddChildToHorizontalBox(Box);
+    if (VoiceSlot != nullptr)
     {
-        Slot->SetVerticalAlignment(VAlign_Center);
-        Slot->SetPadding(bInCluster ? FMargin(0.0f) : FMargin(12.0f, 0.0f, 0.0f, 0.0f));
+        VoiceSlot->SetVerticalAlignment(VAlign_Center);
+        VoiceSlot->SetPadding(bInCluster ? FMargin(0.0f) : FMargin(12.0f, 0.0f, 0.0f, 0.0f));
         if (bInCluster)
         {
-            Slot->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
+            VoiceSlot->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
         }
     }
+    RegisterButtonFeedback(Button);
     Button->OnClicked.AddUniqueDynamic(this, &ULFFJourneyPanel::HandleVoiceIconClicked);
     VoiceIconButton = Button;
     VoiceIconImage = Icon;
@@ -332,12 +359,12 @@ URichTextBlock* ULFFJourneyPanel::MakeKaraokeCopy(UTextBlock* Source, const TCHA
         Rich->SetLineHeightPercentage(LineHeight->GetPropertyValue_InContainer(Source));
     }
     UVerticalBoxSlot* SourceSlot = Cast<UVerticalBoxSlot>(Source->Slot);
-    if (UVerticalBoxSlot* Slot = Cast<UVerticalBoxSlot>(Stack->InsertChildAt(Stack->GetChildIndex(Source) + 1, Rich)))
+    if (UVerticalBoxSlot* RichSlot = Cast<UVerticalBoxSlot>(Stack->InsertChildAt(Stack->GetChildIndex(Source) + 1, Rich)))
     {
         if (SourceSlot != nullptr)
         {
-            Slot->SetPadding(SourceSlot->GetPadding());
-            Slot->SetHorizontalAlignment(SourceSlot->GetHorizontalAlignment());
+            RichSlot->SetPadding(SourceSlot->GetPadding());
+            RichSlot->SetHorizontalAlignment(SourceSlot->GetHorizontalAlignment());
         }
     }
     Source->SetVisibility(ESlateVisibility::Collapsed);
@@ -408,6 +435,7 @@ void ULFFJourneyPanel::BuildFinaleLogo()
 {
     UVerticalBox* Stack = Cast<UVerticalBox>(GetWidgetFromName(TEXT("CaptionStack")));
     UTexture2D* Texture = FinaleLogoTexture.LoadSynchronous();
+    SetLogoSampling(Texture);
     if (FinaleLogo != nullptr || Stack == nullptr || BodyText == nullptr || Texture == nullptr || WidgetTree == nullptr)
     {
         return;
@@ -432,10 +460,10 @@ void ULFFJourneyPanel::BuildFinaleLogo()
     Logo->SetBrush(LogoBrush);
     Plate->SetContent(Logo);
 
-    if (UVerticalBoxSlot* Slot = Cast<UVerticalBoxSlot>(Stack->InsertChildAt(Stack->GetChildIndex(BodyText) + 1, Plate)))
+    if (UVerticalBoxSlot* LogoSlot = Cast<UVerticalBoxSlot>(Stack->InsertChildAt(Stack->GetChildIndex(BodyText) + 1, Plate)))
     {
-        Slot->SetHorizontalAlignment(HAlign_Center);
-        Slot->SetPadding(FMargin(0.0f, 14.0f, 0.0f, 0.0f));
+        LogoSlot->SetHorizontalAlignment(HAlign_Center);
+        LogoSlot->SetPadding(FMargin(0.0f, 14.0f, 0.0f, 0.0f));
     }
     Plate->SetVisibility(ESlateVisibility::Collapsed);
     FinaleLogo = Plate;
@@ -771,10 +799,10 @@ void ULFFJourneyPanel::LayoutWelcome(const FVector2D& ViewportSize)
 
     const float AvailableWidth = FMath::Clamp(static_cast<float>(ViewportSize.X - 96.0), 320.0f, 1060.0f);
     Width->SetWidthOverride(AvailableWidth);
-    if (UOverlaySlot* Slot = Cast<UOverlaySlot>(Width->Slot))
+    if (UOverlaySlot* WelcomeSlot = Cast<UOverlaySlot>(Width->Slot))
     {
         // On narrow views Settings occupies its own bottom row, never the mode controls' hit targets.
-        Slot->SetPadding(FMargin(48.0f, 24.0f, 48.0f, ViewportSize.X < 1460.0 ? 208.0f : 112.0f));
+        WelcomeSlot->SetPadding(FMargin(48.0f, 24.0f, 48.0f, LFFUILayout::WelcomeBottomInset(static_cast<float>(ViewportSize.X))));
     }
     if (UWrapBox* Actions = Cast<UWrapBox>(GetWidgetFromName(TEXT("WelcomeActions"))))
     {
@@ -887,7 +915,12 @@ void ULFFTimelineMarkHandler::HandleClicked()
 
 void ULFFJourneyPanel::RebuildTimeline(const TArray<FLFFTimelineMark>& Marks)
 {
-    TimelineMarks->ClearChildren();
+    PrepareTimelineLayout();
+    if (TimelineLayout == nullptr)
+    {
+        return;
+    }
+    TimelineLayout->ClearChildren();
     MarkSteps.Reset();
     MarkButtons.Reset();
     MarkLabels.Reset();
@@ -932,10 +965,11 @@ void ULFFJourneyPanel::RebuildTimeline(const TArray<FLFFTimelineMark>& Marks)
         ULFFTimelineMarkHandler* Handler = NewObject<ULFFTimelineMarkHandler>(this);
         Handler->StepIndex = Marks[Index].StepIndex;
         Handler->Panel = this;
+        RegisterButtonFeedback(Button);
         Button->OnClicked.AddDynamic(Handler, &ULFFTimelineMarkHandler::HandleClicked);
 
         // A bar runs left to right; the schedule column runs top to bottom, each mark the column's full width.
-        UPanelSlot* MarkSlot = TimelineMarks->AddChild(Box);
+        UPanelSlot* MarkSlot = TimelineLayout->AddChild(Box);
         if (UHorizontalBoxSlot* RowSlot = Cast<UHorizontalBoxSlot>(MarkSlot))
         {
             RowSlot->SetVerticalAlignment(VAlign_Center);
@@ -946,11 +980,104 @@ void ULFFJourneyPanel::RebuildTimeline(const TArray<FLFFTimelineMark>& Marks)
             ColumnSlot->SetHorizontalAlignment(HAlign_Fill);
             ColumnSlot->SetPadding(FMargin(0.0f, Index == 0 ? 0.0f : MarkGap, 0.0f, 0.0f));
         }
+        else if (UWrapBoxSlot* WrapSlot = Cast<UWrapBoxSlot>(MarkSlot))
+        {
+            WrapSlot->SetHorizontalAlignment(HAlign_Fill);
+        }
 
         MarkSteps.Add(Marks[Index].StepIndex);
         MarkButtons.Add(Button);
         MarkLabels.Add(Label);
         MarkHandlers.Add(Handler);
+    }
+    LayoutTimeline(TimelineWidth);
+}
+
+void ULFFJourneyPanel::PrepareTimelineLayout()
+{
+    if (TimelineLayout != nullptr || TimelineMarks == nullptr || WidgetTree == nullptr)
+    {
+        return;
+    }
+    if (UHorizontalBox* Row = Cast<UHorizontalBox>(TimelineMarks))
+    {
+        // Older saved narratives centre a single long row, cutting its first marks off at the left edge.
+        Row->ClearChildren();
+        UWrapBox* Wrap = WidgetTree->ConstructWidget<UWrapBox>(UWrapBox::StaticClass(), TEXT("TimelineSafeWrap"));
+        Wrap->SetExplicitWrapSize(true);
+        Wrap->SetWrapSize(TimelineWidth);
+        Wrap->SetInnerSlotPadding(FVector2D(MarkGap, MarkGap));
+        Wrap->SetHorizontalAlignment(HAlign_Left);
+        if (UHorizontalBoxSlot* WrapSlot = Row->AddChildToHorizontalBox(Wrap))
+        {
+            WrapSlot->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
+            WrapSlot->SetHorizontalAlignment(HAlign_Fill);
+        }
+        TimelineLayout = Wrap;
+    }
+    else
+    {
+        TimelineLayout = TimelineMarks;
+    }
+}
+
+void ULFFJourneyPanel::LayoutTimeline(const float AvailableWidth)
+{
+    TimelineWidth = FMath::Max(1.0f, AvailableWidth);
+    if (USizeBox* Caption = Cast<USizeBox>(GetWidgetFromName(TEXT("CaptionWidth"))))
+    {
+        if (UScaleBoxSlot* CaptionSlot = Cast<UScaleBoxSlot>(Caption->Slot))
+        {
+            // The saved widget centres a fixed-width caption in a scrollbar-narrowed viewport.
+            // Fill keeps its leading edge inside the narrative padding, including when Large text is scaled.
+            CaptionSlot->SetHorizontalAlignment(HAlign_Fill);
+        }
+    }
+    if (TextScale != nullptr)
+    {
+        if (UScrollBoxSlot* ScaleSlot = Cast<UScrollBoxSlot>(TextScale->Slot))
+        {
+            ScaleSlot->SetHorizontalAlignment(HAlign_Fill);
+        }
+    }
+    if (WidgetTree != nullptr)
+    {
+        WidgetTree->ForEachWidget([](UWidget* Widget)
+        {
+            // Explicit wrap widths remain upper bounds; the actual scroll content width can be smaller.
+            if (UTextBlock* Text = Cast<UTextBlock>(Widget); Text != nullptr && Text->GetWrapTextAt() > 0.0f)
+            {
+                Text->SetAutoWrapText(true);
+            }
+            if (URichTextBlock* Text = Cast<URichTextBlock>(Widget); Text != nullptr && Text->GetWrapTextAt() > 0.0f)
+            {
+                Text->SetAutoWrapText(true);
+            }
+        });
+    }
+    PrepareTimelineLayout();
+    if (UWrapBox* Wrap = Cast<UWrapBox>(TimelineLayout))
+    {
+        Wrap->SetExplicitWrapSize(true);
+        Wrap->SetWrapSize(TimelineWidth);
+        Wrap->SetHorizontalAlignment(HAlign_Left);
+        const float Width = LFFUILayout::TimelineMarkWidth(TimelineWidth, MarkMinWidth, MarkGap);
+        for (UWidget* Child : Wrap->GetAllChildren())
+        {
+            if (USizeBox* Mark = Cast<USizeBox>(Child))
+            {
+                Mark->SetMinDesiredWidth(0.0f);
+                Mark->SetWidthOverride(Width);
+                if (UButton* Button = Cast<UButton>(Mark->GetContent()))
+                {
+                    if (UTextBlock* Label = Cast<UTextBlock>(Button->GetContent()))
+                    {
+                        Label->SetAutoWrapText(true);
+                        Label->SetWrapTextAt(FMath::Max(1.0f, Width - 20.0f));
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -1087,6 +1214,7 @@ void ULFFJourneyPanel::RebuildChapters()
         ULFFTimelineMarkHandler* Handler = NewObject<ULFFTimelineMarkHandler>(this);
         Handler->StepIndex = Chapters[Index].FirstStep;
         Handler->Panel = this;
+        RegisterButtonFeedback(Button);
         Button->OnClicked.AddDynamic(Handler, &ULFFTimelineMarkHandler::HandleClicked);
 
         if (UUniformGridPanel* Grid = Cast<UUniformGridPanel>(ChapterMarks))
@@ -1121,13 +1249,14 @@ void ULFFJourneyPanel::LayoutChapters(const float AvailableWidth, const bool bLa
         return;
     }
     const float CellWidth = bLargeText ? 128.0f : 100.0f;
-    const int32 Columns = AvailableWidth >= CellWidth * 5.0f ? 5 : AvailableWidth >= CellWidth * 3.0f ? 3 : 2;
+    const int32 Capacity = LFFUILayout::TimelineColumns(AvailableWidth, CellWidth, 0.0f);
+    const int32 Columns = Capacity >= 5 ? 5 : Capacity >= 3 ? 3 : Capacity >= 2 ? 2 : 1;
     for (int32 Index = 0; Index < Grid->GetChildrenCount(); ++Index)
     {
-        if (UUniformGridSlot* Slot = Cast<UUniformGridSlot>(Grid->GetChildAt(Index)->Slot))
+        if (UUniformGridSlot* ChapterSlot = Cast<UUniformGridSlot>(Grid->GetChildAt(Index)->Slot))
         {
-            Slot->SetRow(Index / Columns);
-            Slot->SetColumn(Index % Columns);
+            ChapterSlot->SetRow(Index / Columns);
+            ChapterSlot->SetColumn(Index % Columns);
         }
     }
 }
@@ -1274,6 +1403,28 @@ ULFFJourneySubsystem* ULFFJourneyPanel::GetJourney() const
 {
     UWorld* World = GetWorld();
     return World != nullptr ? World->GetSubsystem<ULFFJourneySubsystem>() : nullptr;
+}
+
+void ULFFJourneyPanel::RegisterButtonFeedback(UButton* Button)
+{
+    if (Button == nullptr)
+    {
+        return;
+    }
+    FButtonStyle Style = Button->GetStyle();
+    // Slate sounds cannot respect the journey's Sound/Calm settings and would double the click feedback.
+    Style.PressedSlateSound = FSlateSound();
+    Style.HoveredSlateSound = FSlateSound();
+    Button->SetStyle(Style);
+    Button->OnClicked.AddUniqueDynamic(this, &ULFFJourneyPanel::HandleUIClickFeedback);
+}
+
+void ULFFJourneyPanel::HandleUIClickFeedback()
+{
+    if (ULFFJourneySubsystem* Journey = GetJourney())
+    {
+        Journey->PlayUIClick();
+    }
 }
 
 void ULFFJourneyPanel::BindButtons()
@@ -1553,9 +1704,14 @@ void ULFFJourneyPanel::ApplyTimelineDrawer()
 
 void ULFFJourneyPanel::HandleTimelineToggleClicked()
 {
-    bTimelineOpen = !bTimelineOpen;
-    ApplyTimelineDrawer();
+    SetTimelineOpen(!bTimelineOpen);
     ReturnFocusToGame();
+}
+
+void ULFFJourneyPanel::SetTimelineOpen(const bool bOpen)
+{
+    bTimelineOpen = bOpen;
+    ApplyTimelineDrawer();
 }
 
 #undef LOCTEXT_NAMESPACE

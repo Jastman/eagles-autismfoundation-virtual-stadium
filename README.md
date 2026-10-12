@@ -45,17 +45,12 @@ Future versions could include:
 
 Early prototype in development for the Eagles Autism Foundation partnership.
 
-## What is included (V1 golden path)
+## What is included
 
-- A UE 5.8.3 C++ module (`Source/VirtualStadium`) with 8 small classes:
-  - a pure journey state machine (no wrap, pause, intro);
-  - a world subsystem that runs the journey;
-  - a camera rig with eased, reduced-motion (fade) and instant moves;
-  - named camera targets;
-  - a game mode and a player controller (Enhanced Input built in code);
-  - one HUD widget base class that always shows the disclaimer.
-- Headless automation tests: `LFF.Journey.*`.
-- Sixteen illustrative steps in `SourceData/Journey/LFF_GoldenPath.json`, following the Eagles Autism Foundation visual schedule: arriving, parking, the line, security, clear bags, the mobile ticket, the plaza, Popcorn for the People, the Sensory Activation Vehicle, walking to the seat, loud sounds and bright lights (optional soft previews), Guest Services, the sensory room, food and staff. Simple stand-in props mark each stop.
+- A UE 5.8.3 C++ module (`Source/VirtualStadium`) with Guided Tour and Free Explore, accessibility settings, responsive standard/ultrawide UI, and mouse-drag camera controls.
+- Twenty-three illustrative steps in `SourceData/Journey/LFF_GoldenPath.json`, plus the saved stadium map, UI, narration, fitted MetaHuman hair and clothing masks, crowd circulation, sensory-room refinements, and staff greeting animation.
+- Cesium request retries, off-screen tile preloading, and a branded startup loading screen.
+- Headless automation tests: `LFF.*`.
 - Cesium for Unreal v2.29.1 with Google Photorealistic 3D Tiles for the context.
 - Project docs in `Docs/`: ledger, ADRs, setup, test plan, accessibility rules, wording and known limitations.
 
@@ -79,9 +74,44 @@ Early prototype in development for the Eagles Autism Foundation partnership.
 
 ## Setup
 
-1. Build and run the tests (`Docs/LOCAL_AGENT_SETUP.md` §3).
-2. Follow `Docs/ManualSetup.md` to create the map, import the Data Table, place the camera targets and build `WBP_LFF_HUD`.
-3. Check the result against `Docs/TEST_PLAN.md`.
+1. Install Git LFS, clone the repository, and run `git lfs pull` before opening Unreal. The stadium, CitySample vehicles, and fitted hair assets are LFS-managed.
+2. Install the engine's Cesium and required MetaHuman plugins, including **MetaHuman Creator Core Data** for the fitted hair assets. Optional MCP/editor tooling is disabled in the shared descriptor.
+3. Select and save a restricted Cesium ion token on each workstation; `Content/CesiumSettings/CesiumIonServers/` is intentionally ignored.
+4. Build and run the tests (`Docs/LOCAL_AGENT_SETUP.md` §3). On Windows, follow [WINDOWS_BUILD.md](WINDOWS_BUILD.md) and use `BuildWindows.cmd`.
+5. Open the saved `L_LFF_Stadium` map. `Docs/ManualSetup.md` and editor generation scripts describe earlier setup; do not regenerate or overwrite the current scene as part of normal setup.
+
+## Synchronizing Windows and macOS
+
+The shared project includes the latest saved Windows work from October 8-9,
+2026. Keep sources, content, `Config/Default*.ini`, and the runtime plugin
+descriptor shared. The Windows renderer/audio section applies only to Windows;
+authored `Build/Mac/Resources` files remain available for native Mac packaging.
+Do not copy Windows Direct3D settings into shared renderer settings or Mac
+configuration. Engine and plugin installations are separate on each workstation.
+
+Before switching computers, save assets, close Unreal, review `git status`, commit
+the intended source/assets, and push. On the other computer, with a clean working
+tree, run:
+
+```shell
+git fetch origin
+git pull --ff-only
+git lfs pull
+```
+
+If that checkout has uncommitted edits or diverged commits, preserve them and
+reconcile them before updating; do not force-push or overwrite the newer saved
+binary assets. Prefer one active editing workstation at a time for `.umap` and
+`.uasset` files, which cannot be text-merged.
+
+`.gitattributes` stores text as LF and checks Windows batch scripts out as CRLF.
+Git ignores OS/editor preferences, `Saved`, binaries, caches, packaged Windows
+builds, ZIPs, inspection artifacts, and generated packaging records. Keep ion
+credentials and Android File Server workstation tokens out of shared config.
+The unused Android File Server plugin is explicitly disabled to prevent Unreal
+from regenerating a different token in `DefaultEngine.ini` on each computer.
+MCP, Terminal, editor toolsets, and VibeUE stay disabled in the committed project;
+local enablement must not be included in a synchronization commit.
 
 ## Controls
 
@@ -102,4 +132,8 @@ Edit `SourceData/Journey/LFF_GoldenPath.json`, open a PR, then reimport `DT_LFF_
 
 ## Status
 
-Prototype for the Eagles Autism Foundation partnership. The code is written but not yet compiled. See `Docs/LEDGER.md` for gates, decisions and blockers, and `Docs/KNOWN_LIMITATIONS.md` for what V1 does not do.
+The latest Development package was produced on Windows on October 9, 2026;
+see [WINDOWS_BUILD.md](WINDOWS_BUILD.md) for its behavior and rebuild requirements.
+The updated project still needs a native Mac build on the Mac workstation.
+Earlier prototype gates and decisions remain in `Docs/LEDGER.md` and
+`Docs/KNOWN_LIMITATIONS.md`.

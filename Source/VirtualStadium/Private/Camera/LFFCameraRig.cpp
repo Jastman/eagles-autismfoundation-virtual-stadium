@@ -16,8 +16,9 @@ ALFFCameraRig::ALFFCameraRig()
     if (UCameraComponent* Camera = GetCameraComponent())
     {
         Camera->SetConstraintAspectRatio(false);
+        Camera->SetAspectRatio(16.0f / 9.0f);
         Camera->bOverrideAspectRatioAxisConstraint = true;
-        Camera->SetAspectRatioAxisConstraint(AspectRatio_MaintainXFOV);
+        Camera->SetAspectRatioAxisConstraint(AspectRatio_MaintainYFOV);
         Camera->SetFieldOfView(70.0f);
     }
 }
@@ -66,6 +67,7 @@ void ALFFCameraRig::BeginTransition(
 {
     StopActiveTransition();
     ActiveTransitionId = TransitionId;
+    const uint32 Serial = TransitionSerial;
 
     UWorld* World = GetWorld();
     if (World == nullptr)
@@ -100,9 +102,9 @@ void ALFFCameraRig::BeginTransition(
         const float CutFieldOfView = TargetFieldOfView;
         World->GetTimerManager().SetTimer(
             FadeOutTimer,
-            FTimerDelegate::CreateWeakLambda(this, [this, CutTransform, CutFieldOfView, Fade, FadeColor, TransitionId]()
+            FTimerDelegate::CreateWeakLambda(this, [this, CutTransform, CutFieldOfView, Fade, FadeColor, TransitionId, Serial]()
             {
-                if (TransitionId != ActiveTransitionId)
+                if (TransitionId != ActiveTransitionId || Serial != TransitionSerial)
                 {
                     return;
                 }
@@ -114,7 +116,13 @@ void ALFFCameraRig::BeginTransition(
                 {
                     InnerWorld->GetTimerManager().SetTimer(
                         FadeInTimer,
-                        FTimerDelegate::CreateWeakLambda(this, [this, TransitionId]() { FinishTransition(TransitionId); }),
+                        FTimerDelegate::CreateWeakLambda(this, [this, TransitionId, Serial]()
+                        {
+                            if (Serial == TransitionSerial)
+                            {
+                                FinishTransition(TransitionId);
+                            }
+                        }),
                         Fade,
                         false);
                 }
@@ -131,7 +139,13 @@ void ALFFCameraRig::BeginTransition(
         SnapTo(TargetTransform, TargetFieldOfView);
         // Report on the next tick so callers never re-enter the subsystem mid-command.
         World->GetTimerManager().SetTimerForNextTick(
-            FTimerDelegate::CreateWeakLambda(this, [this, TransitionId]() { FinishTransition(TransitionId); }));
+            FTimerDelegate::CreateWeakLambda(this, [this, TransitionId, Serial]()
+            {
+                if (Serial == TransitionSerial)
+                {
+                    FinishTransition(TransitionId);
+                }
+            }));
         break;
     }
     }
@@ -170,6 +184,18 @@ void ALFFCameraRig::SnapTo(const FTransform& TargetTransform, const float Target
     if (UCameraComponent* Camera = GetCameraComponent())
     {
         Camera->SetFieldOfView(TargetFieldOfView);
+    }
+}
+
+void ALFFCameraRig::HoldPosition()
+{
+    StopActiveTransition();
+    ActiveTransitionId = 0;
+    if (APlayerCameraManager* CameraManager = UGameplayStatics::GetPlayerCameraManager(this, 0))
+    {
+        // StopCameraFade alone leaves the old target amount (often 1), which a later ClearFade could re-enable.
+        CameraManager->StartCameraFade(0.0f, 0.0f, 0.0f, FLinearColor::Black, false, false);
+        CameraManager->StopCameraFade();
     }
 }
 
@@ -492,6 +518,7 @@ void ALFFCameraRig::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 void ALFFCameraRig::StopActiveTransition()
 {
+    ++TransitionSerial;
     bEasing = false;
     bEasePaused = false;
     bOrbiting = false;

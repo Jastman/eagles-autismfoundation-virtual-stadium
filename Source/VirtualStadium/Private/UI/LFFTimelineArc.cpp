@@ -288,6 +288,7 @@ void ULFFTimelineArc::BuildNodes()
         ULFFTimelineMarkHandler* Handler = NewObject<ULFFTimelineMarkHandler>(this);
         Handler->StepIndex = Chapters[Index].FirstStep;
         Handler->Panel = this;
+        RegisterButtonFeedback(Button);
         Button->OnClicked.AddDynamic(Handler, &ULFFTimelineMarkHandler::HandleClicked);
 
         if (UCanvasPanelSlot* NodeSlot = ArcNodes->AddChildToCanvas(Button))

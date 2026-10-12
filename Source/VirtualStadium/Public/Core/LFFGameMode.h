@@ -92,20 +92,24 @@ public:
     /** Free flight: cruise speed (cm/s), Shift's multiplier, mouse-look degrees per pixel of drag, the ease into and out of
      *  moving (seconds), and the space you can fly in (site frame: radius from the centre, lowest and highest Z). */
     UPROPERTY(EditDefaultsOnly, Category = "Explore", meta = (ClampMin = "100.0"))
-    float FlySpeed = 1200.0f;
+    float FlySpeed = 3200.0f;
 
     UPROPERTY(EditDefaultsOnly, Category = "Explore", meta = (ClampMin = "1.0", ClampMax = "5.0"))
-    float FlyFastMultiplier = 3.0f;
+    float FlyFastMultiplier = 2.0f;
 
     UPROPERTY(EditDefaultsOnly, Category = "Explore", meta = (ClampMin = "0.02", ClampMax = "1.0"))
-    float FlyLookDegreesPerPixel = 0.15f;
+    float FlyLookDegreesPerPixel = 0.28f;
 
     UPROPERTY(EditDefaultsOnly, Category = "Explore", meta = (ClampMin = "0.0", ClampMax = "1.0"))
-    float FlyEaseSeconds = 0.3f;
+    float FlyEaseSeconds = 0.22f;
 
     /** One mouse-wheel notch moves this far, eased. */
     UPROPERTY(EditDefaultsOnly, Category = "Explore")
-    float FlyWheelStep = 1500.0f;
+    float FlyWheelStep = 3000.0f;
+
+    /** Oblique map framing keeps the bowl and horizon legible, rather than looking straight down at the roof. */
+    UPROPERTY(EditDefaultsOnly, Category = "Explore", meta = (ClampMin = "-40.0", ClampMax = "-15.0"))
+    float MapFramePitchDegrees = -30.0f;
 
     UPROPERTY(EditDefaultsOnly, Category = "Explore")
     float FlyBoundsRadius = 60000.0f;
@@ -167,15 +171,40 @@ public:
     UPROPERTY(EditDefaultsOnly, Category = "Audio")
     TSoftObjectPtr<USoundBase> AmbientBed;
 
+    /** Second crowd recording for the game chapter; Explore uses the regular crowd bed, never a bookmarked step's bed. */
+    UPROPERTY(EditDefaultsOnly, Category = "Audio")
+    TSoftObjectPtr<USoundBase> StadiumAmbientBed;
+
+    /** National anthem, only during the eagle's visible flight. Not a loop or a generic sensory preview. */
+    UPROPERTY(EditDefaultsOnly, Category = "Audio")
+    TSoftObjectPtr<USoundBase> AnthemSound;
+
+    /** One subtle button sound, played through ULFFJourneySubsystem::PlayUIClick. */
+    UPROPERTY(EditDefaultsOnly, Category = "Audio")
+    TSoftObjectPtr<USoundBase> UIClickSound;
+
     /** Short muffled sample for a step's Sound preview. Plays once, only after the visitor picks Soft. */
     UPROPERTY(EditDefaultsOnly, Category = "Audio")
     TSoftObjectPtr<USoundBase> PreviewSound;
 
     UPROPERTY(EditDefaultsOnly, Category = "Audio", meta = (ClampMin = "0.0", ClampMax = "1.0"))
-    float BedVolume = 0.35f;
+    float BedVolume = 0.5f;
 
     UPROPERTY(EditDefaultsOnly, Category = "Audio", meta = (ClampMin = "0.0", ClampMax = "1.0"))
-    float PreviewVolume = 0.35f;
+    float PreviewVolume = 0.5f;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Audio", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+    float AnthemVolume = 0.85f;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Audio", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+    float UIClickVolume = 1.0f;
+
+    /** Crowd gain inside actual bounded room volumes/boxes tagged LFF_SensoryAudioZone / LFF_QuietAudioZone. */
+    UPROPERTY(EditDefaultsOnly, Category = "Audio", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+    float SensoryRoomCrowdGain = 0.035f;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Audio", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+    float QuietRoomCrowdGain = 0.12f;
 
     /** One full bright-dim cycle of the Lights preview. 4 s is 0.25 Hz, far below any flash threshold. */
     UPROPERTY(EditDefaultsOnly, Category = "Preview", meta = (ClampMin = "3.0", ClampMax = "10.0"))
@@ -200,13 +229,13 @@ public:
     UPROPERTY(EditDefaultsOnly, Category = "Anthem", meta = (ClampMin = "1.0", ClampMax = "6.0"))
     float AnthemReturnSeconds = 3.5f;
 
-    /** Voiceover level. Kept a little under the bed level; the bed ducks under it while it speaks. */
+    /** Narration leads the mix. Normalize voice recordings to -16 LUFS / -1.5 dBTP; never amplify above unity. */
     UPROPERTY(EditDefaultsOnly, Category = "Voice", meta = (ClampMin = "0.0", ClampMax = "1.0"))
-    float VoiceVolume = 0.3f;
+    float VoiceVolume = 0.9f;
 
-    /** How far the bed dips while the voice speaks (6-10 dB). */
-    UPROPERTY(EditDefaultsOnly, Category = "Voice", meta = (ClampMin = "-10.0", ClampMax = "-6.0"))
-    float VoiceDuckDecibels = -8.0f;
+    /** Both crowd and anthem duck under narration, keeping the words intelligible with headroom. */
+    UPROPERTY(EditDefaultsOnly, Category = "Voice", meta = (ClampMin = "-20.0", ClampMax = "-6.0"))
+    float VoiceDuckDecibels = -12.0f;
 
     /** A short breath after the camera arrives before the voice starts, so a step never opens with a jolt. */
     UPROPERTY(EditDefaultsOnly, Category = "Voice", meta = (ClampMin = "0.0", ClampMax = "2.0"))

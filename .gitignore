@@ -5,13 +5,29 @@
 /Script/
 /*.VC.db
 /VirtualStadium.sln
+/Windows/
+/*.zip
+/artifacts/
+/.vs/
+/.vscode/
+/.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.xcodeproj/
+*.xcworkspace/
 
+# Generated packaging records; keep authored Build/<platform>/Resources.
+/Build/*/FileOpenOrder/
+/Build/*/*.PackageVersionCounter
 
 # Cesium runtime tile/request cache
 cesium-request-cache.sqlite*
 
 # macOS
 .DS_Store
+._*
 
 # Cesium ion server asset: holds DefaultIonAccessToken once a project token is selected.
 # Never commit it (CESIUM_PLACEMENT §7). Cesium recreates it on first load; pick the token per machine.

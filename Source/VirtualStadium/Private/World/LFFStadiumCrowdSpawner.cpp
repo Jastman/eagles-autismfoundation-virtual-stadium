@@ -357,7 +357,11 @@ void ALFFStadiumCrowdSpawner::BuildDetailedFans(const TArray<FLFFCrowdSeat>& Poi
         }
         Fan->BodyMesh = Look.BodyMesh;
         Fan->FaceMesh = Look.FaceMesh;
+        Fan->HairStyle = Look.HairStyle;
         Fan->Outfit = Look.Outfit;
+        Fan->BodyMaterialOverrides = Look.BodyMaterialOverrides;
+        Fan->FaceMaterialOverrides = Look.FaceMaterialOverrides;
+        Fan->ExposedBodyMaterialSlots = Look.ExposedBodyMaterialSlots;
         Fan->StillAnimation = bStanding ? StandingIdle : SeatedIdle;
         Fan->Gestures = bStanding ? TArray<TObjectPtr<UAnimSequence>>{ StandingCheer, StandingClap }
             : TArray<TObjectPtr<UAnimSequence>>{ SeatedClap };

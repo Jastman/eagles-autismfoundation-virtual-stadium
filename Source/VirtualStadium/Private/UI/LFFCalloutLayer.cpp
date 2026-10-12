@@ -174,6 +174,7 @@ void ULFFCalloutLayer::BuildCallouts()
         ULFFCalloutHandler* Handler = NewObject<ULFFCalloutHandler>(this);
         Handler->AmenityId = Place.AmenityId;
         Handler->Layer = this;
+        RegisterButtonFeedback(Head);
         Head->OnClicked.AddDynamic(Handler, &ULFFCalloutHandler::HandleClicked);
         Handlers.Add(Handler);
 

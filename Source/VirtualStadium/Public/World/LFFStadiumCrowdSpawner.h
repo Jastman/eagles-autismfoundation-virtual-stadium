@@ -24,7 +24,19 @@ struct FLFFCrowdAppearance
     TObjectPtr<USkeletalMesh> FaceMesh;
 
     UPROPERTY(EditAnywhere, Category = "Crowd")
+    FLFFHairPiece HairStyle;
+
+    UPROPERTY(EditAnywhere, Category = "Crowd")
     TArray<FLFFOutfitPiece> Outfit;
+
+    UPROPERTY(EditAnywhere, Category = "Crowd")
+    TMap<FName, TObjectPtr<UMaterialInterface>> BodyMaterialOverrides;
+
+    UPROPERTY(EditAnywhere, Category = "Crowd")
+    TMap<FName, TObjectPtr<UMaterialInterface>> FaceMaterialOverrides;
+
+    UPROPERTY(EditAnywhere, Category = "Crowd")
+    TArray<FName> ExposedBodyMaterialSlots = { TEXT("head"), TEXT("face"), TEXT("hands") };
 };
 
 struct FLFFCrowdSeat

@@ -90,12 +90,16 @@ protected:
 
     /** 0 at the start pose, 1 at the end pose. Subclasses may draw more (fireworks). */
     virtual void ApplyAlpha(float Alpha, float ElapsedSeconds);
+    /** People can wait for a route reservation without consuming their remaining cue time. Other cues are unchanged. */
+    virtual bool TryAdvanceCue(float Alpha, float ElapsedSeconds);
+    const FTransform& GetRestRelativePose() const { return RestRelative; }
+    float GetCueElapsed() const { return Elapsed; }
     virtual void OnPlayStarted() {}
     virtual void OnStopped() {}
     /** The one mesh the animations play on (a person's body; the rest follow its pose). Null: every skeletal mesh. */
     virtual USkeletalMeshComponent* GetAnimatedMesh() const { return nullptr; }
 
-    void SetCueHidden(bool bHidden);
+    void SetCueHidden(bool bCueHidden);
 
     UPROPERTY(VisibleAnywhere, Category = "Components")
     TObjectPtr<USceneComponent> SceneRoot;
