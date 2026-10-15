@@ -9,7 +9,7 @@ export interface XF {
     s: number[];
 }
 
-export type Shape = "cube" | "cylinder" | "sphere" | "cone" | "plane" | "box" | "car" | "person";
+export type Shape = "cube" | "cylinder" | "sphere" | "cone" | "plane" | "box" | "car" | "carpart" | "person";
 
 export interface Part extends Partial<XF> {
     shape: Shape;
@@ -18,6 +18,12 @@ export interface Part extends Partial<XF> {
     bounds?: { o: number[]; e: number[] };
     mesh?: string;
     instances?: XF[];
+    /** Unreal asset name of the part's mesh (an exported glTF of it replaces the stand-in). */
+    asset?: string;
+    /** City Sample vehicle number for "car" parts ("02" ... "07"). */
+    vehicle?: string;
+    /** For "person" parts: the MetaHuman's build and hairstyle (e.g. "S_Pixie", "M_BobStraight"). */
+    look?: { sex: "m" | "f"; hair: string | null };
 }
 
 export interface CueData {

@@ -10,8 +10,10 @@ import { EagleVisual } from "./eagle";
 import { CameraEffects } from "./effects";
 import type { Geo } from "./geo";
 import { WorldText } from "./labels";
+import { ModelGroup, ModelLibrary } from "./models";
+import type { UnrealBounds } from "./models";
 import { PropPrimitive, partInstances, rootTransform } from "./props";
-import type { ActorData, SceneData } from "./sceneData";
+import type { ActorData, Part, SceneData } from "./sceneData";
 import { targetTransform, toTransform, vec } from "./sceneData";
 
 interface Obb {
@@ -34,8 +36,13 @@ export class StadiumWorld implements JourneyWorld {
     private crowd: StadiumCrowd | null = null;
     private crowdShown = true;
     readonly effects: CameraEffects;
+    /** Meshes exported from Unreal (scene/models.ts), by the toggles their stand-ins follow. */
+    private readonly library: ModelLibrary;
+    private readonly modelGroups = { static: new ModelGroup(), exterior: new ModelGroup(), crowd: new ModelGroup() };
 
-    constructor(private readonly scene: Scene, private readonly geo: Geo, private readonly data: SceneData, models: Record<string, string>) {
+    constructor(private readonly scene: Scene, private readonly geo: Geo, private readonly data: SceneData, models: Record<string, string>,
+        modelBounds: Record<string, UnrealBounds> = {}) {
+        this.library = new ModelLibrary(scene, geo, models, modelBounds);
         this.siteFrame = geo.siteFrame;
         for (const [id, t] of Object.entries(data.targets)) this.targets.set(id, { id, transform: targetTransform(t), fov: t.fov });
         this.cameraPaths = data.paths.map((p) => ({ name: p.name, fromTargetId: p.from, toTargetId: p.to, travelSeconds: p.travelSeconds,
@@ -54,13 +61,35 @@ export class StadiumWorld implements JourneyWorld {
         }
         const staticInstances: ReturnType<typeof partInstances> = [];
         const enu = this.geo.enuToFixed;
+        // Exported meshes, gathered per toggle group and asset so each becomes one instanced model.
+        const exported = new Map<string, { group: keyof StadiumWorld["modelGroups"]; asset: string; worlds: Transform[]; fallback: ReturnType<typeof partInstances> }>();
+        // People stay stand-ins: their MetaHuman outfits are Chaos cloth, which the glTF exporter can't write, and an
+        // unclothed body is never shown (export_web_assets.py, Docs/WEB_PARITY.md W5).
+        const isExported = (p: Part) => !p.hidden && (p.shape === "box" || p.shape === "car" || p.shape === "carpart") && this.library.has(p.asset);
 
         for (const actor of this.data.actors) {
             const root = rootTransform(actor);
-            const instances = actor.parts.filter((p) => !p.hidden).flatMap((p, i) => partInstances(actor, p, i));
+            const group: keyof StadiumWorld["modelGroups"] = actor.tags.includes("LFF_Crowd") ? "crowd" : actor.tags.includes("LFF_Exterior") ? "exterior" : "static";
+            const replaceable = !actor.text && !actor.cue && !(actor.attachedTo && byLabel.get(actor.attachedTo)?.cue);
+            const instances = actor.parts.flatMap((p, i) => (p.hidden || (replaceable && isExported(p)) ? [] : partInstances(actor, p, i)));
+            if (replaceable) {
+                actor.parts.forEach((p, i) => {
+                    if (!isExported(p)) return;
+                    const key = `${group}|${p.asset}`;
+                    const entry = exported.get(key) ?? { group, asset: p.asset!, worlds: [], fallback: [] };
+                    for (const xf of p.instances ?? [p as Required<Pick<Part, "l" | "q" | "s">>]) entry.worlds.push(toTransform(xf).mul(root));
+                    // The stand-in stays until the model is in (and for good if it fails).
+                    const rootMatrix = this.geo.worldTransformToModelMatrix(root);
+                    for (const instance of partInstances(actor, p, i)) {
+                        instance.modelMatrix = Matrix4.multiply(rootMatrix, instance.modelMatrix, new Matrix4());
+                        entry.fallback.push(instance);
+                    }
+                    exported.set(key, entry);
+                });
+            }
             for (const box of actor.boxes ?? []) this.addVolume(actor, box);
             if (!actor.cue) {
-                for (const p of actor.parts) if (!p.hidden && p.shape !== "person") this.addObstacles(actor, p, root);
+                for (const p of actor.parts) if (!p.hidden && p.shape !== "person" && p.shape !== "carpart") this.addObstacles(actor, p, root);
             }
 
             if (actor.text) {
@@ -119,8 +148,21 @@ export class StadiumWorld implements JourneyWorld {
             }
         }
         if (staticInstances.length > 0) new PropPrimitive(this.scene, staticInstances, Matrix4.clone(Matrix4.IDENTITY));
+        for (const entry of exported.values()) this.placeExported(entry.group, entry.asset, entry.worlds, entry.fallback);
+        if (exported.size > 0) console.info(`Level: ${exported.size} exported meshes replace their stand-ins.`);
         console.info(`Level: ${this.data.actors.length} actors, ${this.cueActors.length} cues, ${this.labels.length} labels, ` +
             `${this.crowdProps.length} crowd and ${this.exteriorProps.length} exterior groups, ${this.obstacles.length} obstacles.`);
+    }
+
+    private placeExported(group: keyof StadiumWorld["modelGroups"], asset: string, worlds: Transform[], fallback: ReturnType<typeof partInstances>): void {
+        const standIn = fallback.length > 0 ? new PropPrimitive(this.scene, fallback, Matrix4.clone(Matrix4.IDENTITY)) : null;
+        const list = group === "crowd" ? this.crowdProps : group === "exterior" ? this.exteriorProps : null;
+        if (standIn) list?.push(standIn);
+        void this.library.place(asset, worlds, this.modelGroups[group]).then((placed) => {
+            if (!placed || !standIn) return;
+            list?.splice(list.indexOf(standIn), 1);
+            standIn.destroy();
+        });
     }
 
     private addVolume(actor: ActorData, box: { extent: number[]; world: { l: number[]; q: number[]; s: number[] } }): void {
@@ -178,6 +220,9 @@ export class StadiumWorld implements JourneyWorld {
         this.crowdShown = shown;
         for (const prop of this.crowdProps) prop.setShown(shown);
         this.crowd?.setShown(shown);
+        this.modelGroups.crowd.setShown(shown);
+        // Exported people's idles and gestures stop under Less movement (Unreal's fans freeze the same way).
+        for (const g of Object.values(this.modelGroups)) g.setAnimating(_animate);
     }
 
     isInsideStadium(point: Vec3): boolean {
@@ -186,6 +231,7 @@ export class StadiumWorld implements JourneyWorld {
 
     setExteriorHidden(hidden: boolean): void {
         for (const prop of this.exteriorProps) prop.setShown(!hidden);
+        this.modelGroups.exterior.setShown(!hidden);
     }
 
     isPathBlocked(from: Vec3, to: Vec3, radius: number): boolean {

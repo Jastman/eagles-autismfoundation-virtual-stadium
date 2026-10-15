@@ -10,6 +10,9 @@ import { amenities, goldenPath } from "./journey/data";
 import { Journey } from "./journey/journey";
 import { Geo } from "./scene/geo";
 import { sceneData } from "./scene/sceneData";
+import { SceneLook } from "./scene/look";
+import type { UnrealBounds } from "./scene/models";
+import { FrameRateGovernor, chooseTier, lowerTier, rememberTier, settingsFor } from "./scene/quality";
 import { loadTiles } from "./scene/tiles";
 import { StadiumWorld } from "./scene/world";
 import { CalloutLayer } from "./ui/callouts";
@@ -45,9 +48,10 @@ async function main(): Promise<void> {
     if (!config.noLoadingScreen) document.body.append(loading.root);
 
     const audio = new AudioEngine();
-    const [ticket, models] = await Promise.all([
+    const [ticket, models, modelBounds] = await Promise.all([
         fetchJson<{ frames: string[] }>("media/ticket/manifest.json", { frames: [] }),
         fetchJson<Record<string, string>>("models/manifest.json", {}),
+        fetchJson<Record<string, UnrealBounds>>("models/bounds.json", {}),
         audio.loadManifest("media/audio/manifest.json"),
         // Signs are drawn into textures, so the project font must be ready first.
         document.fonts.load('700 64px "Atkinson Hyperlegible"').catch(() => undefined),
@@ -56,6 +60,9 @@ async function main(): Promise<void> {
     for (const frame of ticket.frames) new Image().src = frame;
 
     Ion.defaultAccessToken = config.ionToken || config.stadiumIonToken;
+    const params = new URLSearchParams(location.search);
+    const quality = chooseTier(params);
+    let settings = settingsFor(quality.tier);
     const container = h("div", { id: "cesium" });
     app.append(container);
     const viewer = new Viewer(container, {
@@ -72,21 +79,24 @@ async function main(): Promise<void> {
         infoBox: false,
         selectionIndicator: false,
         shadows: false,
-        msaaSamples: 1,
+        msaaSamples: settings.msaaSamples,
     });
     const scene = viewer.scene;
     // Unreal's camera is the only one: no Cesium mouse/touch camera controls.
     const controller = scene.screenSpaceCameraController;
     controller.enableInputs = false;
-    scene.fog.enabled = true;
     scene.backgroundColor = Color.fromCssColorString("#9fb6c8");
-    scene.postProcessStages.fxaa.enabled = true;
     // CesiumSunSky: 1:00 PM EDT on Sunday, October 18, 2026 (ADR-0004, amended).
     viewer.clock.currentTime = JulianDate.fromIso8601("2026-10-18T17:00:00Z");
     viewer.clock.shouldAnimate = false;
 
     const geo = new Geo(sceneData.georeference);
-    const world = new StadiumWorld(scene, geo, sceneData, models);
+    const look = new SceneLook(viewer, geo);
+    look.apply(settings);
+    console.info(`Quality: ${settings.tier}${quality.fixed ? " (fixed by ?quality=)" : ""}.`);
+    // Exported models are keyed by Unreal asset name (the manifest also lists sub-folders, e.g. people/...).
+    const byAsset = Object.fromEntries(Object.entries(models).map(([k, v]) => [k.split("/").pop()!, v]));
+    const world = new StadiumWorld(scene, geo, sceneData, { ...byAsset, ...models }, modelBounds);
     const timers = new Timers();
     const journey = new Journey(world, timers, audio, goldenPath(), amenities());
 
@@ -106,8 +116,7 @@ async function main(): Promise<void> {
     const input = new Input(journey, hud, container);
 
     journey.initialize();
-    const tiles = loadTiles(scene, geo, config, sceneData.footprintLonLat);
-    const params = new URLSearchParams(location.search);
+    const tiles = loadTiles(scene, geo, config, sceneData.footprintLonLat, (set, kind) => look.addTileset(set, kind));
     if (!params.has("noCrowd")) void world.loadCrowd();
     let progress = () => 0;
     void tiles.then((t) => (progress = t.progress)).catch((error) => {
@@ -115,6 +124,8 @@ async function main(): Promise<void> {
         progress = () => 100;
     });
 
+    // Steps down a tier if the device can't keep up once the stadium is in (never back up during the visit).
+    const governor = new FrameRateGovernor();
     let last = performance.now();
     scene.preRender.addEventListener(() => {
         const now = performance.now();
@@ -133,9 +144,18 @@ async function main(): Promise<void> {
         fade.style.background = rig.fadeColor;
         hud.tick();
         if (covered) loading.tick(dt, progress());
+        if (!quality.fixed && governor.tick(dt, !covered && progress() >= 100 && !rig.isBusy())) {
+            const lower = lowerTier(settings.tier);
+            if (lower) {
+                settings = settingsFor(lower);
+                look.apply(settings);
+                rememberTier(lower);
+                console.info(`Quality: frame rate low, now ${lower}.`);
+            }
+        }
     });
     // Development hooks for automated checks (Docs/WEB_PARITY.md, verification).
-    (window as unknown as { lff: unknown }).lff = { journey, world, viewer, hud };
+    (window as unknown as { lff: unknown }).lff = { journey, world, viewer, hud, look, settingsFor };
 }
 
 void main();

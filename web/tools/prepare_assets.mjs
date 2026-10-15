@@ -6,7 +6,7 @@
 //                    Content/LFF/Crowd, and the ticket frames
 //
 // The sources are the Unreal project's own files, so a change there reaches both builds. Ticket frames come from
-// web/assets-src/ticket/*.png when Tools/Pipeline/export_web_assets.py has written them (full resolution); otherwise
+// web/assets-src/ticket/*.png when Tools/Editor/export_web_assets.py has written them (full resolution); otherwise
 // the editor thumbnails embedded in Content/LFF/UI/Ticket/*.uasset are used (128 x 256, a stand-in).
 //
 //   node tools/prepare_assets.mjs [--force]
@@ -136,13 +136,22 @@ for (const file of walk(join(web, "static"), () => true)) cpSync(file, join(pub,
 // testing, props. Listed so the scene can prefer a model over its primitive stand-in.
 mkdirSync(join(pub, "models"), { recursive: true });
 const models = {};
+const modelBounds = {};
 for (const glb of walk(join(web, "assets-src", "models"), (p) => p.endsWith(".glb"))) {
     const rel = relative(join(web, "assets-src", "models"), glb).replaceAll("\\", "/");
     mkdirSync(dirname(join(pub, "models", rel)), { recursive: true });
-    cpSync(glb, join(pub, "models", rel));
-    models[rel.replace(/\.glb$/, "")] = `models/${rel}`;
+    if (newer(glb, join(pub, "models", rel))) cpSync(glb, join(pub, "models", rel));
+    const name = rel.replace(/\.glb$/, "");
+    models[name] = `models/${rel}`;
+    // The mesh's Unreal-local bounds (export_web_assets.py), which fix the model's axes on the web (scene/models.ts).
+    const bounds = glb.replace(/\.glb$/, ".bounds.json");
+    if (existsSync(bounds)) {
+        const b = JSON.parse(readFileSync(bounds, "utf8"));
+        modelBounds[basename(name)] = { min: b.min, max: b.max };
+    }
 }
 writeFileSync(join(pub, "models", "manifest.json"), JSON.stringify(models, null, 2));
+writeFileSync(join(pub, "models", "bounds.json"), JSON.stringify(modelBounds));
 
 console.log(`prepare_assets: ${Object.keys(audioManifest).length} audio (${ffmpeg ? "AAC + MP3" : "WAV"}), ${ticketFrames.length} ticket frames` +
     `${exported.length > 0 ? "" : " (thumbnails)"}, ${Object.keys(models).length} models.`);

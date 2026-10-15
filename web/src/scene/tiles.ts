@@ -4,7 +4,7 @@
 // Streaming follows ULFFTileStreamingSubsystem::ConfigureTileset: keep tiles around the camera, show parents, not holes.
 import {
     Cartesian3, Cesium3DTileset, ClippingPolygon, ClippingPolygonCollection, Color, ColorGeometryInstanceAttribute, EllipseGeometry,
-    GeometryInstance, IonResource, Math as CesiumMath, Matrix3, Matrix4, PerInstanceColorAppearance, Primitive,
+    GeometryInstance, IonResource, Math as CesiumMath, Matrix3, Matrix4, PerInstanceColorAppearance, Primitive, ShadowMode,
 } from "cesium";
 import type { Scene } from "cesium";
 import type { DeploymentConfig } from "../config";
@@ -63,7 +63,8 @@ function placeStadium(tileset: Cesium3DTileset, geo: Geo, config: DeploymentConf
         `(now ${placed.toFixed(1)} m from midfield). Tune with ?stadiumHeading= and ?stadiumOffset=e,n,u if needed.`);
 }
 
-export async function loadTiles(scene: Scene, geo: Geo, config: DeploymentConfig, footprintLonLat: number[][]): Promise<TileSet> {
+export async function loadTiles(scene: Scene, geo: Geo, config: DeploymentConfig, footprintLonLat: number[][],
+    onTileset: (set: Cesium3DTileset, kind: "stadium" | "city") => void = () => undefined): Promise<TileSet> {
     const stadium: Cesium3DTileset[] = [];
     let context: Cesium3DTileset | null = null;
 
@@ -74,6 +75,7 @@ export async function loadTiles(scene: Scene, geo: Geo, config: DeploymentConfig
             const tileset = await Cesium3DTileset.fromUrl(resource, { maximumScreenSpaceError: 8 });
             configure(tileset);
             placeStadium(tileset, geo, config, id);
+            onTileset(tileset, "stadium");
             scene.primitives.add(tileset);
             return tileset;
         }));
@@ -95,6 +97,7 @@ export async function loadTiles(scene: Scene, geo: Geo, config: DeploymentConfig
                     polygons: [new ClippingPolygon({ positions: Cartesian3.fromDegreesArray(footprintLonLat.flat()) })],
                 });
             }
+            onTileset(context, "city");
             scene.primitives.add(context);
         } catch (error) {
             console.error("Google Photorealistic 3D Tiles could not be loaded (check the ion token's asset access).", error);
@@ -113,6 +116,7 @@ export async function loadTiles(scene: Scene, geo: Geo, config: DeploymentConfig
             }),
             appearance: new PerInstanceColorAppearance({ flat: false }),
             asynchronous: false,
+            shadows: ShadowMode.RECEIVE_ONLY,
         }));
         console.warn("City tiles unavailable: showing a plain ground disc.");
     }

@@ -6,7 +6,8 @@
 //
 // Shapes:  cube | cylinder | sphere | cone | plane    Unreal's /Engine/BasicShapes (100 cm unit shapes, pivot at centre)
 //          box                                          a project mesh drawn as its stored bounds (until a glTF is exported)
-//          car                                          a City Sample car body (Epic content: Unreal-only licence, never exported)
+//          car                                          a City Sample car body (shaped stand-in, or its exported glTF)
+//          carpart                                      a City Sample wheel or glass mesh (drawn only from an exported glTF)
 //          person                                       a MetaHuman (Unreal-only licence): drawn as a simple figure
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -75,7 +76,8 @@ const BASIC = { Cube: "cube", Cylinder: "cylinder", Sphere: "sphere", Cone: "con
 function shapeOf(mesh) {
     const basic = mesh.match(/^\/Engine\/BasicShapes\/(\w+)\./);
     if (basic) return BASIC[basic[1]] ?? null;
-    if (mesh.includes("/CitySampleVehicles/")) return mesh.includes("_No_Wheel") ? "car" : null; // wheels and glass ride in the body
+    // The body draws the whole stand-in car; wheels and glass are kept as "carpart" for when the meshes are exported.
+    if (mesh.includes("/CitySampleVehicles/")) return mesh.includes("_No_Wheel") ? "car" : "carpart";
     if (mesh.includes("_BodyMesh")) return "person";
     if (mesh.startsWith("/MetaHumanCrowdContent/") || mesh.includes("/People/Hair/") || mesh.includes("_FaceMesh")) return null;
     if (mesh.startsWith("/Game/LFF/Stadium/")) return null; // the licensed stadium: a Cesium ion asset on the web (scene/world.ts)
@@ -132,6 +134,18 @@ for (const actor of props.actors) {
         const part = { shape, colour, hidden: hidden || undefined };
         if (shape === "box") part.bounds = meshBounds(mesh) ?? { o: [0, 0, 50], e: [50, 50, 50] };
         if (shape === "box") part.mesh = mesh;
+        // The City Sample vehicle (vehicle02 ... vehicle07): the web draws each type's own body shape (scene/vehicles.ts).
+        if (shape === "car" || shape === "carpart") part.vehicle = mesh.match(/vehicle(\d\d)/)?.[1] ?? "02";
+        // Unreal asset name, so an exported glTF of the same mesh can replace the stand-in (web/assets-src/models/).
+        part.asset = mesh.split("/").pop().split(".")[0];
+        if (shape === "person") {
+            // The MetaHuman's build and hairstyle, so the web figure resembles it (scene/people.ts).
+            const hair = comps.map((h) => h.mesh ?? "").find((m) => m.includes("/People/Hair/") && m.includes(mesh.match(/Average\w+?_Head0\d/)?.[0] ?? "-"));
+            part.look = {
+                sex: mesh.includes("Female") ? "f" : "m",
+                hair: hair?.match(/_Hair_([A-Z])_(\w+?)\./)?.slice(1, 3).join("_") ?? null,
+            };
+        }
         if (Array.isArray(c.instances) && c.instances.length > 0) {
             part.instances = c.instances.map((i) => relativeTo(root, i.world));
         } else {

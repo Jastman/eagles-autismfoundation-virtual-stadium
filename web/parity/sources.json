@@ -240,6 +240,19 @@
       ],
       "sha": "1ef660a437925e4a",
       "how": "LFF.Crowd.Selection only; the rest test Unreal-only MetaHuman and circulation code"
+    },
+    "Tools/Editor/setup_cinematic_look.py": {
+      "web": [
+        "web/src/scene/look.ts"
+      ],
+      "sha": "8a13aacf8f1b9811"
+    },
+    "Tools/Editor/build_crowd_billboards.py": {
+      "web": [
+        "web/tools/draw_crowd_fans.py"
+      ],
+      "sha": "30b995fd7038eecf",
+      "how": "the web runs its fan() directly; check the atlas layout if W, H or LOOKS change"
     }
   }
 }

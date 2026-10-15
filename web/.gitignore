@@ -4,7 +4,7 @@ dist/
 public/cesium/
 public/media/
 public/models/
-# Licensed or Unreal-only source exports (Tools/Pipeline/export_web_assets.py). Never commit.
+# Licensed or Unreal-only source exports (Tools/Editor/export_web_assets.py). Never commit.
 assets-src/
 .env.local
 test-results/

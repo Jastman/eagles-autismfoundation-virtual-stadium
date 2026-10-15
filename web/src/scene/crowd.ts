@@ -8,7 +8,7 @@
 // height. Crowd Off and Calm Mode hide it.
 import {
     BoundingSphere, ComponentDatatype, Geometry, GeometryAttribute, GeometryAttributes, GeometryInstance, Material,
-    MaterialAppearance, Primitive, PrimitiveType,
+    MaterialAppearance, Primitive, PrimitiveType, ShadowMode,
 } from "cesium";
 import type { Scene } from "cesium";
 import { Rotator, Transform, Vec3 } from "../util/ue";
@@ -166,6 +166,7 @@ export class StadiumCrowd {
                 }),
                 modelMatrix: geo.enuToFixed,
                 asynchronous: false,
+                shadows: ShadowMode.ENABLED,
                 allowPicking: false,
             });
             crowd.primitive.show = crowd.shown;

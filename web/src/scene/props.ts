@@ -4,7 +4,7 @@
 // hides on its own (cues, labels, crowd, the parking lot) gets its own, moved through its model matrix.
 import {
     BoxGeometry, Color, ColorGeometryInstanceAttribute, CylinderGeometry, EllipsoidGeometry, GeometryInstance, Matrix4, PerInstanceColorAppearance,
-    Primitive, Cartesian3,
+    Primitive, Cartesian3, ShadowMode,
 } from "cesium";
 import type { Scene } from "cesium";
 import { Quat, Rotator, Transform, Vec3 } from "../util/ue";
@@ -12,6 +12,7 @@ import { ueTransformToLocalMatrix } from "./geo";
 import type { Geo } from "./geo";
 import type { ActorData, Part, XF } from "./sceneData";
 import { linearToSrgb, toTransform } from "./sceneData";
+import { carInstances } from "./vehicles";
 
 const BOX = BoxGeometry.fromDimensions({ vertexFormat: PerInstanceColorAppearance.VERTEX_FORMAT, dimensions: new Cartesian3(100, 100, 100) });
 const CYLINDER = new CylinderGeometry({ vertexFormat: PerInstanceColorAppearance.VERTEX_FORMAT, length: 100, topRadius: 50, bottomRadius: 50, slices: 24 });
@@ -42,30 +43,55 @@ function local(xf: Transform, offset = new Vec3(), scale = new Vec3(1, 1, 1), ro
     return ueTransformToLocalMatrix(inner.mul(xf));
 }
 
-/** A person: legs, torso, head, in the actor's frame (feet at its origin, facing +X). Colours vary per person. */
-function personInstances(key: string, at: Transform): GeometryInstance[] {
-    const shirt = srgb(SHIRTS[Math.floor(hash01(key, 1) * SHIRTS.length)]);
-    const skin = srgb(SKINS[Math.floor(hash01(key, 2) * SKINS.length)]);
-    const trousers = srgb(TROUSERS[Math.floor(hash01(key, 3) * TROUSERS.length)]);
-    const tall = 0.92 + hash01(key, 4) * 0.14;
-    const upright = new Quat();
-    return [
-        instance(CYLINDER, local(at, new Vec3(0, 0, 44 * tall), new Vec3(0.34, 0.42, 0.88 * tall), upright), trousers),
-        instance(CYLINDER, local(at, new Vec3(0, 0, 118 * tall), new Vec3(0.36, 0.48, 0.62 * tall), upright), shirt),
-        instance(SPHERE, local(at, new Vec3(0, 0, 162 * tall), new Vec3(0.21, 0.19, 0.25), upright), skin),
-    ];
-}
+const HAIR = [[0.13, 0.1, 0.08], [0.27, 0.19, 0.12], [0.47, 0.35, 0.23], [0.74, 0.62, 0.43], [0.06, 0.05, 0.05], [0.24, 0.24, 0.24]];
+const SHOES = [[0.08, 0.08, 0.09], [0.92, 0.92, 0.9], [0.32, 0.22, 0.14]];
 
-/** A City Sample car body: about 4.6 x 1.9 x 1.45 m, wheels and glass included in the shape's colour blocks. */
-function carInstances(at: Transform, paint: Color): GeometryInstance[] {
-    const glass = Color.fromBytes(30, 36, 42);
-    const tyre = Color.fromBytes(18, 18, 20);
-    return [
-        instance(BOX, local(at, new Vec3(0, 0, 58), new Vec3(4.55, 1.86, 0.72)), paint),
-        instance(BOX, local(at, new Vec3(-25, 0, 112), new Vec3(2.6, 1.7, 0.5)), glass),
-        instance(BOX, local(at, new Vec3(135, 0, 34), new Vec3(0.7, 1.9, 0.68)), tyre),
-        instance(BOX, local(at, new Vec3(-140, 0, 34), new Vec3(0.7, 1.9, 0.68)), tyre),
+/**
+ * A person in the actor's frame (feet at its origin, facing +X): shoes, legs, hips, torso, arms, hands, neck, head and a
+ * hair shape for the MetaHuman's hairstyle. Build follows the MetaHuman's body (female or male); colours vary per person.
+ */
+function personInstances(key: string, at: Transform, look: Part["look"]): GeometryInstance[] {
+    const pick = <T>(list: T[], salt: number) => list[Math.floor(hash01(key, salt) * list.length)];
+    const shirt = srgb(pick(SHIRTS, 1));
+    const skin = srgb(pick(SKINS, 2));
+    const trousers = srgb(pick(TROUSERS, 3));
+    const hair = srgb(pick(HAIR, 5));
+    const shoes = srgb(pick(SHOES, 6));
+    const female = look?.sex === "f";
+    const k = (female ? 0.94 : 1) * (0.95 + hash01(key, 4) * 0.1);
+    const shoulders = female ? 19 : 22;
+    const up = new Quat();
+    const part = (geometry: typeof BOX | typeof CYLINDER | typeof SPHERE, x: number, y: number, z: number, sx: number, sy: number, sz: number, colour: Color) =>
+        instance(geometry, local(at, new Vec3(x, y, z * k), new Vec3(sx, sy, sz * k), up), colour);
+    const out = [
+        part(BOX, 4, 9, 4, 0.26, 0.1, 0.08, shoes),
+        part(BOX, 4, -9, 4, 0.26, 0.1, 0.08, shoes),
+        part(CYLINDER, 0, 9, 48, 0.15, 0.15, 0.82, trousers),
+        part(CYLINDER, 0, -9, 48, 0.15, 0.15, 0.82, trousers),
+        part(SPHERE, 0, 0, 92, 0.26, female ? 0.38 : 0.36, 0.2, trousers),
+        part(CYLINDER, 0, 0, 120, 0.24, shoulders * 0.019, 0.5, shirt),
+        part(SPHERE, 0, 0, 142, 0.26, shoulders * 0.02, 0.14, shirt),
+        part(CYLINDER, 0, shoulders + 4, 115, 0.1, 0.1, 0.56, shirt),
+        part(CYLINDER, 0, -(shoulders + 4), 115, 0.1, 0.1, 0.56, shirt),
+        part(SPHERE, 1, shoulders + 4, 84, 0.1, 0.08, 0.12, skin),
+        part(SPHERE, 1, -(shoulders + 4), 84, 0.1, 0.08, 0.12, skin),
+        part(CYLINDER, 0, 0, 150, 0.1, 0.1, 0.12, skin),
+        part(SPHERE, 1, 0, 163, 0.2, 0.17, 0.24, skin),
     ];
+    // Hair, after the MetaHuman's groom (S_ short, M_ medium).
+    const style = look?.hair ?? (female ? "M_BobStraight" : "S_Clean");
+    if (style.startsWith("M_")) {
+        out.push(part(SPHERE, -3, 0, 165, 0.25, 0.21, 0.27, hair));
+        out.push(part(BOX, -6, 0, 154, 0.16, 0.21, 0.16, hair));
+    } else if (style.includes("PulledBack")) {
+        out.push(part(SPHERE, -2, 0, 168, 0.22, 0.185, 0.2, hair));
+        out.push(part(SPHERE, -13, 0, 166, 0.08, 0.08, 0.08, hair));
+    } else if (style.includes("Curly")) {
+        out.push(part(SPHERE, -1, 0, 171, 0.215, 0.185, 0.16, hair));
+    } else {
+        out.push(part(SPHERE, -1.5, 0, 169, 0.21, 0.18, 0.16, hair));
+    }
+    return out;
 }
 
 /** Geometry instances for one part (and each of its instances) in the actor's root frame. */
@@ -97,12 +123,12 @@ export function partInstances(actor: ActorData, part: Part, index: number): Geom
                 break;
             }
             case "car":
-                out.push(...carInstances(at, colourOf(part.colour)));
+                out.push(...carInstances(part.vehicle ?? "02", at, colourOf(part.colour)));
                 break;
             case "person":
                 // MetaHuman body meshes face +Y and are turned -90 to face the actor's +X; undo that so the figure (drawn
                 // facing +X, shoulders across Y) faces the same way.
-                out.push(...personInstances(key, new Transform(at.rotation.mul(new Rotator(0, 90, 0).quaternion()).normalized(), at.translation)));
+                out.push(...personInstances(key, new Transform(at.rotation.mul(new Rotator(0, 90, 0).quaternion()).normalized(), at.translation), part.look));
                 break;
         }
     });
@@ -118,10 +144,12 @@ export class PropPrimitive {
             geometryInstances: instances,
             appearance: new PerInstanceColorAppearance({ flat: false, translucent: false, closed: true }),
             modelMatrix,
-            asynchronous: true,
+            // Synchronous: the cars and people are prebuilt geometry, which the worker path can't take.
+            asynchronous: false,
             allowPicking: false,
             releaseGeometryInstances: true,
             compressVertices: true,
+            shadows: ShadowMode.ENABLED,
         });
         scene.primitives.add(this.primitive);
     }

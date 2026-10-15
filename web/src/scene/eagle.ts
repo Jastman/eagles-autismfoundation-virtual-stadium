@@ -1,6 +1,6 @@
 // The anthem's bald eagle (SI_EagleMesh, a 2 s flap-loop geometry cache riding the SI_EagleFlight cue). The glTF it was
-// baked from lives in the licensed Assets/ folder; web/assets-src/models/eagle.glb (Tools/Pipeline/export_web_assets.py)
-// replaces this stand-in when present. The stand-in: a dark body, white head and tail, 2.8 m wingspan, slow wing beat.
+// baked from lives in the licensed Assets/ folder (bald-eagle); exported from Blender as web/assets-src/models/eagle.glb it
+// replaces this stand-in (Unreal's glTF exporter can't write a geometry cache, so export_web_assets.py skips it). The stand-in: a dark body, white head and tail, 2.8 m wingspan, slow wing beat.
 import { BoxGeometry, Cartesian3, Color, ColorGeometryInstanceAttribute, EllipsoidGeometry, GeometryInstance, Matrix4, Model,
     PerInstanceColorAppearance, Primitive } from "cesium";
 import type { Scene } from "cesium";
