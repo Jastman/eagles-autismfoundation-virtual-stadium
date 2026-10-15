@@ -1,0 +1,868 @@
+{
+ "CT_Anthem": {
+  "label": "CT_Anthem",
+  "export": "LFFCameraTarget_71",
+  "fov": 70.0,
+  "fovDefaulted": true,
+  "site": {
+   "x": -5050.0,
+   "y": 0.0,
+   "z": 520.0,
+   "pitch": 10.158766,
+   "yaw": 0.0,
+   "roll": 0.0
+  },
+  "world": {
+   "x": -5017.537871,
+   "y": 571.67623,
+   "z": 520.0,
+   "pitch": 10.158766,
+   "yaw": -6.5,
+   "roll": 0.0
+  },
+  "cesium": {
+   "longitude": -75.16806573,
+   "latitude": 39.900752111,
+   "height": -25.8398,
+   "ecef": [
+    1254264.0267,
+    -4736507.9893,
+    4069521.1651
+   ],
+   "heading": 83.499624,
+   "pitch": 10.158313,
+   "roll": 0.0
+  },
+  "tags": [
+   "LFF_StandIn"
+  ]
+ },
+ "CT_BagCheck": {
+  "label": "CT_BagCheck",
+  "export": "LFFCameraTarget_7",
+  "fov": 35.0,
+  "fovDefaulted": false,
+  "site": {
+   "x": -916.0,
+   "y": -23599.0,
+   "z": 282.599792,
+   "pitch": -10.294341,
+   "yaw": 52.19347,
+   "roll": 0.0
+  },
+  "world": {
+   "x": -3581.594462,
+   "y": -23343.608078,
+   "z": 282.599792,
+   "pitch": -10.294341,
+   "yaw": 45.69347,
+   "roll": 0.0
+  },
+  "cesium": {
+   "longitude": -75.16789783,
+   "latitude": 39.902906016,
+   "height": -28.2096,
+   "ecef": [
+    1254238.1701,
+    -4736354.2575,
+    4069703.1099
+   ],
+   "heading": 135.692976,
+   "pitch": -10.29607,
+   "roll": 0.001259
+  },
+  "tags": [
+   "LFF_StandIn"
+  ]
+ },
+ "CT_ClubGate": {
+  "label": "CT_ClubGate",
+  "export": "LFFCameraTarget_68",
+  "fov": 70.0,
+  "fovDefaulted": true,
+  "site": {
+   "x": -4650.0,
+   "y": -16300.0,
+   "z": 322.600433,
+   "pitch": 0.241048,
+   "yaw": 67.750976,
+   "roll": 0.0
+  },
+  "world": {
+   "x": -6465.321513,
+   "y": -15668.826304,
+   "z": 322.600433,
+   "pitch": 0.241048,
+   "yaw": 61.250976,
+   "roll": 0.0
+  },
+  "cesium": {
+   "longitude": -75.168235044,
+   "latitude": 39.902214793,
+   "height": -27.8117,
+   "ecef": [
+    1254222.9751,
+    -4736409.5266,
+    4069644.4889
+   ],
+   "heading": 151.250492,
+   "pitch": 0.239532,
+   "roll": 0.00017
+  },
+  "tags": [
+   "LFF_StandIn"
+  ]
+ },
+ "CT_ExteriorArrival": {
+  "label": "CT_ExteriorArrival",
+  "export": "LFFCameraTarget_0",
+  "fov": 70.0,
+  "fovDefaulted": true,
+  "site": {
+   "x": -6000.0,
+   "y": -25000.0,
+   "z": 1800.0,
+   "pitch": -0.668534,
+   "yaw": 76.504265,
+   "roll": 0.0
+  },
+  "world": {
+   "x": -8791.511478,
+   "y": -24160.077109,
+   "z": 1800.0,
+   "pitch": -0.668534,
+   "yaw": 70.004265,
+   "roll": 0.0
+  },
+  "cesium": {
+   "longitude": -75.168507074,
+   "latitude": 39.902979541,
+   "height": -13.0348,
+   "ecef": [
+    1254189.4462,
+    -4736373.7847,
+    4069719.107
+   ],
+   "heading": 160.003605,
+   "pitch": -0.670848,
+   "roll": 3e-06
+  },
+  "tags": []
+ },
+ "CT_Food": {
+  "label": "CT_Food",
+  "export": "LFFCameraTarget_74",
+  "fov": 70.0,
+  "fovDefaulted": true,
+  "site": {
+   "x": -8350.0,
+   "y": -2300.0,
+   "z": 322.601685,
+   "pitch": 0.190108,
+   "yaw": 46.882282,
+   "roll": 0.0
+  },
+  "world": {
+   "x": -8556.692387,
+   "y": -1339.968433,
+   "z": 322.601685,
+   "pitch": 0.190108,
+   "yaw": 40.382282,
+   "roll": 0.0
+  },
+  "cesium": {
+   "longitude": -75.168479586,
+   "latitude": 39.900924279,
+   "height": -27.8134,
+   "ecef": [
+    1254226.2877,
+    -4736503.7316,
+    4069534.5642
+   ],
+   "heading": 130.381639,
+   "pitch": 0.189445,
+   "roll": -0.000405
+  },
+  "tags": [
+   "LFF_StandIn"
+  ]
+ },
+ "CT_GateEntry": {
+  "label": "CT_GateEntry",
+  "export": "LFFCameraTarget_1",
+  "fov": 70.0,
+  "fovDefaulted": true,
+  "site": {
+   "x": -1500.0,
+   "y": -17000.0,
+   "z": 260.0,
+   "pitch": 5.102316,
+   "yaw": 66.801407,
+   "roll": 0.0
+  },
+  "world": {
+   "x": -3414.812418,
+   "y": -16720.916726,
+   "z": 260.0,
+   "pitch": 5.102316,
+   "yaw": 60.301407,
+   "roll": 0.0
+  },
+  "cesium": {
+   "longitude": -75.167878323,
+   "latitude": 39.902309551,
+   "height": -28.4377,
+   "ecef": [
+    1254250.6131,
+    -4736394.7293,
+    4069652.1585
+   ],
+   "heading": 150.301194,
+   "pitch": 5.100856,
+   "roll": 0.000482
+  },
+  "tags": []
+ },
+ "CT_GateFlares": {
+  "label": "CT_GateFlares",
+  "export": "LFFCameraTarget_8",
+  "fov": 70.0,
+  "fovDefaulted": true,
+  "site": {
+   "x": -1500.0,
+   "y": -19500.0,
+   "z": 307.600159,
+   "pitch": 26.229527,
+   "yaw": 83.659808,
+   "roll": 0.0
+  },
+  "world": {
+   "x": -3697.820452,
+   "y": -19204.846365,
+   "z": 307.600159,
+   "pitch": 26.229527,
+   "yaw": 77.159808,
+   "roll": 0.0
+  },
+  "cesium": {
+   "longitude": -75.167911419,
+   "latitude": 39.902533263,
+   "height": -27.961,
+   "ecef": [
+    1254243.8919,
+    -4736380.4043,
+    4069671.5195
+   ],
+   "heading": 167.159561,
+   "pitch": 26.227767,
+   "roll": 6.8e-05
+  },
+  "tags": [
+   "LFF_StandIn"
+  ]
+ },
+ "CT_GuestServices": {
+  "label": "CT_GuestServices",
+  "export": "LFFCameraTarget_72",
+  "fov": 70.0,
+  "fovDefaulted": true,
+  "site": {
+   "x": -8350.0,
+   "y": 2200.0,
+   "z": 322.602081,
+   "pitch": -0.631841,
+   "yaw": 53.972627,
+   "roll": 0.0
+  },
+  "world": {
+   "x": -8047.277925,
+   "y": 3131.104917,
+   "z": 322.602081,
+   "pitch": -0.631841,
+   "yaw": 47.472627,
+   "roll": 0.0
+  },
+  "cesium": {
+   "longitude": -75.168420012,
+   "latitude": 39.900521597,
+   "height": -27.8134,
+   "ecef": [
+    1254238.5541,
+    -4736530.152,
+    4069500.2641
+   ],
+   "heading": 137.472031,
+   "pitch": -0.632121,
+   "roll": -0.000723
+  },
+  "tags": [
+   "LFF_StandIn"
+  ]
+ },
+ "CT_InnerGate": {
+  "label": "CT_InnerGate",
+  "export": "LFFCameraTarget_69",
+  "fov": 70.0,
+  "fovDefaulted": true,
+  "site": {
+   "x": -800.0,
+   "y": -15900.0,
+   "z": 322.600464,
+   "pitch": 0.518958,
+   "yaw": 61.113418,
+   "roll": 0.0
+  },
+  "world": {
+   "x": -2594.788583,
+   "y": -15707.229934,
+   "z": 322.600464,
+   "pitch": 0.518958,
+   "yaw": 54.613418,
+   "roll": 0.0
+  },
+  "cesium": {
+   "longitude": -75.16778243,
+   "latitude": 39.902218254,
+   "height": -27.812,
+   "ecef": [
+    1254260.3276,
+    -4736399.3801,
+    4069644.7835
+   ],
+   "heading": 144.613229,
+   "pitch": 0.51767,
+   "roll": 0.000629
+  },
+  "tags": [
+   "LFF_StandIn"
+  ]
+ },
+ "CT_InteriorConcourse": {
+  "label": "CT_InteriorConcourse",
+  "export": "LFFCameraTarget_2",
+  "fov": 70.0,
+  "fovDefaulted": true,
+  "site": {
+   "x": -7800.0,
+   "y": 800.0,
+   "z": 323.0,
+   "pitch": -0.226166,
+   "yaw": -90.0,
+   "roll": 0.0
+  },
+  "world": {
+   "x": -7659.297903,
+   "y": 1677.842552,
+   "z": 323.0,
+   "pitch": -0.226166,
+   "yaw": -96.5,
+   "roll": 0.0
+  },
+  "cesium": {
+   "longitude": -75.168374645,
+   "latitude": 39.900652483,
+   "height": -27.8095,
+   "ecef": [
+    1254239.919,
+    -4736520.1503,
+    4069511.4154
+   ],
+   "heading": 353.499423,
+   "pitch": -0.226239,
+   "roll": 0.0007
+  },
+  "tags": []
+ },
+ "CT_Line": {
+  "label": "CT_Line",
+  "export": "LFFCameraTarget_60",
+  "fov": 70.0,
+  "fovDefaulted": true,
+  "site": {
+   "x": -2600.0,
+   "y": -25500.0,
+   "z": 307.59964,
+   "pitch": -1.385834,
+   "yaw": 53.746162,
+   "roll": 0.0
+  },
+  "world": {
+   "x": -5469.968776,
+   "y": -25041.753964,
+   "z": 307.59964,
+   "pitch": -1.385834,
+   "yaw": 47.246162,
+   "roll": 0.0
+  },
+  "cesium": {
+   "longitude": -75.168118657,
+   "latitude": 39.903058957,
+   "height": -27.9588,
+   "ecef": [
+    1254217.1762,
+    -4736348.7471,
+    4069716.2977
+   ],
+   "heading": 137.245724,
+   "pitch": -1.387823,
+   "roll": 0.001171
+  },
+  "tags": [
+   "LFF_StandIn"
+  ]
+ },
+ "CT_Parking": {
+  "label": "CT_Parking",
+  "export": "LFFCameraTarget_59",
+  "fov": 70.0,
+  "fovDefaulted": true,
+  "site": {
+   "x": 4118.5,
+   "y": -24357.3,
+   "z": 382.599721,
+   "pitch": -6.0,
+   "yaw": 106.5,
+   "roll": 0.0
+  },
+  "world": {
+   "x": 1334.701049,
+   "y": -24666.955196,
+   "z": 382.599721,
+   "pitch": -6.0,
+   "yaw": 100.0,
+   "roll": 0.0
+  },
+  "cesium": {
+   "longitude": -75.16732292,
+   "latitude": 39.903025202,
+   "height": -27.2092,
+   "ecef": [
+    1254283.7182,
+    -4736334.2078,
+    4069713.9035
+   ],
+   "heading": 190.000128,
+   "pitch": -6.002209,
+   "roll": -0.000269
+  },
+  "tags": [
+   "LFF_StandIn"
+  ]
+ },
+ "CT_Plaza": {
+  "label": "CT_Plaza",
+  "export": "LFFCameraTarget_65",
+  "fov": 70.0,
+  "fovDefaulted": true,
+  "site": {
+   "x": -9300.0,
+   "y": -21900.0,
+   "z": 322.599976,
+   "pitch": 0.684751,
+   "yaw": 27.645975,
+   "roll": 0.0
+  },
+  "world": {
+   "x": -11719.368639,
+   "y": -20706.433751,
+   "z": 322.599976,
+   "pitch": 0.684751,
+   "yaw": 21.145975,
+   "roll": 0.0
+  },
+  "cesium": {
+   "longitude": -75.168849452,
+   "latitude": 39.902668494,
+   "height": -27.8096,
+   "ecef": [
+    1254163.9131,
+    -4736391.7391,
+    4069683.1352
+   ],
+   "heading": 111.145112,
+   "pitch": 0.683098,
+   "roll": 0.00136
+  },
+  "tags": [
+   "LFF_StandIn"
+  ]
+ },
+ "CT_PlazaGate": {
+  "label": "CT_PlazaGate",
+  "export": "LFFCameraTarget_62",
+  "fov": 70.0,
+  "fovDefaulted": true,
+  "site": {
+   "x": -2800.0,
+   "y": -23950.0,
+   "z": 307.599762,
+   "pitch": 0.165058,
+   "yaw": 41.496468,
+   "roll": 0.0
+  },
+  "world": {
+   "x": -5493.218166,
+   "y": -23479.076945,
+   "z": 307.599762,
+   "pitch": 0.165058,
+   "yaw": 34.996468,
+   "roll": 0.0
+  },
+  "cesium": {
+   "longitude": -75.168121374,
+   "latitude": 39.902918216,
+   "height": -27.9594,
+   "ecef": [
+    1254219.5175,
+    -4736358.4965,
+    4069704.3095
+   ],
+   "heading": 124.99606,
+   "pitch": 0.163441,
+   "roll": 0.00145
+  },
+  "tags": [
+   "LFF_StandIn"
+  ]
+ },
+ "CT_Popcorn": {
+  "label": "CT_Popcorn",
+  "export": "LFFCameraTarget_66",
+  "fov": 70.0,
+  "fovDefaulted": true,
+  "site": {
+   "x": -3700.0,
+   "y": -20550.0,
+   "z": 322.600067,
+   "pitch": 3.313431,
+   "yaw": 90.0,
+   "roll": 0.0
+  },
+  "world": {
+   "x": -6002.541909,
+   "y": -19999.049743,
+   "z": 322.600067,
+   "pitch": 3.313431,
+   "yaw": 83.5,
+   "roll": 0.0
+  },
+  "cesium": {
+   "longitude": -75.168180931,
+   "latitude": 39.902604791,
+   "height": -27.8106,
+   "ecef": [
+    1254220.338,
+    -4736381.4908,
+    4069677.7085
+   ],
+   "heading": 173.499531,
+   "pitch": 3.31158,
+   "roll": -0.000332
+  },
+  "tags": [
+   "LFF_StandIn"
+  ]
+ },
+ "CT_SeatFieldView": {
+  "label": "CT_SeatFieldView",
+  "export": "LFFCameraTarget_3",
+  "fov": 70.0,
+  "fovDefaulted": true,
+  "site": {
+   "x": -5050.0,
+   "y": 0.0,
+   "z": 520.0,
+   "pitch": -5.879044,
+   "yaw": 0.0,
+   "roll": 0.0
+  },
+  "world": {
+   "x": -5017.537871,
+   "y": 571.67623,
+   "z": 520.0,
+   "pitch": -5.879044,
+   "yaw": -6.5,
+   "roll": 0.0
+  },
+  "cesium": {
+   "longitude": -75.16806573,
+   "latitude": 39.900752111,
+   "height": -25.8398,
+   "ecef": [
+    1254264.0267,
+    -4736507.9893,
+    4069521.1651
+   ],
+   "heading": 83.499624,
+   "pitch": -5.879497,
+   "roll": 0.0
+  },
+  "tags": []
+ },
+ "CT_SeatLights": {
+  "label": "CT_SeatLights",
+  "export": "LFFCameraTarget_70",
+  "fov": 70.0,
+  "fovDefaulted": true,
+  "site": {
+   "x": -5050.0,
+   "y": 0.0,
+   "z": 520.0,
+   "pitch": 17.007947,
+   "yaw": 0.0,
+   "roll": 0.0
+  },
+  "world": {
+   "x": -5017.537871,
+   "y": 571.67623,
+   "z": 520.0,
+   "pitch": 17.007947,
+   "yaw": -6.5,
+   "roll": 0.0
+  },
+  "cesium": {
+   "longitude": -75.16806573,
+   "latitude": 39.900752111,
+   "height": -25.8398,
+   "ecef": [
+    1254264.0267,
+    -4736507.9893,
+    4069521.1651
+   ],
+   "heading": 83.499624,
+   "pitch": 17.007494,
+   "roll": 0.0
+  },
+  "tags": [
+   "LFF_StandIn"
+  ]
+ },
+ "CT_Security": {
+  "label": "CT_Security",
+  "export": "LFFCameraTarget_5",
+  "fov": 70.0,
+  "fovDefaulted": true,
+  "site": {
+   "x": -2200.0,
+   "y": -24300.0,
+   "z": 307.599731,
+   "pitch": -0.780447,
+   "yaw": 50.52754,
+   "roll": 0.0
+  },
+  "world": {
+   "x": -4936.696177,
+   "y": -23894.749023,
+   "z": 307.599731,
+   "pitch": -0.780447,
+   "yaw": 44.02754,
+   "roll": 0.0
+  },
+  "cesium": {
+   "longitude": -75.168056295,
+   "latitude": 39.902955653,
+   "height": -27.9593,
+   "ecef": [
+    1254224.2147,
+    -4736354.4943,
+    4069707.4983
+   ],
+   "heading": 134.027153,
+   "pitch": -0.782261,
+   "roll": 0.00124
+  },
+  "tags": [
+   "LFF_StandIn"
+  ]
+ },
+ "CT_SensoryRoom": {
+  "label": "CT_SensoryRoom",
+  "export": "LFFCameraTarget_73",
+  "fov": 70.0,
+  "fovDefaulted": true,
+  "site": {
+   "x": -8027.4,
+   "y": 4059.4,
+   "z": 322.0,
+   "pitch": -12.0,
+   "yaw": 90.0,
+   "roll": 0.0
+  },
+  "world": {
+   "x": -7516.261588,
+   "y": 4942.033069,
+   "z": 322.0,
+   "pitch": -12.0,
+   "yaw": 83.5,
+   "roll": 0.0
+  },
+  "cesium": {
+   "longitude": -75.168357915,
+   "latitude": 39.900358498,
+   "height": -27.8194,
+   "ecef": [
+    1254246.6598,
+    -4736540.0175,
+    4069486.3676
+   ],
+   "heading": 173.499589,
+   "pitch": -11.999634,
+   "roll": -0.000736
+  },
+  "tags": [
+   "LFF_StandIn"
+  ]
+ },
+ "CT_SensoryVehicle": {
+  "label": "CT_SensoryVehicle",
+  "export": "LFFCameraTarget_4",
+  "fov": 70.0,
+  "fovDefaulted": true,
+  "site": {
+   "x": -8055.0,
+   "y": -21065.0,
+   "z": 322.600037,
+   "pitch": -2.827335,
+   "yaw": 110.224859,
+   "roll": 0.0
+  },
+  "world": {
+   "x": -10387.846995,
+   "y": -20017.739253,
+   "z": 322.600037,
+   "pitch": -2.827335,
+   "yaw": 103.724859,
+   "roll": 0.0
+  },
+  "cesium": {
+   "longitude": -75.168693744,
+   "latitude": 39.90260647,
+   "height": -27.81,
+   "ecef": [
+    1254177.9155,
+    -4736392.601,
+    4069677.8518
+   ],
+   "heading": 193.724146,
+   "pitch": -2.828865,
+   "roll": -0.001335
+  },
+  "tags": [
+   "LFF_StandIn"
+  ]
+ },
+ "CT_StadiumWide": {
+  "label": "CT_StadiumWide",
+  "export": "LFFCameraTarget_58",
+  "fov": 60.0,
+  "fovDefaulted": false,
+  "site": {
+   "x": 0.0,
+   "y": 40000.0,
+   "z": 13500.0,
+   "pitch": -14.708304,
+   "yaw": -90.0,
+   "roll": 0.0
+  },
+  "world": {
+   "x": 4528.128551,
+   "y": 39742.874227,
+   "z": 13500.0,
+   "pitch": -14.708304,
+   "yaw": -96.5,
+   "roll": 0.0
+  },
+  "cesium": {
+   "longitude": -75.166949538,
+   "latitude": 39.897224272,
+   "height": 103.9726,
+   "ecef": [
+    1254446.1169,
+    -4736822.7067,
+    4069303.9224
+   ],
+   "heading": 353.500339,
+   "pitch": -14.711906,
+   "roll": 2e-06
+  },
+  "tags": [
+   "LFF_StandIn"
+  ]
+ },
+ "CT_Staff": {
+  "label": "CT_Staff",
+  "export": "LFFCameraTarget_9",
+  "fov": 60.0,
+  "fovDefaulted": false,
+  "site": {
+   "x": -7932.340187,
+   "y": 767.659813,
+   "z": 312.60199,
+   "pitch": -4.864514,
+   "yaw": 45.0,
+   "roll": 0.0
+  },
+  "world": {
+   "x": -7794.448402,
+   "y": 1660.691587,
+   "z": 312.60199,
+   "pitch": -4.864514,
+   "yaw": 38.5,
+   "roll": 0.0
+  },
+  "cesium": {
+   "longitude": -75.168390449,
+   "latitude": 39.900654028,
+   "height": -27.9135,
+   "ecef": [
+    1254238.5639,
+    -4736520.3128,
+    4069511.4803
+   ],
+   "heading": 128.499462,
+   "pitch": -4.864969,
+   "roll": -0.000554
+  },
+  "tags": [
+   "LFF_StandIn"
+  ]
+ },
+ "CT_Ticket": {
+  "label": "CT_Ticket",
+  "export": "LFFCameraTarget_64",
+  "fov": 70.0,
+  "fovDefaulted": true,
+  "site": {
+   "x": -1750.0,
+   "y": -23600.0,
+   "z": 307.599792,
+   "pitch": -0.971468,
+   "yaw": 47.29061,
+   "roll": 0.0
+  },
+  "world": {
+   "x": -4410.346592,
+   "y": -23250.19017,
+   "z": 307.599792,
+   "pitch": -0.971468,
+   "yaw": 40.79061,
+   "roll": 0.0
+  },
+  "cesium": {
+   "longitude": -75.167994744,
+   "latitude": 39.902897602,
+   "height": -27.9596,
+   "ecef": [
+    1254230.3612,
+    -4736357.1437,
+    4069702.5536
+   ],
+   "heading": 130.790257,
+   "pitch": -0.973135,
+   "roll": 0.001327
+  },
+  "tags": [
+   "LFF_StandIn"
+  ]
+ }
+}

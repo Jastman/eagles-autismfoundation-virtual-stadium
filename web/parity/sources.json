@@ -1,0 +1,231 @@
+{
+  "note": "Unreal files the web build ports by hand, with the hash each had when the web last matched it. See Docs/WEB_PARITY.md.",
+  "updated": "2026-10-15",
+  "files": {
+    "Source/VirtualStadium/Public/Journey/LFFJourneyTypes.h": {
+      "web": [
+        "web/src/journey/types.ts",
+        "web/src/journey/rules.ts"
+      ],
+      "sha": "35dc0800ca4dfda3"
+    },
+    "Source/VirtualStadium/Public/Journey/LFFJourneyStateMachine.h": {
+      "web": [
+        "web/src/journey/stateMachine.ts"
+      ],
+      "sha": "d73d32c0c198bab6"
+    },
+    "Source/VirtualStadium/Private/Journey/LFFJourneyStateMachine.cpp": {
+      "web": [
+        "web/src/journey/stateMachine.ts"
+      ],
+      "sha": "d95224e499e2f47c"
+    },
+    "Source/VirtualStadium/Public/Journey/LFFJourneySubsystem.h": {
+      "web": [
+        "web/src/journey/journey.ts"
+      ],
+      "sha": "40148d4d483c8669"
+    },
+    "Source/VirtualStadium/Private/Journey/LFFJourneySubsystem.cpp": {
+      "web": [
+        "web/src/journey/journey.ts",
+        "web/src/journey/rules.ts"
+      ],
+      "sha": "0aa49f59cbb11b3b"
+    },
+    "Source/VirtualStadium/Public/Core/LFFGameMode.h": {
+      "web": [
+        "web/src/config.ts"
+      ],
+      "sha": "2c7eba405b1a79e6"
+    },
+    "Source/VirtualStadium/Private/Core/LFFGameMode.cpp": {
+      "web": [
+        "web/src/config.ts"
+      ],
+      "sha": "aeef019e335d3552"
+    },
+    "Source/VirtualStadium/Public/Core/LFFPlayerController.h": {
+      "web": [
+        "web/src/input/input.ts"
+      ],
+      "sha": "14da3b468b1f5429"
+    },
+    "Source/VirtualStadium/Private/Core/LFFPlayerController.cpp": {
+      "web": [
+        "web/src/input/input.ts"
+      ],
+      "sha": "f33a59592b3aa9d3"
+    },
+    "Source/VirtualStadium/Public/Camera/LFFCameraRig.h": {
+      "web": [
+        "web/src/scene/cameraRig.ts"
+      ],
+      "sha": "bbe9860444cede09"
+    },
+    "Source/VirtualStadium/Private/Camera/LFFCameraRig.cpp": {
+      "web": [
+        "web/src/scene/cameraRig.ts"
+      ],
+      "sha": "e7f72043d8fe3a55"
+    },
+    "Source/VirtualStadium/Private/Camera/LFFCameraPath.cpp": {
+      "web": [
+        "web/src/util/spline.ts",
+        "web/src/scene/world.ts"
+      ],
+      "sha": "0589ade811856ece"
+    },
+    "Source/VirtualStadium/Private/Camera/LFFCameraTarget.cpp": {
+      "web": [
+        "web/src/scene/world.ts"
+      ],
+      "sha": "2b1af0edcfe9ff44"
+    },
+    "Source/VirtualStadium/Public/UI/LFFHUDWidget.h": {
+      "web": [
+        "web/src/ui/hud.ts"
+      ],
+      "sha": "3c8761547ae8fabd"
+    },
+    "Source/VirtualStadium/Private/UI/LFFHUDWidget.cpp": {
+      "web": [
+        "web/src/ui/hud.ts",
+        "web/src/ui/hud.css"
+      ],
+      "sha": "43dcaf8e7d2c4aec"
+    },
+    "Source/VirtualStadium/Private/UI/LFFJourneyPanel.cpp": {
+      "web": [
+        "web/src/ui/hud.ts"
+      ],
+      "sha": "9ba094ac4b323cd1"
+    },
+    "Source/VirtualStadium/Private/UI/LFFMapPanel.cpp": {
+      "web": [
+        "web/src/ui/hud.ts"
+      ],
+      "sha": "74736b3a3000aa22"
+    },
+    "Source/VirtualStadium/Private/UI/LFFCalloutLayer.cpp": {
+      "web": [
+        "web/src/ui/callouts.ts"
+      ],
+      "sha": "9f5b5a40d1ee5d67"
+    },
+    "Source/VirtualStadium/Private/UI/LFFCalmToggle.cpp": {
+      "web": [
+        "web/src/ui/hud.ts",
+        "web/src/ui/hud.css"
+      ],
+      "sha": "3b5a93c8f3ad7d10"
+    },
+    "Source/VirtualStadium/Private/UI/LFFKaraokeDecorator.cpp": {
+      "web": [
+        "web/src/ui/hud.ts"
+      ],
+      "sha": "73844b392d1cade2"
+    },
+    "Source/VirtualStadium/Private/UI/LFFTimelineArc.cpp": {
+      "web": [
+        "web/src/ui/hud.ts"
+      ],
+      "sha": "337a3547c91a0dd2"
+    },
+    "Source/VirtualStadium/Public/UI/LFFUILayout.h": {
+      "web": [
+        "web/src/ui/layout.ts"
+      ],
+      "sha": "46c5584e52373738"
+    },
+    "Source/VirtualStadium/Private/UI/LFFUILayout.cpp": {
+      "web": [
+        "web/src/ui/layout.ts"
+      ],
+      "sha": "a3670ffb052256bd"
+    },
+    "Source/VirtualStadium/Private/UI/SLFFLoadingScreen.cpp": {
+      "web": [
+        "web/src/ui/loading.ts"
+      ],
+      "sha": "f3673e9a287fd788"
+    },
+    "Source/VirtualStadium/Private/World/LFFCueActor.cpp": {
+      "web": [
+        "web/src/scene/cues.ts"
+      ],
+      "sha": "d902810a6c6ca38a"
+    },
+    "Source/VirtualStadium/Private/World/LFFFireworksActor.cpp": {
+      "web": [
+        "web/src/scene/cues.ts"
+      ],
+      "sha": "64efcf2b782769c7"
+    },
+    "Source/VirtualStadium/Private/World/LFFStadiumCrowdSpawner.cpp": {
+      "web": [
+        "web/src/scene/crowd.ts"
+      ],
+      "sha": "05604490a053ec5e"
+    },
+    "Source/VirtualStadium/Private/World/LFFRoomComfortZone.cpp": {
+      "web": [
+        "web/src/scene/world.ts"
+      ],
+      "sha": "b989308ee3e0b944"
+    },
+    "Source/VirtualStadium/Private/World/LFFTileStreamingSubsystem.cpp": {
+      "web": [
+        "web/src/scene/tiles.ts"
+      ],
+      "sha": "ba1500deefe7c925"
+    },
+    "Source/VirtualStadium/Private/Tests/LFFJourneyStateMachineTest.cpp": {
+      "web": [
+        "web/test/stateMachine.test.ts"
+      ],
+      "sha": "60c0993a115f4015"
+    },
+    "Source/VirtualStadium/Private/Tests/LFFUILayoutTest.cpp": {
+      "web": [
+        "web/test/layout.test.ts"
+      ],
+      "sha": "bda098b0c51ffae1"
+    },
+    "Tools/Editor/build_wbp_lff_ui.py": {
+      "web": [
+        "web/src/ui/hud.ts",
+        "web/src/ui/hud.css"
+      ],
+      "sha": "c1d6ba2867af37db"
+    },
+    "Tools/Editor/build_wbp_lff_modes.py": {
+      "web": [
+        "web/src/ui/hud.ts",
+        "web/src/ui/hud.css"
+      ],
+      "sha": "97bf2f3641e88935"
+    },
+    "SourceData/UI/Materials/LFF_LevelHighlight.hlsl": {
+      "web": [
+        "web/src/scene/effects.ts"
+      ],
+      "sha": "0e285f9a68e0563f"
+    },
+    "Tools/Pipeline/prepare_stadium.py": {
+      "web": [
+        "web/src/scene/tiles.ts"
+      ],
+      "sha": "8e14423055f49f1d",
+      "how": "the ADR-0004 registration constants in tiles.ts"
+    },
+    "Content/LFF/Levels/L_LFF_Stadium.umap": {
+      "web": [
+        "web/data/*.json"
+      ],
+      "sha": "7f9622fbfc0022f8",
+      "how": "python3 web/tools/extract_umap.py && node web/tools/build_scene_data.mjs"
+    }
+  }
+}

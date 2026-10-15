@@ -1,0 +1,1098 @@
+/* The HUD (Docs/UI_DESIGN.md, Tools/Editor/build_wbp_lff_modes.py and build_wbp_lff_ui.py). Sizes are Unreal's logical
+   units: html's font-size is set so 1rem = 10 units, one unit being (shortest side / 1080) CSS px, as Unreal's
+   UIScaleRule=ShortestSide does. So "1.8rem" is the 18-unit label floor. */
+
+@font-face {
+    font-family: "Atkinson Hyperlegible";
+    src: url("/media/ui/AtkinsonHyperlegible-Regular.ttf") format("truetype");
+    font-weight: 400;
+    font-display: block;
+}
+@font-face {
+    font-family: "Atkinson Hyperlegible";
+    src: url("/media/ui/AtkinsonHyperlegible-Bold.ttf") format("truetype");
+    font-weight: 700;
+    font-display: block;
+}
+
+:root {
+    --surface: #072a2f;
+    --raised: #0f3b41;
+    --raised-hover: #16474e;
+    --raised-pressed: #0a3237;
+    --ink: #f4f2ec;
+    --ink-muted: #b8c7c8;
+    --edge: rgba(244, 242, 236, 0.12);
+    --outline: rgba(244, 242, 236, 0.55);
+    --kelly: #69be28;
+    --kelly-hover: #7bcb3c;
+    --kelly-pressed: #5aa622;
+    --on-kelly: #072a2f;
+    --disabled: #12353a;
+    --disabled-outline: rgba(244, 242, 236, 0.35);
+    --notice: #f2b65a;
+    --midnight: #004c54;
+    --selected-text: #062b2f;
+    --chapter-muted: #b8c5c6;
+    --font: "Atkinson Hyperlegible", system-ui, -apple-system, sans-serif;
+    color-scheme: dark;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #000;
+    color: var(--ink);
+    font-family: var(--font);
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    overscroll-behavior: none;
+    touch-action: none;
+}
+
+#app, #cesium {
+    position: fixed;
+    inset: 0;
+}
+#cesium .cesium-viewer-bottom {
+    /* The Cesium and Google credits stay visible; nothing in the HUD covers the bottom 72 units. */
+    z-index: 30;
+}
+
+.hud {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    font-size: 1.8rem;
+    line-height: 1.25;
+    z-index: 20;
+}
+.hud button, .hud .interactive {
+    pointer-events: auto;
+}
+.hidden {
+    display: none !important;
+}
+.collapsed {
+    display: none !important;
+}
+
+/* ---- the camera fade (APlayerCameraManager::StartCameraFade): under the HUD, over the scene ---- */
+.camera-fade {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 10;
+    opacity: 0;
+}
+
+/* ---- cards ---- */
+.surface {
+    background: var(--surface);
+    border: 1px solid var(--edge);
+    border-radius: 1rem;
+    box-sizing: border-box;
+}
+.hc .surface, .hc .surface-fill {
+    background: #000 !important;
+}
+
+/* ---- buttons (button_style in build_wbp_lff_ui.py) ---- */
+.btn {
+    font-family: var(--font);
+    font-weight: 700;
+    color: var(--ink);
+    background: var(--raised);
+    border: 0.2rem solid var(--outline);
+    border-radius: 0.8rem;
+    padding: 0.8rem 1.2rem;
+    min-height: 6.4rem;
+    min-width: 6.4rem;
+    box-sizing: border-box;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-size: 1.8rem;
+    line-height: 1.1;
+    outline: none;
+    transition: none;
+    touch-action: manipulation;
+}
+.btn.pill {
+    border-radius: 999px;
+    padding: 0.6rem 2.4rem;
+}
+.btn.row {
+    border-radius: 1.6rem;
+    padding: 0.8rem 2.4rem;
+}
+@media (hover: hover) {
+    .btn:hover:not(:disabled) {
+        background: var(--raised-hover);
+        border-color: var(--ink);
+        border-width: 0.3rem;
+    }
+}
+.btn:active:not(:disabled) {
+    background: var(--raised-pressed);
+    border-color: var(--ink);
+    border-width: 0.3rem;
+    padding-top: 0.9rem;
+    padding-bottom: 0.7rem;
+}
+.btn:disabled {
+    background: var(--disabled);
+    border-color: var(--disabled-outline);
+    color: rgba(244, 242, 236, 0.45);
+    cursor: default;
+}
+.btn.primary {
+    background: var(--kelly);
+    border-color: var(--kelly);
+    color: var(--on-kelly);
+}
+@media (hover: hover) {
+    .btn.primary:hover:not(:disabled) {
+        background: var(--kelly-hover);
+        border-color: var(--ink);
+    }
+}
+.btn.primary:active:not(:disabled) {
+    background: var(--kelly-pressed);
+}
+.btn.primary:disabled {
+    background: #8fa3a2;
+    border-color: var(--disabled-outline);
+    color: rgba(7, 42, 47, 0.7);
+}
+/* Chosen or On (ApplyModeButton): a light fill, kelly outline and dark text, in every state. */
+.btn.selected, .btn.selected:hover, .btn.selected:active {
+    background: var(--ink) !important;
+    border-color: var(--kelly) !important;
+    border-width: 0.3rem !important;
+    color: var(--selected-text) !important;
+}
+.btn.selected:disabled {
+    background: #ece9e2 !important;
+    border-color: rgba(105, 190, 40, 0.5) !important;
+}
+.btn.selected .state {
+    font-weight: 700;
+}
+.btn .state {
+    font-weight: 400;
+}
+.btn.on-scene {
+    background: rgba(7, 42, 47, 0.92);
+}
+
+/* A toggle cell: name and its explicit state on two lines. */
+.toggle-cell {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    text-align: left;
+}
+.toggle-cell span {
+    display: block;
+    overflow-wrap: anywhere;
+}
+
+.keycap {
+    display: inline-block;
+    border: 0.15rem solid var(--outline);
+    border-radius: 0.8rem;
+    padding: 0.1rem 1rem;
+    font-size: 1.8rem;
+    font-weight: 700;
+    line-height: 1.3;
+    color: inherit;
+}
+
+.eyebrow {
+    color: var(--kelly);
+    font-weight: 700;
+    font-size: 1.8rem;
+    letter-spacing: 0.06em;
+    text-shadow: 0 0.1rem 0 rgba(0, 0, 0, 0.55);
+}
+
+/* ---- corner groups ---- */
+.info-group, .control-group {
+    position: absolute;
+    top: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    box-sizing: border-box;
+}
+.info-group {
+    left: 0;
+}
+.control-group {
+    right: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    pointer-events: auto;
+    touch-action: pan-y;
+}
+.control-group::-webkit-scrollbar {
+    display: none;
+}
+
+.identity {
+    padding: 1.6rem;
+    display: flex;
+    align-items: center;
+}
+.identity .logo {
+    width: 15rem;
+    height: 5.2rem;
+    background: url("/media/ui/T_LFF_Logo_EAF_White.png") center / contain no-repeat;
+    flex: none;
+}
+.identity .rule {
+    width: 0.2rem;
+    height: 4.4rem;
+    margin: 0 2rem;
+    background: rgba(244, 242, 236, 0.45);
+    flex: none;
+}
+.identity .title {
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+}
+.identity .place {
+    font-size: 1.8rem;
+    color: var(--ink-muted);
+}
+
+/* ---- narrative caption ---- */
+.narrative {
+    padding: 2rem;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    pointer-events: auto;
+    touch-action: pan-y;
+}
+.caption-scale {
+    transform-origin: top left;
+}
+.caption-stack {
+    display: flex;
+    flex-direction: column;
+}
+.step-number {
+    font-size: 1.8rem;
+    color: var(--ink-muted);
+    margin-bottom: 1.2rem;
+}
+.caption-title {
+    font-size: 3.2rem;
+    font-weight: 700;
+    line-height: 1.08;
+    margin-bottom: 1.2rem;
+}
+.caption-body {
+    font-size: 2.4rem;
+    line-height: 1.3;
+}
+/* Karaoke: the spoken word's highlight and underline paint around it without moving any line break. */
+.word {
+    border-radius: 0.6rem;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+}
+.word.spoken {
+    background: rgba(105, 190, 40, 0.32);
+    box-shadow: inset 0 -0.4rem 0 var(--kelly), 0 0 0 0.1rem rgba(105, 190, 40, 0.32);
+}
+.finale-logo {
+    align-self: center;
+    margin-top: 1.4rem;
+    background: #fff;
+    border-radius: 1rem;
+    padding: 0.8rem 1.4rem;
+}
+.finale-logo .mark {
+    width: 20.7rem;
+    height: 7.2rem;
+    background: var(--midnight);
+    -webkit-mask: url("/media/ui/T_LFF_Logo_EAF_White.png") center / contain no-repeat;
+    mask: url("/media/ui/T_LFF_Logo_EAF_White.png") center / contain no-repeat;
+}
+.preview-row {
+    margin-top: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+.preview-row .btn {
+    min-width: 28rem;
+    font-size: 2rem;
+}
+.note {
+    font-size: 1.8rem;
+    color: var(--ink-muted);
+    margin-top: 1rem;
+    white-space: pre-line;
+}
+.target-missing {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--notice);
+    margin-top: 1rem;
+}
+.timeline-toggle {
+    margin-top: 2rem;
+    min-width: 28rem;
+    font-size: 2rem;
+    align-self: flex-start;
+}
+.timeline-panel {
+    margin-top: 1.2rem;
+    display: flex;
+    flex-direction: column;
+}
+.timeline-panel .note {
+    margin: 0 0 1.2rem 0;
+}
+.timeline-marks {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+.mark {
+    font-family: var(--font);
+    font-weight: 700;
+    font-size: 1.8rem;
+    min-height: 6.4rem;
+    border-radius: 1.2rem;
+    border: 0.1rem solid rgba(244, 242, 236, 0.35);
+    background: transparent;
+    color: var(--ink);
+    padding: 0.4rem 1rem;
+    white-space: pre-line;
+    text-align: center;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+.mark.done {
+    color: var(--chapter-muted);
+}
+.mark.current {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--selected-text);
+}
+.mark:disabled {
+    border-color: transparent;
+    cursor: default;
+}
+.finale-actions {
+    margin-top: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    align-items: flex-start;
+}
+.finale-actions .btn {
+    min-width: 28rem;
+    font-size: 2.2rem;
+}
+
+/* ---- control dock ---- */
+.stage-chrome {
+    padding: 1.6rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+.mode-row, .options-row, .nav-row {
+    display: flex;
+    gap: 0.8rem;
+}
+.mode-row .btn, .options-row > * {
+    flex: 1 1 0;
+    min-width: 0;
+}
+.voice-button {
+    gap: 1rem;
+}
+.voice-button svg {
+    width: 2.8rem;
+    height: 2.8rem;
+    flex: none;
+}
+.chapters {
+    padding: 1.2rem;
+    display: grid;
+    gap: 0.2rem 0.8rem;
+    transition: opacity 0.18s ease-out;
+}
+.chapter {
+    font-family: var(--font);
+    background: transparent;
+    border: 0.2rem solid transparent;
+    border-radius: 1.8rem;
+    color: var(--ink);
+    min-height: 6.4rem;
+    padding: 0.8rem 0.8rem;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+.chapter .name {
+    font-weight: 700;
+    font-size: 1.8rem;
+    overflow-wrap: anywhere;
+}
+.chapter .progress {
+    font-size: 1.8rem;
+    color: var(--chapter-muted);
+}
+@media (hover: hover) {
+    .chapter:hover:not(:disabled) {
+        background: rgba(244, 242, 236, 0.08);
+        border-color: var(--ink);
+    }
+}
+.chapter.current, .chapter.current:disabled {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--selected-text);
+}
+.chapter.current .progress {
+    color: var(--selected-text);
+}
+.chapter:disabled {
+    cursor: default;
+}
+.nav-row .btn {
+    flex: 1 1 0;
+    min-height: 7.2rem;
+    font-size: 2.2rem;
+}
+.nav-row .btn.small-label {
+    font-size: 1.8rem;
+}
+.fly-help {
+    margin-top: 0.8rem;
+    background: var(--surface);
+    padding: 0.8rem 1.2rem;
+    color: var(--ink-muted);
+    font-size: 1.8rem;
+    line-height: 1.1;
+}
+
+/* ---- places (Explore) ---- */
+.places {
+    padding: 1.6rem;
+    display: flex;
+    flex-direction: column;
+}
+.places h2 {
+    margin: 0 0 0.4rem;
+    font-size: 2.4rem;
+}
+.places .scope {
+    color: var(--ink-muted);
+    margin-bottom: 1.6rem;
+}
+.places .viewing {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.8rem;
+}
+.places .levels-toggle {
+    min-width: 28rem;
+    font-size: 2rem;
+    align-self: flex-start;
+    margin-bottom: 1.2rem;
+}
+.grid2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.8rem;
+    margin-bottom: 1.6rem;
+}
+.grid2 .btn {
+    justify-content: flex-start;
+    text-align: left;
+}
+.grid2 .btn.center {
+    justify-content: center;
+    text-align: center;
+    font-size: 2.2rem;
+}
+.poi-card .poi-title {
+    font-size: 2.2rem;
+    font-weight: 700;
+    margin-bottom: 0.4rem;
+}
+.poi-card .poi-note {
+    color: var(--ink-muted);
+    margin-bottom: 1.2rem;
+}
+.poi-card .btn {
+    min-width: 22rem;
+    font-size: 2rem;
+}
+.pick-hint {
+    color: var(--ink-muted);
+}
+
+/* ---- welcome ---- */
+.welcome {
+    position: absolute;
+    inset: 0;
+}
+.welcome-fade {
+    position: absolute;
+    inset: 0;
+    background: var(--midnight);
+    -webkit-mask: url("/media/ui/T_LFF_WelcomeFade.png") 0 0 / 100% 100% no-repeat;
+    mask: url("/media/ui/T_LFF_WelcomeFade.png") 0 0 / 100% 100% no-repeat;
+}
+.hc .welcome-fade {
+    display: none;
+}
+.welcome-stack {
+    position: absolute;
+    left: 4.8rem;
+    bottom: 11.2rem;
+    display: flex;
+    flex-direction: column;
+}
+.welcome-partners {
+    display: flex;
+    align-items: center;
+    margin-bottom: 2.8rem;
+}
+.welcome-partners .eaf {
+    width: 22rem;
+    height: 7.7rem;
+    margin-right: 4rem;
+    background: url("/media/ui/T_LFF_Logo_EAF_White.png") center / contain no-repeat;
+}
+.welcome-partners .fivebelow {
+    width: 27rem;
+    height: 7.2rem;
+    background: url("/media/ui/T_LFF_Logo_FiveBelow_UI.png") center / contain no-repeat;
+}
+.welcome-headline {
+    font-weight: 700;
+    color: #fff;
+    line-height: 0.95;
+    white-space: pre-line;
+    text-shadow: 0 0.1rem 0 rgba(0, 0, 0, 0.55);
+    margin-bottom: 2.4rem;
+}
+.welcome-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.6rem 2.4rem;
+    align-items: flex-start;
+}
+.welcome-mode {
+    width: 30rem;
+    height: 9.6rem;
+    font-size: 3.2rem;
+    color: #fff;
+    background: #286b70;
+    border: 0.2rem solid #fff;
+    border-radius: 1.6rem;
+    padding: 0.8rem 2.4rem;
+}
+@media (hover: hover) {
+    .welcome-mode:hover:not(:disabled) {
+        background: #327c81;
+        border-color: #fff;
+    }
+}
+.welcome-mode:active:not(:disabled) {
+    background: var(--midnight);
+}
+.welcome-settings {
+    position: absolute;
+    right: 4.8rem;
+    bottom: 11.2rem;
+    min-width: 17rem;
+    height: 6.4rem;
+    background: var(--midnight);
+    border-color: #fff;
+    color: #fff;
+    gap: 1rem;
+    font-size: 2rem;
+}
+.gear {
+    width: 2.4rem;
+    height: 2.4rem;
+    background: currentColor;
+    -webkit-mask: url("/media/ui/T_LFF_Icon_Settings.png") center / contain no-repeat;
+    mask: url("/media/ui/T_LFF_Icon_Settings.png") center / contain no-repeat;
+    flex: none;
+}
+
+/* The Calm Mode switch: cheering fans (Off) / empty seats (On), the thumb sliding 172 units in 240 ms. */
+.calm-toggle {
+    position: relative;
+    width: 26.8rem;
+    height: 13.8rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.calm-switch {
+    position: relative;
+    width: 100%;
+    height: 9.6rem;
+    border-radius: 999px;
+    border: 0.2rem solid #fff;
+    background: var(--midnight);
+    padding: 0;
+    overflow: hidden;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+.calm-switch .scene {
+    position: absolute;
+    inset: 0.2rem;
+    border-radius: 999px;
+    background-size: cover;
+    background-position: center;
+}
+.calm-switch .active {
+    background-image: url("/media/ui/T_LFF_CalmActive_UI.png");
+}
+.calm-switch .quiet {
+    background-image: url("/media/ui/T_LFF_CalmQuiet_UI.png");
+    opacity: 0;
+}
+.hc .calm-switch .scene {
+    display: none;
+}
+.calm-switch .thumb {
+    position: absolute;
+    left: 0.8rem;
+    top: 50%;
+    width: 8rem;
+    height: 8rem;
+    margin-top: -4rem;
+    border-radius: 50%;
+    background: #edf4e9;
+    border: 0.1rem solid #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 2.2rem;
+    color: #15393b;
+    box-sizing: border-box;
+}
+.calm-toggle.animate .thumb, .calm-toggle.animate .quiet {
+    transition: transform 0.24s cubic-bezier(0.65, 0, 0.35, 1), opacity 0.24s cubic-bezier(0.65, 0, 0.35, 1);
+}
+.calm-toggle.on .thumb {
+    transform: translateX(17.2rem);
+}
+.calm-toggle.on .quiet {
+    opacity: 1;
+}
+.calm-toggle .label {
+    font-size: 2.4rem;
+    font-weight: 700;
+    color: #fff;
+    padding-top: 1rem;
+}
+.calm-hint {
+    position: absolute;
+    left: 0;
+    bottom: calc(100% + 1.2rem);
+    width: 31.2rem;
+    padding: 1.6rem;
+    box-sizing: border-box;
+    border: 0.1rem solid #fff;
+    border-radius: 1.2rem;
+    background: var(--surface);
+    color: #fff;
+    font-size: 2rem;
+    line-height: 1.1;
+    pointer-events: none;
+}
+
+/* ---- callouts (places on the stadium) ---- */
+.callouts {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+.callouts canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+.callout-head {
+    position: absolute;
+    width: 6.4rem;
+    height: 6.4rem;
+    margin: -3.2rem 0 0 -3.2rem;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+.callout-head.passive {
+    pointer-events: none !important;
+}
+.callout-head .disc {
+    width: 3.4rem;
+    height: 3.4rem;
+    border-radius: 50%;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 2.2rem;
+    background: var(--ink);
+    border: 0.2rem solid var(--surface);
+    color: var(--surface);
+}
+.callout-head.picked .disc {
+    background: var(--surface);
+    border: 0.4rem solid var(--ink);
+    color: var(--ink);
+}
+.callout-head.seat .disc {
+    background: var(--kelly);
+    border: 0.4rem solid var(--ink);
+}
+.callout-head.seat.picked .disc {
+    border-width: 0.5rem;
+}
+.callout-head.seat .dot {
+    width: 1.6rem;
+    height: 1.6rem;
+    border-radius: 50%;
+    background: var(--ink);
+}
+.callout-chip {
+    position: absolute;
+    transform: translateY(-50%);
+    background: var(--surface);
+    border: 0.15rem solid var(--ink);
+    border-radius: 1rem;
+    padding: 0.6rem 1.2rem;
+    font-weight: 700;
+    font-size: 1.8rem;
+    white-space: nowrap;
+}
+
+/* ---- ticket phone ---- */
+.ticket {
+    position: absolute;
+    pointer-events: none;
+}
+.ticket img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+}
+
+/* ---- modal layer: Settings, Paused, Start again? ---- */
+.modal-layer {
+    position: absolute;
+    inset: 0;
+}
+.scrim {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    pointer-events: auto;
+}
+.hc .scrim {
+    background: rgba(0, 0, 0, 0.85);
+}
+.settings-sheet {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    pointer-events: auto;
+}
+.settings-sheet .edge {
+    width: 12rem;
+    background: linear-gradient(to right, rgba(7, 42, 47, 0), var(--surface));
+}
+.hc .settings-sheet .edge {
+    background: linear-gradient(to right, rgba(0, 0, 0, 0), #000);
+}
+.settings-body {
+    background: var(--surface);
+    padding: 4.4rem 5.6rem 4rem 1.6rem;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    box-sizing: border-box;
+}
+.settings-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+.settings-header h2 {
+    flex: 1;
+    margin: 0;
+    font-size: 4.4rem;
+}
+.settings-header .btn {
+    min-width: 13rem;
+    font-size: 2.2rem;
+}
+.settings-hint {
+    color: var(--ink-muted);
+    max-width: 50rem;
+    margin-bottom: 2.4rem;
+}
+.settings-group-title {
+    margin: 1.8rem 0 1rem;
+}
+.settings-group-title.first {
+    margin-top: 0;
+}
+.setting-row {
+    min-width: 50rem;
+    margin-bottom: 0.8rem;
+    justify-content: flex-start;
+    font-size: 2.2rem;
+}
+.setting-row .name {
+    flex: 1;
+    text-align: left;
+}
+.setting-row .keycap {
+    margin-left: 1.6rem;
+}
+.setting-row .state {
+    margin-left: 2rem;
+    min-width: 4.4rem;
+    text-align: right;
+}
+.settings-fill {
+    flex: 1;
+}
+.settings-foot {
+    display: flex;
+    align-items: center;
+    gap: 1.6rem;
+    margin-top: 2rem;
+}
+.settings-foot .btn {
+    min-width: 20rem;
+    font-size: 2.2rem;
+}
+.settings-keys {
+    color: var(--ink-muted);
+    margin-top: 1.8rem;
+}
+.center-card {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: auto;
+    padding: 10.4rem 12rem;
+    /* T_LFF_Fog: a soft dark field with no hard edge. */
+    background: rgba(7, 42, 47, 0.94);
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 12rem, #000 calc(100% - 12rem), transparent),
+        linear-gradient(to bottom, transparent, #000 10.4rem, #000 calc(100% - 10.4rem), transparent);
+    -webkit-mask-composite: source-in;
+    mask-image: linear-gradient(to right, transparent, #000 12rem, #000 calc(100% - 12rem), transparent),
+        linear-gradient(to bottom, transparent, #000 10.4rem, #000 calc(100% - 10.4rem), transparent);
+    mask-composite: intersect;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    max-width: 80vw;
+}
+.hc .center-card {
+    background: #000;
+}
+.center-card h2 {
+    margin: 0 0 1rem;
+    font-size: 6.4rem;
+    line-height: 1;
+    text-shadow: 0 0.1rem 0 rgba(0, 0, 0, 0.55);
+}
+.center-card p {
+    margin: 0 0 3rem;
+    font-size: 2.6rem;
+    color: var(--ink-muted);
+    max-width: 56rem;
+}
+.center-card .eyebrow {
+    margin-bottom: 1.2rem;
+}
+.center-card .actions {
+    display: flex;
+    align-items: center;
+    gap: 1.6rem;
+}
+.center-card .actions .btn {
+    min-width: 22rem;
+    font-size: 2.2rem;
+}
+.center-card .actions .primary.big {
+    font-size: 2.6rem;
+}
+.center-card .hint {
+    color: var(--ink-muted);
+}
+
+/* ---- the HUD's own focus ring (Tab / Shift+Tab, Enter presses) ---- */
+.focus-ring {
+    position: absolute;
+    pointer-events: none;
+    border: 0.4rem solid #e7e3d6;
+    box-shadow: 0 0 0 0.2rem rgba(0, 0, 0, 0.85), inset 0 0 0 0.2rem rgba(0, 0, 0, 0.85);
+    box-sizing: border-box;
+    z-index: 100;
+}
+
+/* ---- loading cover (SLFFLoadingScreen) ---- */
+.loading {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    background: var(--midnight);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-family: var(--font);
+    transition: opacity 0.6s linear 0.4s;
+}
+.loading.done {
+    opacity: 0;
+    pointer-events: none;
+}
+.loading .logos {
+    display: flex;
+    align-items: center;
+}
+.loading .logo {
+    height: 9.6rem;
+    width: 30rem;
+    background-position: center;
+    background-size: contain;
+    background-repeat: no-repeat;
+}
+.loading .divider {
+    width: 0.2rem;
+    height: 7.7rem;
+    margin: 0 5.6rem;
+    background: rgba(255, 255, 255, 0.35);
+}
+.loading .bar {
+    margin-top: 7.2rem;
+    width: 48rem;
+    height: 1.2rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.22);
+    overflow: hidden;
+}
+.loading .fill {
+    height: 100%;
+    border-radius: 999px;
+    background: #fff;
+    min-width: 1.2rem;
+    width: 0;
+}
+.loading .percent {
+    margin-top: 2.4rem;
+    font-size: 3rem;
+    font-weight: 700;
+}
+.loading .status {
+    margin-top: 0.8rem;
+    font-size: 2rem;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+/* ---- touch flight pad (Explore on touch screens; the keyboard's WASD / E Q) ---- */
+.fly-pad {
+    position: absolute;
+    left: 2.4rem;
+    bottom: 11.2rem;
+    display: flex;
+    gap: 1.6rem;
+    align-items: flex-end;
+    pointer-events: none;
+}
+.fly-stick {
+    position: relative;
+    width: 18rem;
+    height: 18rem;
+    border-radius: 50%;
+    background: rgba(7, 42, 47, 0.78);
+    border: 0.2rem solid var(--outline);
+    pointer-events: auto;
+    touch-action: none;
+}
+.fly-stick .knob {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 7.2rem;
+    height: 7.2rem;
+    margin: -3.6rem 0 0 -3.6rem;
+    border-radius: 50%;
+    background: var(--ink);
+    opacity: 0.9;
+}
+.fly-rise {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+.fly-rise .btn {
+    width: 8.8rem;
+    font-size: 1.8rem;
+    background: rgba(15, 59, 65, 0.9);
+}
+.hc .fly-stick, .hc .fly-rise .btn {
+    background: #000;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+}

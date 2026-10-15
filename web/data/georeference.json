@@ -1,0 +1,272 @@
+{
+ "tilesets": [
+  {
+   "label": "Tileset_Context",
+   "export": "Cesium3DTileset_0",
+   "IonAssetID": 2275207,
+   "Url": null,
+   "TilesetSource": "(default) FromCesiumIon",
+   "MaximumScreenSpaceError": "(default) 16",
+   "props": {
+    "Georeference": "/Game/LFF/Levels/L_LFF_Stadium.L_LFF_Stadium:PersistentLevel.CesiumGeoreference_0",
+    "IonAssetID": 2275207,
+    "CesiumIonServer": "/Game/CesiumSettings/CesiumIonServers/CesiumIonSaaS.CesiumIonSaaS"
+   },
+   "overlays": [
+    {
+     "name": "Tileset",
+     "class": "Cesium3DTilesetRoot",
+     "props": null
+    },
+    {
+     "name": "ClipOverlay_LFF_Footprint",
+     "class": "CesiumPolygonRasterOverlay",
+     "props": {
+      "Polygons": [
+       "/Game/LFF/Levels/L_LFF_Stadium.L_LFF_Stadium:PersistentLevel.CesiumCartographicPolygon_0"
+      ]
+     }
+    }
+   ]
+  }
+ ],
+ "cartographicPolygons": [
+  {
+   "label": "CartoPoly_LFF_Footprint",
+   "pointsWorld": [
+    {
+     "x": -20278.503687,
+     "y": 19600.587191,
+     "z": 500.0
+    },
+    {
+     "x": 15266.91542,
+     "y": 14105.407707,
+     "z": 500.0
+    },
+    {
+     "x": 21646.326367,
+     "y": -21852.907353,
+     "z": 500.0
+    },
+    {
+     "x": -11901.801613,
+     "y": -27793.337392,
+     "z": 500.0
+    }
+   ],
+   "pointsSite": [
+    {
+     "x": -22367.0,
+     "y": 17179.0,
+     "z": 500.0
+    },
+    {
+     "x": 13572.0,
+     "y": 15743.0,
+     "z": 500.0
+    },
+    {
+     "x": 23981.0,
+     "y": -19262.0,
+     "z": 500.0
+    },
+    {
+     "x": -8679.0,
+     "y": -28962.0,
+     "z": 500.0
+    }
+   ],
+   "pointsLonLatHeight": [
+    [
+     -75.169850224,
+     39.89903827,
+     -26.0338
+    ],
+    [
+     -75.165693783,
+     39.899533198,
+     -26.0366
+    ],
+    [
+     -75.164947695,
+     39.90277173,
+     -26.0326
+    ],
+    [
+     -75.168870798,
+     39.903306768,
+     -26.0328
+    ]
+   ],
+   "globeAnchor": {
+    "ActorToEarthCenteredEarthFixedMatrix": [
+     [
+      0.009666784,
+      0.002559939,
+      5e-09,
+      0.0
+     ],
+     [
+      0.001642105,
+      -0.006200863,
+      -0.007671557,
+      0.0
+     ],
+     [
+      0.001963868,
+      -0.007415929,
+      0.006414609,
+      0.0
+     ],
+     [
+      1254310.570212146,
+      -4736487.743484417,
+      4069522.215163897,
+      1.0
+     ]
+    ],
+    "_actorToECEFIsValid": true
+   }
+  }
+ ],
+ "georeference": {
+  "label": "CesiumGeoreference",
+  "tags": [
+   "DEFAULT_GEOREFERENCE"
+  ],
+  "OriginLatitude": 39.9008036,
+  "OriginLongitude": -75.167479,
+  "OriginHeight": -31.04,
+  "originEcef": [
+   1254310.5702,
+   -4736487.7435,
+   4069522.2152
+  ]
+ },
+ "sunSky": {
+  "label": "CesiumSunSky",
+  "props": {
+   "Day": 18,
+   "Month": 10,
+   "Year": 2026,
+   "Elevation": 40.251693726,
+   "CorrectedElevation": 40.270721436,
+   "Azimuth": 184.590576172
+  }
+ },
+ "siteRoot": {
+  "label": "LFF_SiteRoot",
+  "export": "Actor_0",
+  "world": {
+   "location": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -6.5,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.056692788,
+    "w": 0.998391671
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "rootComponent": {
+   "name": "DefaultSceneRoot",
+   "class": "SceneComponent",
+   "relative": {
+    "location": {
+     "x": 0.0,
+     "y": 0.0,
+     "z": 0.0
+    },
+    "rotation": {
+     "pitch": 0.0,
+     "yaw": -6.5,
+     "roll": 0.0
+    },
+    "scale": {
+     "x": 1.0,
+     "y": 1.0,
+     "z": 1.0
+    }
+   },
+   "relativeExplicit": [
+    "RelativeRotation",
+    "RelativeScale3D"
+   ],
+   "attachParent": null
+  },
+  "cesium": {
+   "longitude": -75.167479,
+   "latitude": 39.9008036,
+   "height": -31.04,
+   "ecef": [
+    1254310.5702,
+    -4736487.7435,
+    4069522.2152
+   ],
+   "heading": 83.5,
+   "pitch": 0.0,
+   "roll": 0.0
+  },
+  "globeAnchor": {
+   "Georeference": "/Game/LFF/Levels/L_LFF_Stadium.L_LFF_Stadium:PersistentLevel.CesiumGeoreference_0",
+   "ActorToEarthCenteredEarthFixedMatrix": [
+    [
+     0.009418752,
+     0.003245446,
+     0.000868445,
+     0.0
+    ],
+    [
+     0.002725858,
+     -0.005871204,
+     -0.007622248,
+     0.0
+    ],
+    [
+     0.001963877,
+     -0.007415932,
+     0.006414604,
+     0.0
+    ],
+    [
+     1254310.570212146,
+     -4736487.743484417,
+     4069522.215163897,
+     1.0
+    ]
+   ],
+   "_actorToECEFIsValid": true
+  },
+  "check": {
+   "anchorEcefTranslation": [
+    1254310.570212146,
+    -4736487.743484417,
+    4069522.215163897
+   ],
+   "ecefFromGeoreferenceAndWorldLocation": [
+    1254310.5702,
+    -4736487.7435,
+    4069522.2152
+   ],
+   "differenceMeters": 0.0
+  },
+  "anchorLonLatHeight": [
+   -75.167479,
+   39.9008036,
+   -31.04
+  ]
+ }
+}

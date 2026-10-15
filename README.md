@@ -53,6 +53,9 @@ Early prototype in development for the Eagles Autism Foundation partnership.
 - Headless automation tests: `LFF.*`.
 - Cesium for Unreal v2.29.1 with Google Photorealistic 3D Tiles for the context.
 - Project docs in `Docs/`: ledger, ADRs, setup, test plan, accessibility rules, wording and known limitations.
+- A **web build** in `web/` (CesiumJS, iPad Safari first) of the same experience, reading the same `SourceData/`. See
+  `web/README.md`. Differences between the two builds are tracked in `Docs/WEB_PARITY.md`; `npm run check-parity` in
+  `web/` reports drift in both directions.
 
 ## Repository structure
 
@@ -62,6 +65,7 @@ Early prototype in development for the Eagles Autism Foundation partnership.
 ├── Docs/                       LEDGER, ADR/, setup, schema, test plan, accessibility
 ├── SourceData/Journey/         step data (JSON; imported into DT_LFF_GoldenPath)
 ├── Source/VirtualStadium/      C++ module
+├── web/                        CesiumJS web build (iPad)
 └── VirtualStadium.uproject
 ```
 

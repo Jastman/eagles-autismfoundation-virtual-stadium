@@ -1,0 +1,14 @@
+{
+    "name": "Game Day Visual Schedule · Lincoln Financial Field",
+    "short_name": "Game Day",
+    "description": "A calm preview of game day at Lincoln Financial Field, from the Eagles Autism Foundation.",
+    "start_url": "./",
+    "display": "fullscreen",
+    "orientation": "landscape",
+    "background_color": "#004C54",
+    "theme_color": "#004C54",
+    "icons": [
+        { "src": "icon-180.png", "sizes": "180x180", "type": "image/png" },
+        { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+    ]
+}
