@@ -10,6 +10,16 @@ import { toTransform } from "./sceneData";
 
 const PX_PER_UNIT = 4; // canvas pixels per cm of text height
 
+const TEXT_SHADER = `
+czm_material czm_getMaterial(czm_materialInput materialInput) {
+    czm_material material = czm_getDefaultMaterial(materialInput);
+    vec4 colour = texture(image, materialInput.st);
+    if (colour.a < 0.4) discard;
+    material.diffuse = colour.rgb;
+    material.alpha = 1.0;
+    return material;
+}`;
+
 /** Draws the text in the project font; returns the canvas and its size in cm. */
 function drawText(text: string, worldSize: number, colour: { r: number; g: number; b: number; a: number }, align: string) {
     const lines = text.split("\n");
@@ -61,9 +71,11 @@ export class WorldText {
                 geometry: new PlaneGeometry({ vertexFormat: VertexFormat.POSITION_NORMAL_AND_ST }),
                 modelMatrix: modelLocal,
             }),
+            // Opaque with an alpha cut-off, unlit like Unreal's text material: no translucency sorting against the plate.
             appearance: new MaterialAppearance({
-                material: Material.fromType("Image", { image: canvas, transparent: true }),
-                translucent: true,
+                material: new Material({ fabric: { uniforms: { image: canvas }, source: TEXT_SHADER } }),
+                translucent: false,
+                flat: true,
                 faceForward: false,
                 closed: false,
                 renderState: { cull: { enabled: true } },
