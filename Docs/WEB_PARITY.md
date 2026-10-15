@@ -59,5 +59,4 @@ Unreal status values: `Pending` (Unreal must take this), `Done (...)`, `N/A (rea
 |---|---|---|
 | G1 | Full-resolution ticket frames | Export from `Assets/` into `web/assets-src/ticket/` (git-ignored) |
 | G2 | Eagle model | Export the eagle as `web/assets-src/models/eagle.glb` |
-| G3 | Stadium placement not yet checked against the Unreal shots | Load with the ion token on an iPad and compare against `Docs/UI_VERIFICATION.md` shots; tune W12 if needed |
-| G4 | Google tiles need a token with access to ion asset 2275207 (the stadium token is scoped to the stadium assets only) | Add `VITE_CESIUM_ION_TOKEN` to `web/.env.local` |
+| G3 | Stadium placement checked in headless Chromium only (2026-10-15): the ion assets arrive ungeoreferenced, the ADR-0004 registration places them, and the level's lot paint, parked cars, gates and signs line up with the model. Not yet compared side by side with Unreal on an iPad | Compare a few steps on the iPad against the Unreal build; tune W12 if needed |

@@ -86,9 +86,13 @@ export class Geo {
         return this.siteFrame.transformPosition(p);
     }
 
-    /** A full Unreal world transform (with scale) as a Cesium model matrix. */
+    /**
+     * A full Unreal world transform (with scale) as a Cesium model matrix for content already in metres: geometry built
+     * with ueTransformToLocalMatrix (which converts cm to m itself) or a glTF model. Only the translation is converted.
+     */
     worldTransformToModelMatrix(t: Transform, result = new Matrix4()): Matrix4 {
-        return Matrix4.multiply(this.enuToFixed, ueTransformToLocalMatrix(t), result);
+        Matrix4.multiply(this.enuToFixed, ueTransformToLocalMatrix(t), result);
+        return Matrix4.multiplyByUniformScale(result, 100, result);
     }
 
     /**
