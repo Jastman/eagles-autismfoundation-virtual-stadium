@@ -41,7 +41,8 @@ export class SceneLook {
     private tilesets: { set: Cesium3DTileset; kind: "stadium" | "city" }[] = [];
     private settings: QualitySettings | null = null;
 
-    constructor(private readonly viewer: Viewer, private readonly geo: Geo) {
+    /** `bakedStadium`: the stadium's lighting is baked in, so it only casts shadows and ambient occlusion stays off. */
+    constructor(private readonly viewer: Viewer, private readonly geo: Geo, private readonly bakedStadium = false) {
         const scene = viewer.scene;
         if (scene.highDynamicRangeSupported) scene.highDynamicRange = true;
         // Unreal's tonemapper is filmic and ACES-fitted.
@@ -63,7 +64,7 @@ export class SceneLook {
     /** The streamed tilesets: their sharpness follows the tier; the city's photographed lighting takes no extra shadows. */
     addTileset(set: Cesium3DTileset, kind: "stadium" | "city"): void {
         this.tilesets.push({ set, kind });
-        set.shadows = kind === "stadium" ? ShadowMode.ENABLED : ShadowMode.DISABLED;
+        set.shadows = kind === "city" ? ShadowMode.DISABLED : this.bakedStadium ? ShadowMode.CAST_ONLY : ShadowMode.ENABLED;
         if (this.settings) this.applyTileset(set, kind, this.settings);
     }
 
@@ -88,8 +89,8 @@ export class SceneLook {
         shadowMap.fadingEnabled = true;
 
         const ao = scene.postProcessStages.ambientOcclusion;
-        ao.enabled = settings.ambientOcclusion;
-        if (settings.ambientOcclusion) {
+        ao.enabled = settings.ambientOcclusion && !this.bakedStadium;
+        if (ao.enabled) {
             Object.assign(ao.uniforms, { intensity: 2.2, bias: 0.12, lengthCap: 0.35, stepSize: 1.6, blurStepSize: 0.9, frustumLength: 400 });
         }
 

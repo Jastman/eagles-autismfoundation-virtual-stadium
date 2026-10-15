@@ -27,9 +27,10 @@ npm run build                # static site in web/dist/, host it anywhere (HTTPS
 | `VITE_CESIUM_ION_TOKEN` | ion token with access to Google Photorealistic 3D Tiles (asset 2275207) |
 | `VITE_STADIUM_ION_TOKEN` | ion token scoped to the stadium assets (may be the same token) |
 | `VITE_STADIUM_ASSET_IDS` | stadium, seats, field: `6040628,6040635,6040637` |
+| `VITE_STADIUM_BAKED` | `1` when those IDs are the baked-lighting uploads (`Tools/Pipeline/bake_stadium_lighting.py`) |
 
 URL parameters for testing: `?ionToken=` (remembered on the device), `?stadiumToken=`, `?stadiumAssets=`,
-`?stadiumPlacement=auto|registration|ion`, `?stadiumHeading=<deg>`, `?stadiumOffset=e,n,u` (metres), `?noLoadingScreen`,
+`?stadiumPlacement=auto|registration|ion`, `?stadiumBaked=1`, `?quality=low|medium|high`, `?stadiumHeading=<deg>`, `?stadiumOffset=e,n,u` (metres), `?noLoadingScreen`,
 `?noCrowd`.
 
 ## Check

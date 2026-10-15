@@ -91,7 +91,7 @@ async function main(): Promise<void> {
     viewer.clock.shouldAnimate = false;
 
     const geo = new Geo(sceneData.georeference);
-    const look = new SceneLook(viewer, geo);
+    const look = new SceneLook(viewer, geo, config.stadiumBaked);
     look.apply(settings);
     console.info(`Quality: ${settings.tier}${quality.fixed ? " (fixed by ?quality=)" : ""}.`);
     // Exported models are keyed by Unreal asset name (the manifest also lists sub-folders, e.g. people/...).

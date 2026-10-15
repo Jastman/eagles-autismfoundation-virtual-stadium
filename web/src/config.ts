@@ -119,6 +119,9 @@ export interface DeploymentConfig {
     /** Fine-tuning on top of the registration, for checking alignment on the device (?stadiumHeading=, ?stadiumOffset=e,n,u). */
     stadiumHeadingAdjustDeg: number;
     stadiumOffsetAdjustM: [number, number, number];
+    /** The stadium assets carry baked lighting (Tools/Pipeline/bake_stadium_lighting.py): they cast shadows but don't receive
+     *  them, and screen-space ambient occlusion stays off, so the bake isn't darkened twice. */
+    stadiumBaked: boolean;
     /** Dev only: skip the loading cover. */
     noLoadingScreen: boolean;
 }
@@ -159,6 +162,7 @@ export function readDeploymentConfig(): DeploymentConfig {
         stadiumPlacement: placement === "registration" || placement === "ion" ? placement : "auto",
         stadiumHeadingAdjustDeg: Number(params.get("stadiumHeading") ?? 0) || 0,
         stadiumOffsetAdjustM: [offset[0] || 0, offset[1] || 0, offset[2] || 0],
+        stadiumBaked: ["1", "true"].includes(params.get("stadiumBaked") ?? (env.VITE_STADIUM_BAKED as string | undefined) ?? ""),
         noLoadingScreen: params.has("noLoadingScreen"),
     };
 }
