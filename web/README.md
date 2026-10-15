@@ -9,7 +9,8 @@ most content changes reach both builds. Every difference is logged in [`Docs/WEB
 
 ## Run
 
-Needs Node 20+, and `ffmpeg` for audio (without it the WAVs are served as they are).
+Needs Node 20+. Optional: `ffmpeg` for compressed audio (without it the WAVs are served as they are), and Python 3
+with Pillow for the crowd's fan art, drawn by the same code as Unreal's (without it the crowd uses simpler cards).
 
 ```sh
 cd web

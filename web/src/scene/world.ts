@@ -160,7 +160,7 @@ export class StadiumWorld implements JourneyWorld {
     }
 
     async loadCrowd(): Promise<void> {
-        const seat = this.targets.get("CT_SeatFieldView")?.transform.translation ?? null;
+        const seat = this.targets.get("CT_SeatFieldView")?.transform ?? null;
         this.crowd = await StadiumCrowd.load(this.scene, this.geo, seat);
         this.crowd.setShown(this.crowdShown);
     }

@@ -165,7 +165,8 @@
     },
     "Source/VirtualStadium/Private/World/LFFStadiumCrowdSpawner.cpp": {
       "web": [
-        "web/src/scene/crowd.ts"
+        "web/src/scene/crowd.ts",
+        "web/test/crowd.test.ts"
       ],
       "sha": "05604490a053ec5e"
     },
@@ -226,6 +227,19 @@
       ],
       "sha": "7f9622fbfc0022f8",
       "how": "python3 web/tools/extract_umap.py && node web/tools/build_scene_data.mjs"
+    },
+    "Source/VirtualStadium/Public/World/LFFStadiumCrowdSpawner.h": {
+      "web": [
+        "web/src/scene/crowd.ts"
+      ],
+      "sha": "9006b2190599f759"
+    },
+    "Source/VirtualStadium/Private/Tests/LFFCrowdTest.cpp": {
+      "web": [
+        "web/test/crowd.test.ts"
+      ],
+      "sha": "1ef660a437925e4a",
+      "how": "LFF.Crowd.Selection only; the rest test Unreal-only MetaHuman and circulation code"
     }
   }
 }

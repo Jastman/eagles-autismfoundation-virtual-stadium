@@ -95,6 +95,18 @@ for (const name of ["seats.json", "seat_treads.json", "queue.json", "circulation
     if (existsSync(src)) cpSync(src, join(media, "crowd", name));
 }
 
+// 5b. The billboard fans, drawn by the Unreal script's own code (tools/draw_crowd_fans.py; Python with Pillow). Without
+// Python the crowd falls back to simpler cards drawn in the browser.
+const fans = join(media, "crowd", "fans.png");
+const fanSources = [join(web, "tools", "draw_crowd_fans.py"), join(repo, "Tools", "Editor", "build_crowd_billboards.py")];
+if (force || !existsSync(fans) || fanSources.some((src) => statSync(src).mtimeMs > statSync(fans).mtimeMs)) {
+    try {
+        execFileSync(process.platform === "win32" ? "python" : "python3", [fanSources[0], fans], { stdio: ["ignore", "ignore", "pipe"] });
+    } catch (error) {
+        console.warn(`prepare_assets: crowd fans not drawn (needs Python 3 with Pillow): ${String(error.stderr ?? error).trim().split("\n").pop()}`);
+    }
+}
+
 // 6. Ticket frames.
 mkdirSync(join(media, "ticket"), { recursive: true });
 const ticketFrames = [];
