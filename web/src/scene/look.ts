@@ -1,7 +1,8 @@
 // The picture's look, after Unreal's PPV_LFF_Cinematic, Fog_LFF_Aerial and Clouds_LFF_PartlyCloudy
-// (Tools/Editor/setup_cinematic_look.py): HDR with a filmic (ACES) curve, exposure bias +0.3 EV, bloom 0.35, vignette
-// 0.2, sun shadows, sky lighting on the models, contact shadows where the device can afford them, and a static partly
-// cloudy sky. Comfort rules hold: no motion blur, lens flare, grain, fringe, or anything that moves or flashes.
+// (Tools/Editor/setup_cinematic_look.py): HDR with a filmic (ACES) curve, exposure bias +0.3 EV, vignette 0.2, sun
+// shadows, sky lighting on the models, contact shadows where the device can afford them, and a static partly cloudy sky.
+// Unreal's bloom (0.35) is left out: CesiumJS's bloom haloes dark shapes against the bright sky instead of softly
+// lifting highlights (Docs/WEB_PARITY.md W15). Comfort rules hold: no motion blur, lens flare, grain, fringe, or anything that moves or flashes.
 // Lumen's bounce light has no real-time equivalent here; Tools/Pipeline/bake_stadium_lighting.py bakes it instead.
 import {
     Cartesian2, Cartesian3, CloudCollection, Color, CumulusCloud, Math as CesiumMath, Matrix4, PostProcessStage, ShadowMode, Tonemapper,
@@ -11,7 +12,7 @@ import type { Geo } from "./geo";
 import type { QualitySettings } from "./quality";
 
 /** Unreal's look values (setup_cinematic_look.py POST). */
-const UNREAL = { exposureBiasEv: 0.3, bloomIntensity: 0.35, vignetteIntensity: 0.2 };
+const UNREAL = { exposureBiasEv: 0.3, vignetteIntensity: 0.2 };
 /** Clouds_LFF_PartlyCloudy: cumulus at 1.5 km, 3.5 km thick, about 40% of the sky. */
 const CLOUDS = { bottomM: 1500, thicknessM: 2000, radiusM: 16000, count: 46, seed: 2026 };
 
@@ -94,12 +95,7 @@ export class SceneLook {
             Object.assign(ao.uniforms, { intensity: 2.2, bias: 0.12, lengthCap: 0.35, stepSize: 1.6, blurStepSize: 0.9, frustumLength: 400 });
         }
 
-        const bloom = scene.postProcessStages.bloom;
-        bloom.enabled = settings.bloom;
-        if (settings.bloom) {
-            // Only real highlights bloom (sun on glass, white concrete), softly: Unreal's 0.35.
-            Object.assign(bloom.uniforms, { contrast: 119, brightness: -0.4 - (1 - UNREAL.bloomIntensity) * 0.2, glowOnly: false, delta: 1, sigma: 2.5, stepSize: 1.2 });
-        }
+        scene.postProcessStages.bloom.enabled = false;
 
         if (settings.clouds && !this.clouds) this.clouds = this.makeClouds(scene);
         if (this.clouds) this.clouds.show = settings.clouds;

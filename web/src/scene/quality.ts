@@ -13,7 +13,6 @@ export interface QualitySettings {
     shadowMapSize: number;
     softShadows: boolean;
     ambientOcclusion: boolean;
-    bloom: boolean;
     clouds: boolean;
     /** Screen-space error for the stadium model and the Google tiles (lower is sharper). */
     stadiumError: number;
@@ -23,15 +22,15 @@ export interface QualitySettings {
 const TIERS: Record<QualityTier, Omit<QualitySettings, "tier">> = {
     low: {
         pixelRatio: 1, msaaSamples: 1, shadows: false, shadowMapSize: 1024, softShadows: false, ambientOcclusion: false,
-        bloom: false, clouds: false, stadiumError: 16, cityError: 32,
+        clouds: false, stadiumError: 16, cityError: 32,
     },
     medium: {
         pixelRatio: 1.5, msaaSamples: 1, shadows: true, shadowMapSize: 2048, softShadows: false, ambientOcclusion: false,
-        bloom: true, clouds: true, stadiumError: 12, cityError: 24,
+        clouds: true, stadiumError: 12, cityError: 24,
     },
     high: {
         pixelRatio: 2, msaaSamples: 4, shadows: true, shadowMapSize: 4096, softShadows: true, ambientOcclusion: true,
-        bloom: true, clouds: true, stadiumError: 8, cityError: 16,
+        clouds: true, stadiumError: 8, cityError: 16,
     },
 };
 
