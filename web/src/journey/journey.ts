@@ -758,6 +758,15 @@ export class Journey {
         this.broadcast();
     }
 
+    /** Settings > "Send feedback": opens the feedback form (a new browser tab; the experience stays where it was). */
+    openFeedback(): void {
+        if (!GameMode.FeedbackUrl) return;
+        this.stopVoice();
+        console.info(`Feedback: opening ${GameMode.FeedbackUrl}`);
+        this.openUrl(GameMode.FeedbackUrl);
+        this.broadcast();
+    }
+
     /** "Preview this? Off / Soft" on a loud or bright step. Ignored elsewhere, while paused or in Calm Mode. */
     togglePreview(): void {
         if (this.isModalOpen() || this.machine.isPaused() || !this.machine.hasStarted()

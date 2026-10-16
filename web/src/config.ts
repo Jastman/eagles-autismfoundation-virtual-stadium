@@ -91,6 +91,9 @@ export const GameMode = {
     SplashOrbitSeconds: 40,
 
     LearnMoreUrl: "https://www.philadelphiaeagles.com/eaglesautismfoundation/",
+    /** Settings > Send feedback: the Microsoft Forms survey (web addition, Docs/WEB_PARITY.md W19). Empty hides the button.
+     *  Set per deployment with VITE_FEEDBACK_URL (web/.env.local, or the repository variable for GitHub Pages). */
+    FeedbackUrl: ((import.meta.env.VITE_FEEDBACK_URL as string | undefined) ?? "").trim(),
 };
 
 export type GameModeConfig = typeof GameMode;

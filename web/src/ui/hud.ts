@@ -300,6 +300,13 @@ export class Hud {
             row("sound", "Sound", "2", () => j.toggleSound()),
             row("voice", "Voice", "5", () => j.toggleVoice()),
             row("crowd", "Crowd", "6", () => j.toggleCrowd()),
+            // Feedback (web addition, Docs/WEB_PARITY.md W19): only when a form is configured.
+            ...(GameMode.FeedbackUrl ? [
+                h("div", { class: "eyebrow settings-group-title", text: "Feedback" }),
+                button("row setting-row feedback-row", [h("span", { class: "name", text: "Send us feedback" }),
+                    h("span", { class: "state", text: "Opens a form" })], click(() => j.openFeedback())),
+                h("div", { class: "settings-note", text: "Tell the Eagles Autism Foundation what helped and what could be better." }),
+            ] : []),
             h("div", { class: "settings-fill" }),
             h("div", { class: "settings-foot" }, this.restartButton, h("span", { class: "keycap", text: "R" })),
             h("div", { class: "settings-keys", text: options.touch ? "Tap a setting to change it. Close returns to the stadium." : "Tab moves. Enter presses. Esc closes." }));

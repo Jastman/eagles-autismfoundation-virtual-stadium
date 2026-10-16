@@ -903,6 +903,16 @@ html, body {
     min-width: 4.4rem;
     text-align: right;
 }
+.feedback-row .state {
+    min-width: 0;
+    color: var(--ink-muted);
+    font-weight: 400;
+    font-size: 1.8rem;
+}
+.settings-note {
+    color: var(--ink-muted);
+    margin-top: 0.4rem;
+}
 .settings-fill {
     flex: 1;
 }

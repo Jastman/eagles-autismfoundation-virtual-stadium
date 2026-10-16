@@ -4,7 +4,8 @@
 #   1. Pages -> Build and deployment -> Source: GitHub Actions.
 #   2. Secrets and variables -> Actions -> New repository secret: VITE_STADIUM_ION_TOKEN (the Cesium ion token for the
 #      stadium assets and Google 3D Tiles). Optional: VITE_CESIUM_ION_TOKEN if the city tiles use a different token.
-#      Optional variables: VITE_STADIUM_ASSET_IDS, VITE_STADIUM_BAKED.
+#      Optional variables: VITE_STADIUM_ASSET_IDS, VITE_STADIUM_BAKED, VITE_FEEDBACK_URL (the Microsoft Forms link
+#      behind Settings > Send us feedback; the button is hidden without it).
 #   3. Environments -> github-pages -> Deployment branches: allow web/cesiumjs-ipad-port (until it is merged to main).
 #
 # The token ends up in the published JavaScript (every CesiumJS app ships its token to the browser): keep it scoped to
@@ -61,6 +62,7 @@ jobs:
           VITE_STADIUM_ASSET_IDS: ${{ vars.VITE_STADIUM_ASSET_IDS || '6040628,6040635,6040637' }}
           VITE_STADIUM_BAKED: ${{ vars.VITE_STADIUM_BAKED }}
           VITE_SITE_URL: ${{ steps.pages.outputs.base_url }}
+          VITE_FEEDBACK_URL: ${{ vars.VITE_FEEDBACK_URL }}
         run: |
           # A site without a token streams no stadium and no city: never publish one.
           if [ -z "$VITE_STADIUM_ION_TOKEN" ] && [ -z "$VITE_CESIUM_ION_TOKEN" ]; then
