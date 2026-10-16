@@ -22,6 +22,7 @@
     "@gltf-transform/extensions": "4.2.1",
     "@gltf-transform/functions": "4.2.1",
     "@types/node": "22.20.5",
+    "ktx2-encoder": "0.6.0",
     "sharp": "0.34.2",
     "typescript": "5.9.3",
     "vite": "7.3.6",

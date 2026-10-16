@@ -31,8 +31,17 @@ npm run build                # static site in web/dist/, host it anywhere (HTTPS
 | `VITE_STADIUM_BAKED` | `1` when those IDs are the baked-lighting uploads (`Tools/Pipeline/bake_stadium_lighting.py`) |
 
 URL parameters for testing: `?ionToken=` (remembered on the device), `?stadiumToken=`, `?stadiumAssets=`,
+`?stadiumUrls=<structure>,<seats>,<field>` (tileset.json URLs instead of the ion assets; `VITE_STADIUM_TILESET_URLS` in a build),
 `?stadiumPlacement=auto|registration|ion`, `?stadiumBaked=1`, `?quality=low|medium|high`, `?stadiumHeading=<deg>`, `?stadiumOffset=e,n,u` (metres), `?noLoadingScreen`,
 `?noCrowd`.
+
+## Lighter stadium tiles
+
+`node tools/compress_stadium_tiles.mjs` downloads the stadium assets from ion and re-encodes their textures as KTX2
+(about 1.8 GB of GPU memory inside the bowl becomes about 130 MB). It writes `assets-src/stadium-tiles/<id>.zip`
+(git-ignored: the model is licensed). Upload each zip to Cesium ion as 3D Tiles, allow the new IDs in the stadium token,
+and set `VITE_STADIUM_ASSET_IDS` (`.env.local`, or the repository variable for the Pages build). Try local copies first
+with `?stadiumUrls=`.
 
 ## Check
 

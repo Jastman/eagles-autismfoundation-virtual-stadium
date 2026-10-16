@@ -60,13 +60,13 @@ function registrationMatrix(geo: Geo, config: DeploymentConfig): Matrix4 {
     return Matrix4.multiply(geo.enuToFixed, local, new Matrix4());
 }
 
-function placeStadium(tileset: Cesium3DTileset, geo: Geo, config: DeploymentConfig, id: number): void {
+function placeStadium(tileset: Cesium3DTileset, geo: Geo, config: DeploymentConfig, label: string): void {
     const centre = tileset.boundingSphere.center;
     const distance = Cartesian3.distance(centre, geo.origin);
     const georeferenced = distance < 2000;
     const register = config.stadiumPlacement === "registration" || (config.stadiumPlacement === "auto" && !georeferenced);
     if (!register) {
-        console.info(`Stadium asset ${id}: using ion's placement (${distance.toFixed(1)} m from midfield).`);
+        console.info(`${label}: using its own placement (${distance.toFixed(1)} m from midfield).`);
         return;
     }
     // Cancel whatever root transform ion gave it, then apply the Unreal registration on the model's own coordinates.
@@ -74,7 +74,7 @@ function placeStadium(tileset: Cesium3DTileset, geo: Geo, config: DeploymentConf
     const inverseRoot = Matrix4.inverse(root, new Matrix4());
     tileset.modelMatrix = Matrix4.multiply(registrationMatrix(geo, config), inverseRoot, new Matrix4());
     const placed = Cartesian3.distance(tileset.boundingSphere.center, geo.origin);
-    console.info(`Stadium asset ${id}: ion placed it ${(distance / 1000).toFixed(1)} km away; applied the ADR-0004 registration ` +
+    console.info(`${label}: placed ${(distance / 1000).toFixed(1)} km away; applied the ADR-0004 registration ` +
         `(now ${placed.toFixed(1)} m from midfield). Tune with ?stadiumHeading= and ?stadiumOffset=e,n,u if needed.`);
 }
 
@@ -85,27 +85,31 @@ export async function loadTiles(scene: Scene, geo: Geo, config: DeploymentConfig
     const problems: string[] = [];
 
     const stadiumToken = config.stadiumIonToken || config.ionToken;
-    if (!stadiumToken && config.stadiumAssetIds.length > 0) problems.push("Stadium: this build has no Cesium ion token.");
-    if (stadiumToken && config.stadiumAssetIds.length > 0) {
-        // VITE_STADIUM_ASSET_IDS lists the stadium structure, the seats and the field, in that order.
-        const roles: TilesetRole[] = ["structure", "seats", "field"];
-        const loaded = await Promise.allSettled(config.stadiumAssetIds.map(async (id, index) => {
-            const resource = await IonResource.fromAssetId(id, { accessToken: stadiumToken });
-            const tileset = await Cesium3DTileset.fromUrl(resource, { maximumScreenSpaceError: 8 });
-            configure(tileset);
-            placeStadium(tileset, geo, config, id);
-            onTileset(tileset, roles[index] ?? "structure");
-            scene.primitives.add(tileset);
-            return tileset;
-        }));
-        loaded.forEach((result, i) => {
-            if (result.status === "fulfilled") stadium.push(result.value);
-            else {
-                console.error(`Stadium asset ${config.stadiumAssetIds[i]} could not be loaded.`, result.reason);
-                problems.push(describe(result.reason, `Stadium asset ${config.stadiumAssetIds[i]}`, config.stadiumAssetIds[i]));
-            }
-        });
-    }
+    // The stadium structure, the seats and the field, in that order: from tileset URLs when given, else the ion assets.
+    const roles: TilesetRole[] = ["structure", "seats", "field"];
+    const urls = config.stadiumTilesetUrls;
+    if (urls.length === 0 && !stadiumToken && config.stadiumAssetIds.length > 0) problems.push("Stadium: this build has no Cesium ion token.");
+    const sources: { label: string; id: number; open: () => Promise<Cesium3DTileset> }[] = urls.length > 0
+        ? urls.map((url, i) => ({ label: `Stadium tileset ${url}`, id: i, open: () => Cesium3DTileset.fromUrl(url, { maximumScreenSpaceError: 8 }) }))
+        : stadiumToken ? config.stadiumAssetIds.map((id) => ({
+            label: `Stadium asset ${id}`, id,
+            open: async () => Cesium3DTileset.fromUrl(await IonResource.fromAssetId(id, { accessToken: stadiumToken }), { maximumScreenSpaceError: 8 }),
+        })) : [];
+    const loaded = await Promise.allSettled(sources.map(async (source, index) => {
+        const tileset = await source.open();
+        configure(tileset);
+        placeStadium(tileset, geo, config, source.label);
+        onTileset(tileset, roles[index] ?? "structure");
+        scene.primitives.add(tileset);
+        return tileset;
+    }));
+    loaded.forEach((result, i) => {
+        if (result.status === "fulfilled") stadium.push(result.value);
+        else {
+            console.error(`${sources[i].label} could not be loaded.`, result.reason);
+            problems.push(urls.length > 0 ? `${sources[i].label} could not be loaded.` : describe(result.reason, sources[i].label, sources[i].id));
+        }
+    });
 
     const contextToken = config.ionToken || stadiumToken;
     if (contextToken) {

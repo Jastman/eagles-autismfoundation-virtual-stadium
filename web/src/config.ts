@@ -111,6 +111,9 @@ export interface DeploymentConfig {
     /** The licensed CGTrader model on Cesium ion (team assets): stadium, seats (parts 1-5) and the NFL field. Empty: none,
      *  and Google's own stadium stays as the stand-in (CESIUM_PLACEMENT.md, V1 amendments). */
     stadiumAssetIds: number[];
+    /** Stadium, seats and field tileset.json URLs to load instead of the ion assets (a self-hosted or re-processed copy,
+     *  e.g. one from Tools/Pipeline/compress_stadium_textures.mjs). ?stadiumUrls=a,b,c or VITE_STADIUM_TILESET_URLS. */
+    stadiumTilesetUrls: string[];
     /** A token scoped to the stadium assets; falls back to ionToken. */
     stadiumIonToken: string;
     /**
@@ -161,6 +164,8 @@ export function readDeploymentConfig(): DeploymentConfig {
         ionToken,
         googleTilesAssetId: Number(env.VITE_GOOGLE_TILES_ASSET_ID ?? 2275207),
         stadiumAssetIds: ids,
+        stadiumTilesetUrls: (params.get("stadiumUrls") ?? (env.VITE_STADIUM_TILESET_URLS as string | undefined) ?? "")
+            .split(",").map((s) => s.trim()).filter(Boolean),
         stadiumIonToken: stadiumTokenFromUrl ?? readStored("lff.stadiumToken") ?? (env.VITE_STADIUM_ION_TOKEN as string | undefined) ?? ionToken,
         stadiumPlacement: placement === "registration" || placement === "ion" ? placement : "auto",
         stadiumHeadingAdjustDeg: Number(params.get("stadiumHeading") ?? 0) || 0,
