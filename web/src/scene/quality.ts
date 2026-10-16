@@ -21,8 +21,15 @@ export interface QualitySettings {
     /** Screen-space error for the stadium model and the Google tiles (lower is sharper). */
     stadiumError: number;
     cityError: number;
-    /** Tile cache per tileset (MB) and how far over it a busy frame may go: the stadium has three tilesets. */
-    stadiumCacheMB: number;
+    /**
+     * Tile cache per tileset (MB), and how far over it a busy frame may go. Each stadium part gets its own budget: below
+     * what a view needs, CesiumJS keeps coarsening that tileset until whole floors and stands disappear. The structure's
+     * coarsest tiles alone take 160-250 MB, so it gets the most; the seats coarsen gracefully (their finest level would
+     * take gigabytes) and the city's photographed tiles matter least inside the bowl.
+     */
+    structureCacheMB: number;
+    seatsCacheMB: number;
+    fieldCacheMB: number;
     cityCacheMB: number;
     cacheOverflowMB: number;
 }
@@ -30,15 +37,18 @@ export interface QualitySettings {
 const TIERS: Record<QualityTier, Omit<QualitySettings, "tier">> = {
     low: {
         pixelRatio: 1, msaaSamples: 1, shadows: false, shadowMapSize: 1024, softShadows: false, ambientOcclusion: false,
-        clouds: false, stadiumError: 16, cityError: 32, stadiumCacheMB: 64, cityCacheMB: 128, cacheOverflowMB: 32,
+        clouds: false, stadiumError: 16, cityError: 32, structureCacheMB: 288, seatsCacheMB: 144, fieldCacheMB: 48,
+        cityCacheMB: 96, cacheOverflowMB: 32,
     },
     medium: {
         pixelRatio: 1.5, msaaSamples: 1, shadows: true, shadowMapSize: 2048, softShadows: false, ambientOcclusion: false,
-        clouds: true, stadiumError: 12, cityError: 24, stadiumCacheMB: 96, cityCacheMB: 192, cacheOverflowMB: 64,
+        clouds: true, stadiumError: 12, cityError: 24, structureCacheMB: 320, seatsCacheMB: 192, fieldCacheMB: 64,
+        cityCacheMB: 144, cacheOverflowMB: 40,
     },
     high: {
         pixelRatio: 2, msaaSamples: 4, shadows: true, shadowMapSize: 4096, softShadows: true, ambientOcclusion: true,
-        clouds: true, stadiumError: 8, cityError: 16, stadiumCacheMB: 256, cityCacheMB: 512, cacheOverflowMB: 256,
+        clouds: true, stadiumError: 8, cityError: 16, structureCacheMB: 512, seatsCacheMB: 384, fieldCacheMB: 128,
+        cityCacheMB: 512, cacheOverflowMB: 256,
     },
 };
 

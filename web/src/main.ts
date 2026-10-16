@@ -154,7 +154,7 @@ async function main(): Promise<void> {
     const input = new Input(journey, hud, container);
 
     journey.initialize();
-    const tiles = loadTiles(scene, geo, config, sceneData.footprintLonLat, (set, kind) => look.addTileset(set, kind));
+    const tiles = loadTiles(scene, geo, config, sceneData.footprintLonLat, (set, role) => look.addTileset(set, role));
     if (!params.has("noCrowd")) void world.loadCrowd();
     let progress = () => 0;
     void tiles.then((t) => {

@@ -26,9 +26,19 @@ describe("quality tiers", () => {
     it("keeps the iPad tiers' tile caches well under Safari's tab limit", () => {
         for (const tier of ["low", "medium"] as const) {
             const s = settingsFor(tier);
-            // Three stadium tilesets and the city, each allowed its overflow at worst.
-            const worstMB = 3 * (s.stadiumCacheMB + s.cacheOverflowMB) + s.cityCacheMB + s.cacheOverflowMB;
-            expect(worstMB).toBeLessThanOrEqual(768);
+            // The three stadium tilesets and the city, each allowed its overflow at worst. The old uncapped build reached
+            // 1.5 GB of tiles before Safari closed the tab.
+            const worstMB = s.structureCacheMB + s.seatsCacheMB + s.fieldCacheMB + s.cityCacheMB + 4 * s.cacheOverflowMB;
+            expect(worstMB).toBeLessThanOrEqual(900);
+        }
+    });
+
+    it("gives the stadium structure and seats room for a view from inside the bowl", () => {
+        // Measured inside the bowl at the low tier: the structure needs 175-330 MB (its coarsest tiles alone 160+); below
+        // that CesiumJS coarsens it without limit and floors and stands disappear. The seats coarsen gracefully.
+        for (const tier of ["low", "medium", "high"] as const) {
+            expect(settingsFor(tier).structureCacheMB).toBeGreaterThanOrEqual(288);
+            expect(settingsFor(tier).seatsCacheMB).toBeGreaterThanOrEqual(112);
         }
     });
 

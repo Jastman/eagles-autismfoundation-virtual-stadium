@@ -11,7 +11,7 @@
 //
 //   node tools/prepare_assets.mjs [--force]
 import { execFileSync } from "node:child_process";
-import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -137,12 +137,19 @@ for (const file of walk(join(web, "static"), () => true)) cpSync(file, join(pub,
 mkdirSync(join(pub, "models"), { recursive: true });
 const models = {};
 const modelBounds = {};
-for (const glb of walk(join(web, "assets-src", "models"), (p) => p.endsWith(".glb"))) {
-    const rel = relative(join(web, "assets-src", "models"), glb).replaceAll("\\", "/");
+// web/models: committed, from tools/prepare_models.mjs (props and the eagle). web/assets-src/models: local exports from
+// Unreal (export_web_assets.py, git-ignored), which win over a committed model of the same name.
+const modelSources = [join(web, "models"), join(web, "assets-src", "models")];
+for (const [base, glb] of modelSources.flatMap((dir) => walk(dir, (p) => p.endsWith(".glb")).map((f) => [dir, f]))) {
+    const rel = relative(base, glb).replaceAll("\\", "/");
     mkdirSync(dirname(join(pub, "models", rel)), { recursive: true });
     if (newer(glb, join(pub, "models", rel))) cpSync(glb, join(pub, "models", rel));
     const name = rel.replace(/\.glb$/, "");
     models[name] = `models/${rel}`;
+    // The eagle's orientation (prepare_models.mjs), which belongs to that GLB: copied with it, or removed with it.
+    const orient = glb.replace(/\.glb$/, ".orient.json"), orientOut = join(pub, "models", rel.replace(/\.glb$/, ".orient.json"));
+    if (existsSync(orient)) cpSync(orient, orientOut);
+    else rmSync(orientOut, { force: true });
     // The mesh's Unreal-local bounds (export_web_assets.py), which fix the model's axes on the web (scene/models.ts).
     const bounds = glb.replace(/\.glb$/, ".bounds.json");
     if (existsSync(bounds)) {

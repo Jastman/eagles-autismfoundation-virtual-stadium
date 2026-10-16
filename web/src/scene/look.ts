@@ -11,6 +11,17 @@ import type { Cesium3DTileset, Scene, Viewer } from "cesium";
 import type { Geo } from "./geo";
 import type { QualitySettings } from "./quality";
 
+/** The streamed tilesets: the stadium model's three parts (stadium structure, seats, field) and the Google city tiles. */
+export type TilesetRole = "structure" | "seats" | "field" | "city";
+
+/**
+ * The coarsest the stadium model may get when its tile cache is full. CesiumJS keeps coarsening a tileset over budget
+ * without limit, and the stadium's tiles don't thin out evenly: the structure still holds 300+ MB when its floors and
+ * walls have already gone, and the seats vanish entirely from about 96. Up to 64 every surface stays; past that the
+ * cache runs over its budget instead.
+ */
+const STADIUM_ERROR_CEILING = 64;
+
 /** Unreal's look values (setup_cinematic_look.py POST). */
 const UNREAL = { exposureBiasEv: 0.3, vignetteIntensity: 0.2 };
 /** Clouds_LFF_PartlyCloudy: cumulus at 1.5 km, 3.5 km thick, about 40% of the sky. */
@@ -39,7 +50,7 @@ function random(seed: number): () => number {
 export class SceneLook {
     private readonly vignette: PostProcessStage;
     private clouds: CloudCollection | null = null;
-    private tilesets: { set: Cesium3DTileset; kind: "stadium" | "city" }[] = [];
+    private tilesets: { set: Cesium3DTileset; kind: TilesetRole }[] = [];
     private settings: QualitySettings | null = null;
 
     /** `bakedStadium`: the stadium's lighting is baked in, so it only casts shadows and ambient occlusion stays off. */
@@ -60,10 +71,21 @@ export class SceneLook {
         scene.fog.density = 2.0e-4;
         scene.fog.minimumBrightness = 0.25;
         viewer.shadows = false;
+        scene.preUpdate.addEventListener(() => this.limitCoarsening());
+    }
+
+    /** Holds each stadium tileset's memory-adjusted screen-space error at or under the ceiling (CesiumJS has no limit). */
+    private limitCoarsening(): void {
+        for (const { set, kind } of this.tilesets) {
+            if (kind === "city") continue;
+            const adjusted = set as unknown as { _memoryAdjustedScreenSpaceError: number };
+            const ceiling = Math.max(STADIUM_ERROR_CEILING, set.maximumScreenSpaceError);
+            if (adjusted._memoryAdjustedScreenSpaceError > ceiling) adjusted._memoryAdjustedScreenSpaceError = ceiling;
+        }
     }
 
     /** The streamed tilesets: their sharpness follows the tier; the city's photographed lighting takes no extra shadows. */
-    addTileset(set: Cesium3DTileset, kind: "stadium" | "city"): void {
+    addTileset(set: Cesium3DTileset, kind: TilesetRole): void {
         this.tilesets.push({ set, kind });
         set.shadows = kind === "city" ? ShadowMode.DISABLED : this.bakedStadium ? ShadowMode.CAST_ONLY : ShadowMode.ENABLED;
         if (this.settings) this.applyTileset(set, kind, this.settings);
@@ -104,9 +126,10 @@ export class SceneLook {
         scene.requestRender();
     }
 
-    private applyTileset(set: Cesium3DTileset, kind: "stadium" | "city", settings: QualitySettings): void {
-        set.maximumScreenSpaceError = kind === "stadium" ? settings.stadiumError : settings.cityError;
-        set.cacheBytes = (kind === "stadium" ? settings.stadiumCacheMB : settings.cityCacheMB) * 1024 * 1024;
+    private applyTileset(set: Cesium3DTileset, kind: TilesetRole, settings: QualitySettings): void {
+        set.maximumScreenSpaceError = kind === "city" ? settings.cityError : settings.stadiumError;
+        const budget = { structure: settings.structureCacheMB, seats: settings.seatsCacheMB, field: settings.fieldCacheMB, city: settings.cityCacheMB };
+        set.cacheBytes = budget[kind] * 1024 * 1024;
         set.maximumCacheOverflowBytes = settings.cacheOverflowMB * 1024 * 1024;
     }
 

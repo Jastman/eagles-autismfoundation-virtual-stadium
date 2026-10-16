@@ -8,6 +8,7 @@ import {
 } from "cesium";
 import type { Scene } from "cesium";
 import type { DeploymentConfig } from "../config";
+import type { TilesetRole } from "./look";
 import type { Geo } from "./geo";
 
 /** ADR-0004 registration: model (metres, Z-up, origin at midfield turf) into the site's map frame (E = site X, N = -site Y). */
@@ -78,7 +79,7 @@ function placeStadium(tileset: Cesium3DTileset, geo: Geo, config: DeploymentConf
 }
 
 export async function loadTiles(scene: Scene, geo: Geo, config: DeploymentConfig, footprintLonLat: number[][],
-    onTileset: (set: Cesium3DTileset, kind: "stadium" | "city") => void = () => undefined): Promise<TileSet> {
+    onTileset: (set: Cesium3DTileset, role: TilesetRole) => void = () => undefined): Promise<TileSet> {
     const stadium: Cesium3DTileset[] = [];
     let context: Cesium3DTileset | null = null;
     const problems: string[] = [];
@@ -86,12 +87,14 @@ export async function loadTiles(scene: Scene, geo: Geo, config: DeploymentConfig
     const stadiumToken = config.stadiumIonToken || config.ionToken;
     if (!stadiumToken && config.stadiumAssetIds.length > 0) problems.push("Stadium: this build has no Cesium ion token.");
     if (stadiumToken && config.stadiumAssetIds.length > 0) {
-        const loaded = await Promise.allSettled(config.stadiumAssetIds.map(async (id) => {
+        // VITE_STADIUM_ASSET_IDS lists the stadium structure, the seats and the field, in that order.
+        const roles: TilesetRole[] = ["structure", "seats", "field"];
+        const loaded = await Promise.allSettled(config.stadiumAssetIds.map(async (id, index) => {
             const resource = await IonResource.fromAssetId(id, { accessToken: stadiumToken });
             const tileset = await Cesium3DTileset.fromUrl(resource, { maximumScreenSpaceError: 8 });
             configure(tileset);
             placeStadium(tileset, geo, config, id);
-            onTileset(tileset, "stadium");
+            onTileset(tileset, roles[index] ?? "structure");
             scene.primitives.add(tileset);
             return tileset;
         }));

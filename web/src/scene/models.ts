@@ -6,13 +6,12 @@
 // matched against the Unreal bounds to find the axis mapping (a signed permutation; Unreal is left-handed, so the
 // mapping is expected to be a reflection) and the unit scale.
 //
-// Repeated meshes (the barriers, the hundreds of lot cars) are drawn as one instanced model each: the GLB is rewritten
+// Meshes repeated many times (the hundreds of lot cars) are drawn as one instanced model each: the GLB is rewritten
 // in the browser with EXT_mesh_gpu_instancing on its mesh nodes.
 import { Axis, Cartesian3, Matrix3, Matrix4, Model, ModelAnimationLoop, ShadowMode } from "cesium";
 import type { Scene } from "cesium";
 import { Transform, Vec3 } from "../util/ue";
 import type { Geo } from "./geo";
-import { ueTransformToLocalMatrix } from "./geo";
 
 export interface UnrealBounds {
     min: number[];
@@ -137,8 +136,11 @@ const PERMUTATIONS = [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2,
 export function fitAxes(model: UnrealBounds, unreal: UnrealBounds): { matrix: Matrix4; error: number; reflection: boolean } {
     const size = (b: UnrealBounds) => [0, 1, 2].map((k) => b.max[k] - b.min[k]).sort((a, c) => a - c);
     const ms = size(model), us = size(unreal);
+    // The unit scale: the exact ratio of the longest sides (an import may scale), snapped to a power of ten when it is
+    // within 3% of one (a plain metres-to-centimetres export).
     const ratio = (us[2] || 1) / (ms[2] || 1);
-    const scale = [1, 100, 0.01, 10, 0.1].reduce((best, s) => (Math.abs(Math.log(ratio / s)) < Math.abs(Math.log(ratio / best)) ? s : best), 1);
+    const decade = Math.pow(10, Math.round(Math.log10(ratio)));
+    const scale = Math.abs(ratio / decade - 1) < 0.03 ? decade : ratio;
     let best = { matrix: Matrix4.IDENTITY, error: Infinity, reflection: false };
     let bestProper = { ...best };
     for (const perm of PERMUTATIONS) {
@@ -206,7 +208,9 @@ export function instanceGlb(glb: Glb, instances: Matrix4[]): Glb {
         bin.set(c, at);
         at += c.length;
     }
-    json.buffers = [{ byteLength: bin.length }];
+    // The instance data went onto the end of the GLB's own buffer (buffer 0); any other buffers are untouched.
+    json.buffers = json.buffers && json.buffers.length > 0 ? json.buffers.map((b, i) => (i === 0 ? { ...b, byteLength: bin.length } : b))
+        : [{ byteLength: bin.length }];
     return { json, bin };
 }
 
@@ -295,12 +299,16 @@ export class ModelLibrary {
         return pending;
     }
 
-    /** Unreal world cm -> Earth-fixed: the shared base for every exported model. */
+    /**
+     * Unreal world cm -> Earth-fixed: the shared base for every exported model. Unreal's Y points south, so a point (x, y, z)
+     * is (x, -y, z) / 100 east-north-up metres. (ueTransformToLocalMatrix flips both sides, for content already mirrored
+     * into metres; the GLBs here are mapped into Unreal space by their axis fit instead.)
+     */
     private base(): Matrix4 {
-        return Matrix4.multiply(this.geo.enuToFixed, ueTransformToLocalMatrix(new Transform()), new Matrix4());
+        return Matrix4.multiply(this.geo.enuToFixed, Matrix4.fromScale(new Cartesian3(0.01, -0.01, 0.01)), new Matrix4());
     }
 
-    /** Draws `asset` at each world transform, as one instanced model. */
+    /** Draws `asset` at each world transform: one instanced model for many copies (the lot's cars), else one model each. */
     async place(asset: string, worlds: Transform[], group: ModelGroup, options: { animate?: boolean } = {}): Promise<boolean> {
         const loaded = await this.load(asset);
         if (!loaded || worlds.length === 0) return false;
@@ -313,9 +321,11 @@ export class ModelLibrary {
             const W = unrealMatrix(w);
             return Matrix4.multiply(inverseAxes, Matrix4.multiply(W, axes, new Matrix4()), new Matrix4());
         });
-        const make = (gltf: Uint8Array, matrix: Matrix4) => fromBytes(gltf, matrix);
-        if (skinned || worlds.length === 1) {
-            // Skinned meshes can't be GPU-instanced: one model each.
+        const make = (gltf: Uint8Array, matrix: Matrix4) => fromBytes(gltf, matrix, asset);
+        if (skinned || worlds.length < INSTANCE_FROM) {
+            // One model per placement: skinned meshes can't be GPU-instanced, and a handful of copies don't need it. CesiumJS
+            // culls an instanced primitive by its vertex range plus the instance translations, ignoring instance scale and
+            // rotation, so a scaled prop (the trailer at 0.065, the barriers at 0.103) would be culled while in view.
             const bytes = writeGlb(glb);
             for (const J of instanceMatrices) {
                 const model = await make(bytes, Matrix4.multiply(modelMatrix, J, new Matrix4()));
@@ -340,7 +350,7 @@ export class ModelLibrary {
     async movable(asset: string, group: ModelGroup): Promise<((world: Transform) => void) | null> {
         const loaded = await this.load(asset);
         if (!loaded) return null;
-        const model = await fromBytes(writeGlb(loaded.glb), Matrix4.IDENTITY);
+        const model = await fromBytes(writeGlb(loaded.glb), Matrix4.IDENTITY, asset);
         this.scene.primitives.add(model);
         group.add(model);
         const base = this.base();
@@ -351,14 +361,17 @@ export class ModelLibrary {
 }
 
 /** A model from GLB bytes, in the GLB's own axes (no up/forward correction: the bounds fit handles axes). */
-async function fromBytes(bytes: Uint8Array, modelMatrix: Matrix4): Promise<Model> {
+async function fromBytes(bytes: Uint8Array, modelMatrix: Matrix4, id: string): Promise<Model> {
     const url = URL.createObjectURL(new Blob([bytes as BlobPart], { type: "model/gltf-binary" }));
     const model = await Model.fromGltfAsync({
-        url, modelMatrix: Matrix4.clone(modelMatrix), upAxis: Axis.Z, forwardAxis: Axis.X, shadows: ShadowMode.ENABLED, allowPicking: false,
+        url, id, modelMatrix: Matrix4.clone(modelMatrix), upAxis: Axis.Z, forwardAxis: Axis.X, shadows: ShadowMode.ENABLED, allowPicking: false,
     });
     model.readyEvent.addEventListener(() => URL.revokeObjectURL(url));
     return model;
 }
+
+/** Placements from which a mesh is GPU-instanced (the lot's cars: unscaled and centred on their pivots, so culled right). */
+const INSTANCE_FROM = 32;
 
 const animated = new WeakSet<Model>();
 const hasAnimations = (m: Model) => animated.has(m);
