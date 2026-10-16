@@ -106,6 +106,8 @@ export class SceneLook {
 
     private applyTileset(set: Cesium3DTileset, kind: "stadium" | "city", settings: QualitySettings): void {
         set.maximumScreenSpaceError = kind === "stadium" ? settings.stadiumError : settings.cityError;
+        set.cacheBytes = (kind === "stadium" ? settings.stadiumCacheMB : settings.cityCacheMB) * 1024 * 1024;
+        set.maximumCacheOverflowBytes = settings.cacheOverflowMB * 1024 * 1024;
     }
 
     /** A fixed, deterministic cumulus field around the stadium; nothing drifts (the noise never changes). */

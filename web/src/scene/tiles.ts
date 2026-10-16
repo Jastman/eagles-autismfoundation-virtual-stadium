@@ -32,13 +32,16 @@ function describe(error: unknown, what: string, id: number): string {
 }
 
 function configure(tileset: Cesium3DTileset): void {
-    // ConfigureTileset: no holes, siblings and ancestors preloaded, a generous cache so a lap doesn't evict the stadium.
+    // ConfigureTileset: no holes (parents shown until children arrive). Unlike Unreal, the cache is capped per quality
+    // tier (scene/look.ts), nothing loads while hidden, and requests the camera is flying past are dropped: on iPad,
+    // memory runs out long before bandwidth.
     tileset.preloadFlightDestinations = true;
-    tileset.preloadWhenHidden = true;
-    tileset.cullRequestsWhileMoving = false;
+    tileset.preloadWhenHidden = false;
+    tileset.cullRequestsWhileMoving = true;
+    tileset.cullRequestsWhileMovingMultiplier = 60;
     tileset.skipLevelOfDetail = false;
-    tileset.cacheBytes = 768 * 1024 * 1024;
-    tileset.maximumCacheOverflowBytes = 256 * 1024 * 1024;
+    tileset.cacheBytes = 96 * 1024 * 1024;
+    tileset.maximumCacheOverflowBytes = 64 * 1024 * 1024;
     tileset.foveatedScreenSpaceError = true;
     tileset.dynamicScreenSpaceError = true;
 }

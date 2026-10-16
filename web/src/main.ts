@@ -12,7 +12,7 @@ import { Geo } from "./scene/geo";
 import { sceneData } from "./scene/sceneData";
 import { SceneLook } from "./scene/look";
 import type { UnrealBounds } from "./scene/models";
-import { FrameRateGovernor, chooseTier, lowerTier, rememberTier, settingsFor } from "./scene/quality";
+import { FrameRateGovernor, chooseTier, lowerTier, rememberTier, settingsFor, watchForCrashes } from "./scene/quality";
 import { loadTiles } from "./scene/tiles";
 import { StadiumWorld } from "./scene/world";
 import { CalloutLayer } from "./ui/callouts";
@@ -62,6 +62,7 @@ async function main(): Promise<void> {
     Ion.defaultAccessToken = config.ionToken || config.stadiumIonToken;
     const params = new URLSearchParams(location.search);
     const quality = chooseTier(params);
+    watchForCrashes();
     let settings = settingsFor(quality.tier);
     const container = h("div", { id: "cesium" });
     app.append(container);
@@ -80,6 +81,8 @@ async function main(): Promise<void> {
         selectionIndicator: false,
         shadows: false,
         msaaSamples: settings.msaaSamples,
+        // Render errors are recovered from below rather than shown in Cesium's error box.
+        showRenderLoopErrors: false,
     });
     const scene = viewer.scene;
     // Unreal's camera is the only one: no Cesium mouse/touch camera controls.
@@ -93,7 +96,37 @@ async function main(): Promise<void> {
     const geo = new Geo(sceneData.georeference);
     const look = new SceneLook(viewer, geo, config.stadiumBaked);
     look.apply(settings);
-    console.info(`Quality: ${settings.tier}${quality.fixed ? " (fixed by ?quality=)" : ""}.`);
+    console.info(`Quality: ${settings.tier}${quality.fixed ? " (fixed by ?quality=)" : ""}` +
+        `${quality.afterCrash ? "; the last visit ended unexpectedly" + (quality.fixed ? "" : ", so one tier lower") : ""}.`);
+
+    // A rendering error stops Cesium's render loop and shows its error box. Recover instead: drop a tier and carry on;
+    // if errors keep coming, reload at the lowest tier.
+    const renderErrors: number[] = [];
+    scene.renderError.addEventListener((_scene, error) => {
+        console.error("Rendering error; recovering.", error);
+        const now = performance.now();
+        renderErrors.push(now);
+        while (renderErrors.length > 0 && now - renderErrors[0] > 20000) renderErrors.shift();
+        if (renderErrors.length >= 3) {
+            rememberTier("low");
+            location.reload();
+            return;
+        }
+        const lower = lowerTier(settings.tier);
+        if (lower && !quality.fixed) {
+            settings = settingsFor(lower);
+            look.apply(settings);
+            rememberTier(lower);
+        }
+        viewer.useDefaultRenderLoop = true;
+    });
+    // The GPU context lost (memory pressure): nothing can be drawn again on this page, so reload a tier lower.
+    viewer.canvas.addEventListener("webglcontextlost", (event) => {
+        event.preventDefault();
+        console.error("WebGL context lost; reloading at lower quality.");
+        rememberTier(lowerTier(settings.tier) ?? "low");
+        setTimeout(() => location.reload(), 300);
+    });
     // Exported models are keyed by Unreal asset name (the manifest also lists sub-folders, e.g. people/...).
     const byAsset = Object.fromEntries(Object.entries(models).map(([k, v]) => [k.split("/").pop()!, v]));
     const world = new StadiumWorld(scene, geo, sceneData, { ...byAsset, ...models }, modelBounds);
@@ -163,7 +196,7 @@ async function main(): Promise<void> {
         }
     });
     // Development hooks for automated checks (Docs/WEB_PARITY.md, verification).
-    (window as unknown as { lff: unknown }).lff = { journey, world, viewer, hud, look, settingsFor };
+    (window as unknown as { lff: unknown }).lff = { journey, world, viewer, hud, look, settingsFor, V2: (x: number, y: number) => new Vec2(x, y) };
 }
 
 void main();

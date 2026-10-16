@@ -1,6 +1,10 @@
 // Rendering quality tiers: the web's stand-in for Unreal's scalability settings (Docs/WEB_PARITY.md W16). The experience
 // is the same on every tier; only how the picture is made changes. A tier is picked from the device before the viewer
 // exists, and stepped down once the stadium has loaded if the frame rate can't keep up. ?quality=low|medium|high fixes it.
+//
+// Memory is the hard limit on iPad: Safari closes a tab that holds too much, which looks like a crash while flying in
+// Explore (new tiles stream in faster than old ones leave). Each tier caps the tile caches, and a crash guard starts the
+// next visit a tier lower when the last one ended without the page closing normally.
 
 export type QualityTier = "low" | "medium" | "high";
 
@@ -17,20 +21,24 @@ export interface QualitySettings {
     /** Screen-space error for the stadium model and the Google tiles (lower is sharper). */
     stadiumError: number;
     cityError: number;
+    /** Tile cache per tileset (MB) and how far over it a busy frame may go: the stadium has three tilesets. */
+    stadiumCacheMB: number;
+    cityCacheMB: number;
+    cacheOverflowMB: number;
 }
 
 const TIERS: Record<QualityTier, Omit<QualitySettings, "tier">> = {
     low: {
         pixelRatio: 1, msaaSamples: 1, shadows: false, shadowMapSize: 1024, softShadows: false, ambientOcclusion: false,
-        clouds: false, stadiumError: 16, cityError: 32,
+        clouds: false, stadiumError: 16, cityError: 32, stadiumCacheMB: 64, cityCacheMB: 128, cacheOverflowMB: 32,
     },
     medium: {
         pixelRatio: 1.5, msaaSamples: 1, shadows: true, shadowMapSize: 2048, softShadows: false, ambientOcclusion: false,
-        clouds: true, stadiumError: 12, cityError: 24,
+        clouds: true, stadiumError: 12, cityError: 24, stadiumCacheMB: 96, cityCacheMB: 192, cacheOverflowMB: 64,
     },
     high: {
         pixelRatio: 2, msaaSamples: 4, shadows: true, shadowMapSize: 4096, softShadows: true, ambientOcclusion: true,
-        clouds: true, stadiumError: 8, cityError: 16,
+        clouds: true, stadiumError: 8, cityError: 16, stadiumCacheMB: 256, cityCacheMB: 512, cacheOverflowMB: 256,
     },
 };
 
@@ -62,9 +70,10 @@ export function initialTier(device: DeviceInfo): QualityTier {
     const gpu = device.gpu.toLowerCase();
     if (/swiftshader|llvmpipe|software|basic render/.test(gpu)) return "low";
     if (device.apple && device.touch) {
-        // iPads: M-series and recent A-series (8+ cores) start high; older ones medium. Phones medium.
-        if (device.shortSide < 600) return "medium";
-        return device.cores >= 8 ? "high" : "medium";
+        // iPads and iPhones never start high: Safari's per-tab memory, not the GPU, is the limit. Recent iPads (8+ cores)
+        // start medium, older iPads and phones low.
+        if (device.shortSide < 600) return "low";
+        return device.cores >= 8 ? "medium" : "low";
     }
     if (device.touch) return device.memory !== null && device.memory >= 8 ? "medium" : "low";
     if (/nvidia|geforce|rtx|radeon|apple m\d|apple gpu/.test(gpu)) return "high";
@@ -93,17 +102,50 @@ export function readDevice(): DeviceInfo {
     };
 }
 
-/** The tier to start with: ?quality= wins, then a tier remembered on this device from an earlier visit, then a guess. */
-export function chooseTier(params: URLSearchParams): { tier: QualityTier; fixed: boolean } {
+const RUNNING_KEY = "lff.running";
+
+/**
+ * The tier to start with: ?quality= wins, then a tier remembered on this device from an earlier visit, then a guess.
+ * If the last visit ended without the page closing normally (Safari closed the tab for memory), one tier lower.
+ */
+export function chooseTier(params: URLSearchParams): { tier: QualityTier; fixed: boolean; afterCrash: boolean } {
     const asked = params.get("quality");
-    if (asked === "low" || asked === "medium" || asked === "high") return { tier: asked, fixed: true };
-    try {
-        const remembered = window.localStorage.getItem("lff.quality");
-        if (remembered === "low" || remembered === "medium" || remembered === "high") return { tier: remembered, fixed: false };
-    } catch {
-        /* private mode */
+    const crashed = readStorage(RUNNING_KEY) !== null;
+    if (asked === "low" || asked === "medium" || asked === "high") return { tier: asked, fixed: true, afterCrash: crashed };
+    const remembered = readStorage("lff.quality");
+    let tier: QualityTier = remembered === "low" || remembered === "medium" || remembered === "high" ? remembered : initialTier(readDevice());
+    if (crashed) {
+        tier = lowerTier(tier) ?? tier;
+        rememberTier(tier);
     }
-    return { tier: initialTier(readDevice()), fixed: false };
+    return { tier, fixed: false, afterCrash: crashed };
+}
+
+function readStorage(key: string): string | null {
+    try {
+        return window.localStorage.getItem(key);
+    } catch {
+        return null;
+    }
+}
+
+/**
+ * Marks the visit as running while the page is on screen, and clears the mark whenever it is hidden or closed normally.
+ * A mark still there on the next load means the page was killed while showing: chooseTier steps down.
+ */
+export function watchForCrashes(): void {
+    const set = (running: boolean) => {
+        try {
+            if (running) window.localStorage.setItem(RUNNING_KEY, String(Date.now()));
+            else window.localStorage.removeItem(RUNNING_KEY);
+        } catch {
+            /* private mode: no guard */
+        }
+    };
+    set(document.visibilityState === "visible");
+    document.addEventListener("visibilitychange", () => set(document.visibilityState === "visible"));
+    window.addEventListener("pagehide", () => set(false));
+    window.addEventListener("pageshow", () => set(document.visibilityState === "visible"));
 }
 
 export function rememberTier(tier: QualityTier): void {
