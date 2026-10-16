@@ -1,0 +1,357 @@
+[
+ {
+  "label": "Actor - Guest Services 121",
+  "export": "Actor_12",
+  "class": "Actor",
+  "placeTags": [
+   "LFF_Place_GuestServices121"
+  ],
+  "tags": [
+   "LFF_Place_GuestServices121"
+  ],
+  "world": {
+   "location": {
+    "x": -7470.0,
+    "y": 5130.0,
+    "z": 310.0
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -40.0,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.342020143,
+    "w": 0.939692621
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "site": {
+   "location": {
+    "x": -8002.714249,
+    "y": 4251.395613,
+    "z": 310.0
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -33.5,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.288196268,
+    "w": 0.957571361
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "cesium": {
+   "longitude": -75.168352505,
+   "latitude": 39.900341569,
+   "height": -27.9394,
+   "ecef": [
+    1254247.3921,
+    -4736540.9756,
+    4069484.8486
+   ],
+   "heading": 49.99944,
+   "pitch": -0.00081,
+   "roll": 7.7e-05
+  },
+  "boxes": []
+ },
+ {
+  "label": "Actor - Guest Services 136",
+  "export": "Actor_13",
+  "class": "Actor",
+  "placeTags": [
+   "LFF_Place_GuestServices136"
+  ],
+  "tags": [
+   "LFF_Place_GuestServices136"
+  ],
+  "world": {
+   "location": {
+    "x": -8080.0,
+    "y": -5410.0,
+    "z": 310.0
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -40.0,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.342020143,
+    "w": 0.939692621
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "site": {
+   "location": {
+    "x": -7415.631207,
+    "y": -6289.905706,
+    "z": 310.0
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -33.5,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.288196268,
+    "w": 0.957571361
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "cesium": {
+   "longitude": -75.168423849,
+   "latitude": 39.901290842,
+   "height": -27.9393,
+   "ecef": [
+    1254224.1876,
+    -4736477.1801,
+    4069565.7068
+   ],
+   "heading": 49.999394,
+   "pitch": -0.000242,
+   "roll": 0.000839
+  },
+  "boxes": []
+ },
+ {
+  "label": "Actor - Guest Services 206",
+  "export": "Actor_14",
+  "class": "Actor",
+  "placeTags": [
+   "LFF_Place_GuestServices206"
+  ],
+  "tags": [
+   "LFF_Place_GuestServices206"
+  ],
+  "world": {
+   "location": {
+    "x": -8430.0,
+    "y": 7000.0,
+    "z": 3470.0
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -40.0,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.342020143,
+    "w": 0.939692621
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "site": {
+   "location": {
+    "x": -9168.23324,
+    "y": 6000.699898,
+    "z": 3470.0
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -33.5,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.288196268,
+    "w": 0.957571361
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "cesium": {
+   "longitude": -75.168464756,
+   "latitude": 39.900173151,
+   "height": 3.6609,
+   "ecef": [
+    1254247.3886,
+    -4736578.4631,
+    4069490.7729
+   ],
+   "heading": 49.999368,
+   "pitch": -0.000985,
+   "roll": 3e-06
+  },
+  "boxes": []
+ },
+ {
+  "label": "Actor - Guest Services 226",
+  "export": "Actor_15",
+  "class": "Actor",
+  "placeTags": [
+   "LFF_Place_GuestServices226"
+  ],
+  "tags": [
+   "LFF_Place_GuestServices226"
+  ],
+  "world": {
+   "location": {
+    "x": 9100.0,
+    "y": 7010.0,
+    "z": 3470.0
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -40.0,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.342020143,
+    "w": 0.939692621
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "site": {
+   "location": {
+    "x": 8247.949358,
+    "y": 7995.087954,
+    "z": 3470.0
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -33.5,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.288196268,
+    "w": 0.957571361
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "cesium": {
+   "longitude": -75.166414898,
+   "latitude": 39.90017225,
+   "height": 3.661,
+   "ecef": [
+    1254416.8637,
+    -4736533.6493,
+    4069490.6962
+   ],
+   "heading": 50.000683,
+   "pitch": 0.00022,
+   "roll": -0.001008
+  },
+  "boxes": []
+ },
+ {
+  "label": "Actor - Sensory Room Location",
+  "export": "Actor_11",
+  "class": "Actor",
+  "placeTags": [
+   "LFF_Place_SensoryRoom"
+  ],
+  "tags": [
+   "LFF_Place_SensoryRoom"
+  ],
+  "world": {
+   "location": {
+    "x": -7480.0,
+    "y": 5260.0,
+    "z": 310.0
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -40.0,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.342020143,
+    "w": 0.939692621
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "site": {
+   "location": {
+    "x": -8027.366385,
+    "y": 4379.427922,
+    "z": 310.0
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -33.5,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.288196268,
+    "w": 0.957571361
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "cesium": {
+   "longitude": -75.168353675,
+   "latitude": 39.90032986,
+   "height": -27.9393,
+   "ecef": [
+    1254247.5089,
+    -4736541.8073,
+    4069483.8513
+   ],
+   "heading": 49.999439,
+   "pitch": -0.000819,
+   "roll": 6.8e-05
+  },
+  "boxes": []
+ }
+]

@@ -1,0 +1,198 @@
+// Rendering quality tiers: the web's stand-in for Unreal's scalability settings (Docs/WEB_PARITY.md W16). The experience
+// is the same on every tier; only how the picture is made changes. A tier is picked from the device before the viewer
+// exists, and stepped down once the stadium has loaded if the frame rate can't keep up. ?quality=low|medium|high fixes it.
+//
+// Memory is the hard limit on iPad: Safari closes a tab that holds too much, which looks like a crash while flying in
+// Explore (new tiles stream in faster than old ones leave). Each tier caps the tile caches, and a crash guard starts the
+// next visit a tier lower when the last one ended without the page closing normally.
+
+export type QualityTier = "low" | "medium" | "high";
+
+export interface QualitySettings {
+    tier: QualityTier;
+    /** Render resolution as a multiple of CSS pixels (device pixels are capped at this). */
+    pixelRatio: number;
+    msaaSamples: number;
+    shadows: boolean;
+    shadowMapSize: number;
+    softShadows: boolean;
+    ambientOcclusion: boolean;
+    clouds: boolean;
+    /** Screen-space error for the stadium model and the Google tiles (lower is sharper). */
+    stadiumError: number;
+    cityError: number;
+    /**
+     * Tile cache per tileset (MB), and how far over it a busy frame may go. Each stadium part gets its own budget: below
+     * what a view needs, CesiumJS keeps coarsening that tileset until whole floors and stands disappear. The structure's
+     * coarsest tiles alone take 160-250 MB, so it gets the most; the seats coarsen gracefully (their finest level would
+     * take gigabytes) and the city's photographed tiles matter least inside the bowl.
+     */
+    structureCacheMB: number;
+    seatsCacheMB: number;
+    fieldCacheMB: number;
+    cityCacheMB: number;
+    cacheOverflowMB: number;
+}
+
+const TIERS: Record<QualityTier, Omit<QualitySettings, "tier">> = {
+    low: {
+        pixelRatio: 1, msaaSamples: 1, shadows: false, shadowMapSize: 1024, softShadows: false, ambientOcclusion: false,
+        clouds: false, stadiumError: 16, cityError: 32, structureCacheMB: 288, seatsCacheMB: 144, fieldCacheMB: 48,
+        cityCacheMB: 96, cacheOverflowMB: 32,
+    },
+    medium: {
+        pixelRatio: 1.5, msaaSamples: 1, shadows: true, shadowMapSize: 2048, softShadows: false, ambientOcclusion: false,
+        clouds: true, stadiumError: 12, cityError: 24, structureCacheMB: 320, seatsCacheMB: 192, fieldCacheMB: 64,
+        cityCacheMB: 144, cacheOverflowMB: 40,
+    },
+    high: {
+        pixelRatio: 2, msaaSamples: 4, shadows: true, shadowMapSize: 4096, softShadows: true, ambientOcclusion: true,
+        clouds: true, stadiumError: 8, cityError: 16, structureCacheMB: 512, seatsCacheMB: 384, fieldCacheMB: 128,
+        cityCacheMB: 512, cacheOverflowMB: 256,
+    },
+};
+
+const ORDER: QualityTier[] = ["low", "medium", "high"];
+
+export function settingsFor(tier: QualityTier): QualitySettings {
+    return { tier, ...TIERS[tier] };
+}
+
+export function lowerTier(tier: QualityTier): QualityTier | null {
+    const i = ORDER.indexOf(tier);
+    return i > 0 ? ORDER[i - 1] : null;
+}
+
+interface DeviceInfo {
+    /** iPad or iPhone (iPadOS reports itself as a Mac with touch). */
+    apple: boolean;
+    touch: boolean;
+    /** The GPU's name where the browser shares it ("Apple GPU" on iOS, so not much help there). */
+    gpu: string;
+    /** navigator.deviceMemory in GB where available (not on Safari). */
+    memory: number | null;
+    cores: number;
+    shortSide: number;
+}
+
+/** The starting tier for a device, before anything is measured. */
+export function initialTier(device: DeviceInfo): QualityTier {
+    const gpu = device.gpu.toLowerCase();
+    if (/swiftshader|llvmpipe|software|basic render/.test(gpu)) return "low";
+    if (device.apple && device.touch) {
+        // iPads and iPhones never start high: Safari's per-tab memory, not the GPU, is the limit. Recent iPads (8+ cores)
+        // start medium, older iPads and phones low.
+        if (device.shortSide < 600) return "low";
+        return device.cores >= 8 ? "medium" : "low";
+    }
+    if (device.touch) return device.memory !== null && device.memory >= 8 ? "medium" : "low";
+    if (/nvidia|geforce|rtx|radeon|apple m\d|apple gpu/.test(gpu)) return "high";
+    if (/intel/.test(gpu)) return "medium";
+    return device.memory !== null && device.memory < 4 ? "low" : "medium";
+}
+
+export function readDevice(): DeviceInfo {
+    let gpu = "";
+    try {
+        const gl = document.createElement("canvas").getContext("webgl2") ?? document.createElement("canvas").getContext("webgl");
+        const ext = gl?.getExtension("WEBGL_debug_renderer_info");
+        gpu = (ext && gl ? (gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) as string) : gl?.getParameter(gl.RENDERER) as string) ?? "";
+    } catch {
+        /* no WebGL here: the viewer will report it */
+    }
+    const ua = navigator.userAgent;
+    const touch = navigator.maxTouchPoints > 1 || matchMedia("(pointer: coarse)").matches;
+    return {
+        apple: /iPad|iPhone|iPod/.test(ua) || (/Macintosh/.test(ua) && touch),
+        touch,
+        gpu,
+        memory: (navigator as unknown as { deviceMemory?: number }).deviceMemory ?? null,
+        cores: navigator.hardwareConcurrency || 4,
+        shortSide: Math.min(screen.width, screen.height),
+    };
+}
+
+const RUNNING_KEY = "lff.running";
+
+/**
+ * The tier to start with: ?quality= wins, then a tier remembered on this device from an earlier visit, then a guess.
+ * If the last visit ended without the page closing normally (Safari closed the tab for memory), one tier lower.
+ */
+export function chooseTier(params: URLSearchParams): { tier: QualityTier; fixed: boolean; afterCrash: boolean } {
+    const asked = params.get("quality");
+    const crashed = readStorage(RUNNING_KEY) !== null;
+    if (asked === "low" || asked === "medium" || asked === "high") return { tier: asked, fixed: true, afterCrash: crashed };
+    const remembered = readStorage("lff.quality");
+    let tier: QualityTier = remembered === "low" || remembered === "medium" || remembered === "high" ? remembered : initialTier(readDevice());
+    if (crashed) {
+        tier = lowerTier(tier) ?? tier;
+        rememberTier(tier);
+    }
+    return { tier, fixed: false, afterCrash: crashed };
+}
+
+function readStorage(key: string): string | null {
+    try {
+        return window.localStorage.getItem(key);
+    } catch {
+        return null;
+    }
+}
+
+/**
+ * Marks the visit as running while the page is on screen, and clears the mark whenever it is hidden or closed normally.
+ * A mark still there on the next load means the page was killed while showing: chooseTier steps down.
+ */
+export function watchForCrashes(): void {
+    const set = (running: boolean) => {
+        try {
+            if (running) window.localStorage.setItem(RUNNING_KEY, String(Date.now()));
+            else window.localStorage.removeItem(RUNNING_KEY);
+        } catch {
+            /* private mode: no guard */
+        }
+    };
+    set(document.visibilityState === "visible");
+    document.addEventListener("visibilitychange", () => set(document.visibilityState === "visible"));
+    window.addEventListener("pagehide", () => set(false));
+    window.addEventListener("pageshow", () => set(document.visibilityState === "visible"));
+}
+
+export function rememberTier(tier: QualityTier): void {
+    try {
+        window.localStorage.setItem("lff.quality", tier);
+    } catch {
+        /* private mode */
+    }
+}
+
+/**
+ * Watches the frame rate once the world is settled and asks for a lower tier when it stays under the target. It only
+ * ever steps down, so the picture never flips back and forth during the visit.
+ */
+export class FrameRateGovernor {
+    private samples: number[] = [];
+    private cooldown = 0;
+
+    constructor(private readonly targetFps = 28, private readonly windowSeconds = 6) {}
+
+    /** Returns true when the tier should drop now. */
+    tick(dt: number, settled: boolean): boolean {
+        if (!settled || dt <= 0) {
+            this.samples = [];
+            return false;
+        }
+        if (this.cooldown > 0) {
+            this.cooldown -= dt;
+            return false;
+        }
+        this.samples.push(dt);
+        const total = this.samples.reduce((a, b) => a + b, 0);
+        if (total < this.windowSeconds) return false;
+        const fps = this.samples.length / total;
+        this.samples = [];
+        if (fps >= this.targetFps) return false;
+        this.cooldown = 4;
+        return true;
+    }
+}

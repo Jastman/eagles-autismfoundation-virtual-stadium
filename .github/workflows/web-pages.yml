@@ -1,0 +1,87 @@
+# Builds the CesiumJS web build (web/) and publishes it on GitHub Pages, so it can be opened on an iPad from a link.
+#
+# One-time setup in the repository settings:
+#   1. Pages -> Build and deployment -> Source: GitHub Actions.
+#   2. Secrets and variables -> Actions -> New repository secret: VITE_STADIUM_ION_TOKEN (the Cesium ion token for the
+#      stadium assets and Google 3D Tiles). Optional: VITE_CESIUM_ION_TOKEN if the city tiles use a different token.
+#      Optional variables: VITE_STADIUM_ASSET_IDS, VITE_STADIUM_BAKED, VITE_FEEDBACK_URL (a different feedback form
+#      behind Settings > Send us feedback; the project's Microsoft Form is the default).
+#   3. Environments -> github-pages -> Deployment branches: allow web/cesiumjs-ipad-port (until it is merged to main).
+#
+# The token ends up in the published JavaScript (every CesiumJS app ships its token to the browser): keep it scoped to
+# these assets and, in Cesium ion, restrict its allowed URLs to the Pages address.
+name: Web build on GitHub Pages
+
+on:
+  push:
+    branches: [main, web/cesiumjs-ipad-port]
+    paths:
+      - "web/**"
+      - "SourceData/**"
+      - "Content/LFF/Crowd/*.json"
+      - "Content/LFF/UI/Ticket/**"
+      - "Tools/Editor/build_crowd_billboards.py"
+      - ".github/workflows/web-pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: web-pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # No LFS: the web build reads none of the LFS content (stadium meshes, City Sample, MetaHumans).
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      # The site's published address, for the link-preview tags (og:url, og:image).
+      - id: pages
+        uses: actions/configure-pages@v5
+      - name: Audio encoder and the crowd's drawing library
+        run: |
+          sudo apt-get update -q && sudo apt-get install -y -q ffmpeg
+          pip install pillow
+      - name: Build
+        working-directory: web
+        env:
+          VITE_STADIUM_ION_TOKEN: ${{ secrets.VITE_STADIUM_ION_TOKEN }}
+          VITE_CESIUM_ION_TOKEN: ${{ secrets.VITE_CESIUM_ION_TOKEN }}
+          VITE_STADIUM_ASSET_IDS: ${{ vars.VITE_STADIUM_ASSET_IDS || '6040628,6040635,6040637' }}
+          VITE_STADIUM_BAKED: ${{ vars.VITE_STADIUM_BAKED }}
+          VITE_SITE_URL: ${{ steps.pages.outputs.base_url }}
+          VITE_FEEDBACK_URL: ${{ vars.VITE_FEEDBACK_URL }}
+        run: |
+          # A site without a token streams no stadium and no city: never publish one.
+          if [ -z "$VITE_STADIUM_ION_TOKEN" ] && [ -z "$VITE_CESIUM_ION_TOKEN" ]; then
+            echo "::error::No Cesium ion token: add the VITE_STADIUM_ION_TOKEN repository secret (Settings > Secrets and variables > Actions), then re-run this workflow."
+            exit 1
+          fi
+          npm ci
+          npm test
+          npm run build
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

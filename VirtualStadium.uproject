@@ -16,6 +16,10 @@
             "Enabled": true
         },
         {
+            "Name": "GLTFExporter",
+            "Enabled": true
+        },
+        {
             "Name": "AndroidFileServer",
             "Enabled": false
         },

@@ -1,0 +1,2556 @@
+[
+ {
+  "label": "LBL_ClearBag",
+  "export": "TextRenderActor_54",
+  "class": "TextRenderActor",
+  "lblTags": [
+   "LBL_ClearBag"
+  ],
+  "tags": [
+   "LFF_Label",
+   "LBL_ClearBag",
+   "LFF_StandIn"
+  ],
+  "text": "Clear bags only",
+  "worldSize": 30.0,
+  "textRenderColor": {
+   "r": 255,
+   "g": 255,
+   "b": 255,
+   "a": 255
+  },
+  "horizontalAlignment": "EHTA_Center",
+  "verticalAlignment": "EVRTA_TextCenter",
+  "world": {
+   "location": {
+    "x": -3399.794255,
+    "y": -23214.357605,
+    "z": 432.599823
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -135.593859,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.925850334,
+    "w": 0.377890405
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "site": {
+   "location": {
+    "x": -750.0,
+    "y": -23450.0,
+    "z": 432.599823
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -129.093859,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.902937602,
+    "w": 0.429771669
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "plates": [
+   {
+    "name": "Plate",
+    "mesh": "/Engine/BasicShapes/Cube.Cube",
+    "materials": [
+     "/Game/LFF/Materials/MI_LFF_SignPlate.MI_LFF_SignPlate"
+    ],
+    "relative": {
+     "location": {
+      "x": -2.0,
+      "y": 0.0,
+      "z": 0.0
+     },
+     "rotation": {
+      "pitch": 0.0,
+      "yaw": 0.0,
+      "roll": 0.0
+     },
+     "quat": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": 0.0,
+      "w": 1.0
+     },
+     "scale": {
+      "x": 0.02,
+      "y": 4.89,
+      "z": 0.54
+     }
+    },
+    "world": {
+     "location": {
+      "x": -3398.365459,
+      "y": -23212.958125,
+      "z": 432.599823
+     },
+     "rotation": {
+      "pitch": 0.0,
+      "yaw": -135.593859,
+      "roll": 0.0
+     },
+     "quat": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": -0.925850334,
+      "w": 0.377890405
+     },
+     "scale": {
+      "x": 0.02,
+      "y": 4.89,
+      "z": 0.54
+     }
+    },
+    "site": {
+     "location": {
+      "x": -748.738815,
+      "y": -23448.447772,
+      "z": 432.599823
+     },
+     "rotation": {
+      "pitch": 0.0,
+      "yaw": -129.093859,
+      "roll": 0.0
+     },
+     "quat": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": -0.902937602,
+      "w": 0.429771669
+     },
+     "scale": {
+      "x": 0.02,
+      "y": 4.89,
+      "z": 0.54
+     }
+    }
+   }
+  ],
+  "cesium": {
+   "longitude": -75.16787657,
+   "latitude": 39.902894375,
+   "height": -26.7097,
+   "ecef": [
+    1254240.4343,
+    -4736355.706,
+    4069703.0805
+   ],
+   "heading": 314.405886,
+   "pitch": 0.001681,
+   "roll": -0.00128
+  }
+ },
+ {
+  "label": "LBL_ClubGate",
+  "export": "TextRenderActor_59",
+  "class": "TextRenderActor",
+  "lblTags": [
+   "LBL_ClubGate"
+  ],
+  "tags": [
+   "LFF_Label",
+   "LBL_ClubGate",
+   "LFF_StandIn"
+  ],
+  "text": "Club gates",
+  "worldSize": 34.0,
+  "textRenderColor": {
+   "r": 255,
+   "g": 255,
+   "b": 255,
+   "a": 255
+  },
+  "horizontalAlignment": "EHTA_Center",
+  "verticalAlignment": "EVRTA_TextCenter",
+  "world": {
+   "location": {
+    "x": -5893.690643,
+    "y": -14626.838708,
+    "z": 537.600525
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -96.5,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.746057375,
+    "w": 0.665881666
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "site": {
+   "location": {
+    "x": -4200.0,
+    "y": -15200.0,
+    "z": 537.600525
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -90.0,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.707106781,
+    "w": 0.707106781
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "plates": [
+   {
+    "name": "Plate",
+    "mesh": "/Engine/BasicShapes/Cube.Cube",
+    "materials": [
+     "/Game/LFF/Materials/MI_LFF_SignPlate.MI_LFF_SignPlate"
+    ],
+    "relative": {
+     "location": {
+      "x": -2.0,
+      "y": 0.0,
+      "z": 0.0
+     },
+     "rotation": {
+      "pitch": 0.0,
+      "yaw": 0.0,
+      "roll": 0.0
+     },
+     "quat": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": 0.0,
+      "w": 1.0
+     },
+     "scale": {
+      "x": 0.02,
+      "y": 4.658,
+      "z": 0.612
+     }
+    },
+    "world": {
+     "location": {
+      "x": -5893.464237,
+      "y": -14624.851565,
+      "z": 537.600525
+     },
+     "rotation": {
+      "pitch": 0.0,
+      "yaw": -96.5,
+      "roll": 0.0
+     },
+     "quat": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": -0.746057375,
+      "w": 0.665881666
+     },
+     "scale": {
+      "x": 0.02,
+      "y": 4.658,
+      "z": 0.612
+     }
+    },
+    "site": {
+     "location": {
+      "x": -4200.0,
+      "y": -15198.0,
+      "z": 537.600525
+     },
+     "rotation": {
+      "pitch": 0.0,
+      "yaw": -90.0,
+      "roll": 0.0
+     },
+     "quat": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": -0.707106781,
+      "w": 0.707106781
+     },
+     "scale": {
+      "x": 0.02,
+      "y": 4.658,
+      "z": 0.612
+     }
+    }
+   }
+  ],
+  "cesium": {
+   "longitude": -75.168168197,
+   "latitude": 39.902120948,
+   "height": -25.662,
+   "ecef": [
+    1254230.6342,
+    -4736416.1189,
+    4069637.8744
+   ],
+   "heading": 353.499558,
+   "pitch": 0.001369,
+   "roll": 0.000376
+  }
+ },
+ {
+  "label": "LBL_Concourse",
+  "export": "TextRenderActor_3",
+  "class": "TextRenderActor",
+  "lblTags": [
+   "LBL_Concourse"
+  ],
+  "tags": [
+   "LFF_Label",
+   "LBL_Concourse"
+  ],
+  "text": "Concourse",
+  "worldSize": 60.0,
+  "textRenderColor": {
+   "r": 255,
+   "g": 255,
+   "b": 255,
+   "a": 255
+  },
+  "horizontalAlignment": "EHTA_Center",
+  "verticalAlignment": "EVRTA_TextCenter",
+  "world": {
+   "location": {
+    "x": -7772.501117,
+    "y": 684.270696,
+    "z": 548.0
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": 83.5,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.665881666,
+    "w": 0.746057375
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "site": {
+   "location": {
+    "x": -7800.0,
+    "y": -200.0,
+    "z": 548.0
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": 90.0,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.707106781,
+    "w": 0.707106781
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "plates": [
+   {
+    "name": "StaticMesh",
+    "mesh": "/Engine/BasicShapes/Cube.Cube",
+    "materials": [
+     "/Game/LFF/Materials/MI_LFF_SignPlate.MI_LFF_SignPlate"
+    ],
+    "relative": {
+     "location": {
+      "x": -2.0,
+      "y": 0.0,
+      "z": 0.0
+     },
+     "rotation": {
+      "pitch": 0.0,
+      "yaw": 0.0,
+      "roll": 0.0
+     },
+     "quat": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": 0.0,
+      "w": 1.0
+     },
+     "scale": {
+      "x": 0.02,
+      "y": 5.796923,
+      "z": 1.02
+     }
+    },
+    "world": {
+     "location": {
+      "x": -7772.727523,
+      "y": 682.283553,
+      "z": 548.0
+     },
+     "rotation": {
+      "pitch": 0.0,
+      "yaw": 83.5,
+      "roll": 0.0
+     },
+     "quat": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": 0.665881666,
+      "w": 0.746057375
+     },
+     "scale": {
+      "x": 0.02,
+      "y": 5.796923,
+      "z": 1.02
+     }
+    },
+    "site": {
+     "location": {
+      "x": -7800.0,
+      "y": -202.0,
+      "z": 548.0
+     },
+     "rotation": {
+      "pitch": 0.0,
+      "yaw": 90.0,
+      "roll": 0.0
+     },
+     "quat": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": 0.707106781,
+      "w": 0.707106781
+     },
+     "scale": {
+      "x": 0.02,
+      "y": 5.796923,
+      "z": 1.02
+     }
+    }
+   }
+  ],
+  "cesium": {
+   "longitude": -75.168387883,
+   "latitude": 39.900741968,
+   "height": -25.5595,
+   "ecef": [
+    1254237.635,
+    -4736515.9477,
+    4069520.4809
+   ],
+   "heading": 173.499417,
+   "pitch": -1.8e-05,
+   "roll": -0.0007
+  }
+ },
+ {
+  "label": "LBL_Food",
+  "export": "TextRenderActor_5",
+  "class": "TextRenderActor",
+  "lblTags": [
+   "LBL_Food"
+  ],
+  "tags": [
+   "LFF_Label",
+   "LBL_Food"
+  ],
+  "text": "Food",
+  "worldSize": 50.0,
+  "textRenderColor": {
+   "r": 255,
+   "g": 255,
+   "b": 255,
+   "a": 255
+  },
+  "horizontalAlignment": "EHTA_Center",
+  "verticalAlignment": "EVRTA_TextCenter",
+  "world": {
+   "location": {
+    "x": -7567.761337,
+    "y": -345.526188,
+    "z": 577.601776
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -134.840793,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.923346962,
+    "w": 0.38396665
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "site": {
+   "location": {
+    "x": -7480.0,
+    "y": -1200.0,
+    "z": 577.601776
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -128.340793,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.900093776,
+    "w": 0.435696219
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "plates": [
+   {
+    "name": "StaticMesh",
+    "mesh": "/Engine/BasicShapes/Cube.Cube",
+    "materials": [
+     "/Game/LFF/Materials/MI_LFF_SignPlate.MI_LFF_SignPlate"
+    ],
+    "relative": {
+     "location": {
+      "x": -2.0,
+      "y": 0.0,
+      "z": 0.0
+     },
+     "rotation": {
+      "pitch": 0.0,
+      "yaw": 0.0,
+      "roll": 0.0
+     },
+     "quat": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": 0.0,
+      "w": 1.0
+     },
+     "scale": {
+      "x": 0.02,
+      "y": 3.311539,
+      "z": 0.85
+     }
+    },
+    "world": {
+     "location": {
+      "x": -7566.351059,
+      "y": -344.10805,
+      "z": 577.601776
+     },
+     "rotation": {
+      "pitch": 0.0,
+      "yaw": -134.840793,
+      "roll": 0.0
+     },
+     "quat": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": -0.923346962,
+      "w": 0.38396665
+     },
+     "scale": {
+      "x": 0.02,
+      "y": 3.311539,
+      "z": 0.85
+     }
+    },
+    "site": {
+     "location": {
+      "x": -7478.759325,
+      "y": -1198.43133,
+      "z": 577.601776
+     },
+     "rotation": {
+      "pitch": 0.0,
+      "yaw": -128.340793,
+      "roll": 0.0
+     },
+     "quat": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": -0.900093776,
+      "w": 0.435696219
+     },
+     "scale": {
+      "x": 0.02,
+      "y": 3.311539,
+      "z": 0.85
+     }
+    }
+   }
+  ],
+  "cesium": {
+   "longitude": -75.168363943,
+   "latitude": 39.900834716,
+   "height": -25.2635,
+   "ecef": [
+    1254237.9813,
+    -4736509.2574,
+    4069528.571
+   ],
+   "heading": 315.15864,
+   "pitch": 0.000501,
+   "roll": 0.000459
+  }
+ },
+ {
+  "label": "LBL_Gate",
+  "export": "TextRenderActor_1",
+  "class": "TextRenderActor",
+  "lblTags": [
+   "LBL_Gate"
+  ],
+  "tags": [
+   "LFF_Label",
+   "LBL_Gate"
+  ],
+  "text": "Gate",
+  "worldSize": 200.0,
+  "textRenderColor": {
+   "r": 255,
+   "g": 255,
+   "b": 255,
+   "a": 255
+  },
+  "horizontalAlignment": "EHTA_Center",
+  "verticalAlignment": "EVRTA_TextCenter",
+  "world": {
+   "location": {
+    "x": -1607.485636,
+    "y": -14108.720351,
+    "z": 600.0
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -124.678589,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.885712214,
+    "w": 0.464234718
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "site": {
+   "location": {
+    "x": 0.0,
+    "y": -14200.0,
+    "z": 600.0
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -118.178589,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.857968937,
+    "w": 0.51370157
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "plates": [
+   {
+    "name": "StaticMesh",
+    "mesh": "/Engine/BasicShapes/Cube.Cube",
+    "materials": [
+     "/Game/LFF/Materials/MI_LFF_SignPlate.MI_LFF_SignPlate"
+    ],
+    "relative": {
+     "location": {
+      "x": -2.0,
+      "y": 0.0,
+      "z": 0.0
+     },
+     "rotation": {
+      "pitch": 0.0,
+      "yaw": 0.0,
+      "roll": 0.0
+     },
+     "quat": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": 0.0,
+      "w": 1.0
+     },
+     "scale": {
+      "x": 0.02,
+      "y": 14.938462,
+      "z": 3.4
+     }
+    },
+    "world": {
+     "location": {
+      "x": -1606.347691,
+      "y": -14107.075637,
+      "z": 600.0
+     },
+     "rotation": {
+      "pitch": 0.0,
+      "yaw": -124.678589,
+      "roll": 0.0
+     },
+     "quat": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": -0.885712214,
+      "w": 0.464234718
+     },
+     "scale": {
+      "x": 0.02,
+      "y": 14.938462,
+      "z": 3.4
+     }
+    },
+    "site": {
+     "location": {
+      "x": 0.944443,
+      "y": -14198.23704,
+      "z": 600.0
+     },
+     "rotation": {
+      "pitch": 0.0,
+      "yaw": -118.178589,
+      "roll": 0.0
+     },
+     "quat": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": -0.857968937,
+      "w": 0.51370157
+     },
+     "scale": {
+      "x": 0.02,
+      "y": 14.938462,
+      "z": 3.4
+     }
+    }
+   }
+  ],
+  "cesium": {
+   "longitude": -75.167666976,
+   "latitude": 39.902074286,
+   "height": -25.0384,
+   "ecef": [
+    1254273.0413,
+    -4736408.8219,
+    4069634.2998
+   ],
+   "heading": 325.321291,
+   "pitch": 0.001127,
+   "roll": -0.000604
+  }
+ },
+ {
+  "label": "LBL_GuestServices",
+  "export": "TextRenderActor_61",
+  "class": "TextRenderActor",
+  "lblTags": [
+   "LBL_GuestServices"
+  ],
+  "tags": [
+   "LFF_Label",
+   "LBL_GuestServices",
+   "LFF_StandIn"
+  ],
+  "text": "Guest Services<br>Sections 121 · 136 · 206 · 226",
+  "worldSize": 30.0,
+  "textRenderColor": {
+   "r": 255,
+   "g": 255,
+   "b": 255,
+   "a": 255
+  },
+  "horizontalAlignment": "EHTA_Center",
+  "verticalAlignment": "EVRTA_TextCenter",
+  "world": {
+   "location": {
+    "x": -7127.896905,
+    "y": 4133.471388,
+    "z": 487.602173
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -132.527373,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.91540766,
+    "w": 0.402528031
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "site": {
+   "location": {
+    "x": -7550.0,
+    "y": 3300.0,
+    "z": 487.602173
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -126.027373,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.891114947,
+    "w": 0.453777645
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "plates": [
+   {
+    "name": "Plate",
+    "mesh": "/Engine/BasicShapes/Cube.Cube",
+    "materials": [
+     "/Game/LFF/Materials/MI_LFF_SignPlate.MI_LFF_SignPlate"
+    ],
+    "relative": {
+     "location": {
+      "x": -2.0,
+      "y": 0.0,
+      "z": 0.0
+     },
+     "rotation": {
+      "pitch": 0.0,
+      "yaw": 0.0,
+      "roll": 0.0
+     },
+     "quat": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": 0.0,
+      "w": 1.0
+     },
+     "scale": {
+      "x": 0.02,
+      "y": 4.89,
+      "z": 0.87
+     }
+    },
+    "world": {
+     "location": {
+      "x": -7126.54502,
+      "y": 4134.945297,
+      "z": 487.602173
+     },
+     "rotation": {
+      "pitch": 0.0,
+      "yaw": -132.527373,
+      "roll": 0.0
+     },
+     "quat": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": -0.91540766,
+      "w": 0.402528031
+     },
+     "scale": {
+      "x": 0.02,
+      "y": 4.89,
+      "z": 0.87
+     }
+    },
+    "site": {
+     "location": {
+      "x": -7548.823657,
+      "y": 3301.617472,
+      "z": 487.602173
+     },
+     "rotation": {
+      "pitch": 0.0,
+      "yaw": -126.027373,
+      "roll": 0.0
+     },
+     "quat": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": -0.891114947,
+      "w": 0.453777645
+     },
+     "scale": {
+      "x": 0.02,
+      "y": 4.89,
+      "z": 0.87
+     }
+    }
+   }
+  ],
+  "cesium": {
+   "longitude": -75.168312502,
+   "latitude": 39.90043132,
+   "height": -26.1634,
+   "ecef": [
+    1254249.4116,
+    -4736535.2376,
+    4069493.6328
+   ],
+   "heading": 317.472092,
+   "pitch": 0.000158,
+   "roll": 0.000723
+  }
+ },
+ {
+  "label": "LBL_InnerGate",
+  "export": "TextRenderActor_60",
+  "class": "TextRenderActor",
+  "lblTags": [
+   "LBL_InnerGate"
+  ],
+  "tags": [
+   "LFF_Label",
+   "LBL_InnerGate",
+   "LFF_StandIn"
+  ],
+  "text": "Inner gates",
+  "worldSize": 34.0,
+  "textRenderColor": {
+   "r": 255,
+   "g": 255,
+   "b": 255,
+   "a": 255
+  },
+  "horizontalAlignment": "EHTA_Center",
+  "verticalAlignment": "EVRTA_TextCenter",
+  "world": {
+   "location": {
+    "x": -1635.786439,
+    "y": -14357.113315,
+    "z": 537.600586
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -96.5,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.746057375,
+    "w": 0.665881666
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "site": {
+   "location": {
+    "x": 0.0,
+    "y": -14450.0,
+    "z": 537.600586
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -90.0,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.707106781,
+    "w": 0.707106781
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "plates": [
+   {
+    "name": "Plate",
+    "mesh": "/Engine/BasicShapes/Cube.Cube",
+    "materials": [
+     "/Game/LFF/Materials/MI_LFF_SignPlate.MI_LFF_SignPlate"
+    ],
+    "relative": {
+     "location": {
+      "x": -2.0,
+      "y": 0.0,
+      "z": 0.0
+     },
+     "rotation": {
+      "pitch": 0.0,
+      "yaw": 0.0,
+      "roll": 0.0
+     },
+     "quat": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": 0.0,
+      "w": 1.0
+     },
+     "scale": {
+      "x": 0.02,
+      "y": 4.8348,
+      "z": 0.612
+     }
+    },
+    "world": {
+     "location": {
+      "x": -1635.560033,
+      "y": -14355.126171,
+      "z": 537.600586
+     },
+     "rotation": {
+      "pitch": 0.0,
+      "yaw": -96.5,
+      "roll": 0.0
+     },
+     "quat": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": -0.746057375,
+      "w": 0.665881666
+     },
+     "scale": {
+      "x": 0.02,
+      "y": 4.8348,
+      "z": 0.612
+     }
+    },
+    "site": {
+     "location": {
+      "x": 0.0,
+      "y": -14448.0,
+      "z": 537.600586
+     },
+     "rotation": {
+      "pitch": 0.0,
+      "yaw": -90.0,
+      "roll": 0.0
+     },
+     "quat": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": -0.707106781,
+      "w": 0.707106781
+     },
+     "scale": {
+      "x": 0.02,
+      "y": 4.8348,
+      "z": 0.612
+     }
+    }
+   }
+  ],
+  "cesium": {
+   "longitude": -75.167670286,
+   "latitude": 39.902096657,
+   "height": -25.6624,
+   "ecef": [
+    1254272.2373,
+    -4736406.8914,
+    4069635.8051
+   ],
+   "heading": 353.499877,
+   "pitch": 0.001301,
+   "roll": -1e-06
+  }
+ },
+ {
+  "label": "LBL_Line",
+  "export": "TextRenderActor_51",
+  "class": "TextRenderActor",
+  "lblTags": [
+   "LBL_Line"
+  ],
+  "tags": [
+   "LFF_Label",
+   "LBL_Line",
+   "LFF_StandIn"
+  ],
+  "text": "Line",
+  "worldSize": 34.0,
+  "textRenderColor": {
+   "r": 255,
+   "g": 255,
+   "b": 255,
+   "a": 255
+  },
+  "horizontalAlignment": "EHTA_Center",
+  "verticalAlignment": "EVRTA_TextCenter",
+  "world": {
+   "location": {
+    "x": -4914.055534,
+    "y": -23696.034652,
+    "z": 442.599762
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -112.445396,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.831204783,
+    "w": 0.555966374
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "site": {
+   "location": {
+    "x": -2200.0,
+    "y": -24100.0,
+    "z": 442.599762
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -105.945396,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.798348648,
+    "w": 0.602195513
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "plates": [
+   {
+    "name": "Plate",
+    "mesh": "/Engine/BasicShapes/Cube.Cube",
+    "materials": [
+     "/Game/LFF/Materials/MI_LFF_SignPlate.MI_LFF_SignPlate"
+    ],
+    "relative": {
+     "location": {
+      "x": -2.0,
+      "y": 0.0,
+      "z": 0.0
+     },
+     "rotation": {
+      "pitch": 0.0,
+      "yaw": 0.0,
+      "roll": 0.0
+     },
+     "quat": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": 0.0,
+      "w": 1.0
+     },
+     "scale": {
+      "x": 0.02,
+      "y": 3.5972,
+      "z": 0.612
+     }
+    },
+    "world": {
+     "location": {
+      "x": -4913.291929,
+      "y": -23694.186164,
+      "z": 442.599762
+     },
+     "rotation": {
+      "pitch": 0.0,
+      "yaw": -112.445396,
+      "roll": 0.0
+     },
+     "quat": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": -0.831204783,
+      "w": 0.555966374
+     },
+     "scale": {
+      "x": 0.02,
+      "y": 3.5972,
+      "z": 0.612
+     }
+    },
+    "site": {
+     "location": {
+      "x": -2199.450558,
+      "y": -24098.076952,
+      "z": 442.599762
+     },
+     "rotation": {
+      "pitch": 0.0,
+      "yaw": -105.945396,
+      "roll": 0.0
+     },
+     "quat": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": -0.798348648,
+      "w": 0.602195513
+     },
+     "scale": {
+      "x": 0.02,
+      "y": 3.5972,
+      "z": 0.612
+     }
+    }
+   }
+  ],
+  "cesium": {
+   "longitude": -75.168053647,
+   "latitude": 39.902937756,
+   "height": -26.6094,
+   "ecef": [
+    1254225.025,
+    -4736356.6697,
+    4069706.8399
+   ],
+   "heading": 337.554235,
+   "pitch": 0.002141,
+   "roll": -0.000407
+  }
+ },
+ {
+  "label": "LBL_Parking",
+  "export": "TextRenderActor_50",
+  "class": "TextRenderActor",
+  "lblTags": [
+   "LBL_Parking"
+  ],
+  "tags": [
+   "LFF_Label",
+   "LBL_Parking",
+   "LFF_StandIn"
+  ],
+  "text": "Parking Lot",
+  "worldSize": 50.0,
+  "textRenderColor": {
+   "r": 255,
+   "g": 255,
+   "b": 255,
+   "a": 255
+  },
+  "horizontalAlignment": "EHTA_Center",
+  "verticalAlignment": "EVRTA_TextCenter",
+  "world": {
+   "location": {
+    "x": 726.878612,
+    "y": -21220.191448,
+    "z": 662.600018
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -79.998955,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.642780622,
+    "w": 0.766050306
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "site": {
+   "location": {
+    "x": 3124.4,
+    "y": -21001.5,
+    "z": 662.600018
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -73.498955,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.598317292,
+    "w": 0.80125927
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "plates": [
+   {
+    "name": "Plate",
+    "mesh": "/Engine/BasicShapes/Cube.Cube",
+    "materials": [
+     "/Game/LFF/Materials/MI_LFF_SignPlate.MI_LFF_SignPlate"
+    ],
+    "relative": {
+     "location": {
+      "x": -2.0,
+      "y": 0.0,
+      "z": 0.0
+     },
+     "rotation": {
+      "pitch": 0.0,
+      "yaw": 0.0,
+      "roll": 0.0
+     },
+     "quat": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": 0.0,
+      "w": 1.0
+     },
+     "scale": {
+      "x": 0.02,
+      "y": 6.07,
+      "z": 0.9
+     }
+    },
+    "world": {
+     "location": {
+      "x": 726.53128,
+      "y": -21218.221839,
+      "z": 662.600018
+     },
+     "rotation": {
+      "pitch": 0.0,
+      "yaw": -79.998955,
+      "roll": 0.0
+     },
+     "quat": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": -0.642780622,
+      "w": 0.766050306
+     },
+     "scale": {
+      "x": 0.02,
+      "y": 6.07,
+      "z": 0.9
+     }
+    },
+    "site": {
+     "location": {
+      "x": 3123.831934,
+      "y": -20999.582371,
+      "z": 662.600018
+     },
+     "rotation": {
+      "pitch": 0.0,
+      "yaw": -73.498955,
+      "roll": 0.0
+     },
+     "quat": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": -0.598317292,
+      "w": 0.80125927
+     },
+     "scale": {
+      "x": 0.02,
+      "y": 6.07,
+      "z": 0.9
+     }
+    }
+   }
+  ],
+  "cesium": {
+   "longitude": -75.167393999,
+   "latitude": 39.902714772,
+   "height": -24.4105,
+   "ecef": [
+    1254284.0523,
+    -4736359.2131,
+    4069689.2575
+   ],
+   "heading": 10.0011,
+   "pitch": 0.001893,
+   "roll": 0.000268
+  }
+ },
+ {
+  "label": "LBL_Plaza",
+  "export": "TextRenderActor_0",
+  "class": "TextRenderActor",
+  "lblTags": [
+   "LBL_Plaza"
+  ],
+  "tags": [
+   "LFF_Label",
+   "LBL_Plaza"
+  ],
+  "text": "Pepsi Plaza",
+  "worldSize": 350.0,
+  "textRenderColor": {
+   "r": 255,
+   "g": 255,
+   "b": 255,
+   "a": 255
+  },
+  "horizontalAlignment": "EHTA_Center",
+  "verticalAlignment": "EVRTA_TextCenter",
+  "world": {
+   "location": {
+    "x": -6630.729027,
+    "y": -17562.27299,
+    "z": 1057.600281
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -148.288975,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.961953735,
+    "w": 0.273212392
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "site": {
+   "location": {
+    "x": -4600.0,
+    "y": -18200.0,
+    "z": 1057.600281
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -141.788975,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.944917425,
+    "w": 0.327308816
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "plates": [
+   {
+    "name": "StaticMesh",
+    "mesh": "/Engine/BasicShapes/Cube.Cube",
+    "materials": [
+     "/Game/LFF/Materials/MI_LFF_SignPlate.MI_LFF_SignPlate"
+    ],
+    "relative": {
+     "location": {
+      "x": -2.0,
+      "y": 0.0,
+      "z": 0.0
+     },
+     "rotation": {
+      "pitch": 0.0,
+      "yaw": 0.0,
+      "roll": 0.0
+     },
+     "quat": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": 0.0,
+      "w": 1.0
+     },
+     "scale": {
+      "x": 0.02,
+      "y": 27.219233,
+      "z": 5.95
+     }
+    },
+    "world": {
+     "location": {
+      "x": -6629.027607,
+      "y": -17561.221719,
+      "z": 1057.600281
+     },
+     "rotation": {
+      "pitch": 0.0,
+      "yaw": -148.288975,
+      "roll": 0.0
+     },
+     "quat": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": -0.961953735,
+      "w": 0.273212392
+     },
+     "scale": {
+      "x": 0.02,
+      "y": 27.219233,
+      "z": 5.95
+     }
+    },
+    "site": {
+     "location": {
+      "x": -4598.428524,
+      "y": -18198.762881,
+      "z": 1057.600281
+     },
+     "rotation": {
+      "pitch": 0.0,
+      "yaw": -141.788975,
+      "roll": 0.0
+     },
+     "quat": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": -0.944917425,
+      "w": 0.327308816
+     },
+     "scale": {
+      "x": 0.02,
+      "y": 27.219233,
+      "z": 5.95
+     }
+    }
+   }
+  ],
+  "cesium": {
+   "longitude": -75.168254387,
+   "latitude": 39.902385323,
+   "height": -20.4612,
+   "ecef": [
+    1254219.7103,
+    -4736403.6597,
+    4069663.7293
+   ],
+   "heading": 301.710528,
+   "pitch": 0.001337,
+   "roll": -0.001033
+  }
+ },
+ {
+  "label": "LBL_PlazaGate",
+  "export": "TextRenderActor_53",
+  "class": "TextRenderActor",
+  "lblTags": [
+   "LBL_PlazaGate"
+  ],
+  "tags": [
+   "LFF_Label",
+   "LBL_PlazaGate",
+   "LFF_StandIn"
+  ],
+  "text": "Pepsi Plaza gates",
+  "worldSize": 34.0,
+  "textRenderColor": {
+   "r": 255,
+   "g": 255,
+   "b": 255,
+   "a": 255
+  },
+  "horizontalAlignment": "EHTA_Center",
+  "verticalAlignment": "EVRTA_TextCenter",
+  "world": {
+   "location": {
+    "x": -4071.391057,
+    "y": -22483.633489,
+    "z": 522.599854
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -96.5,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.746057375,
+    "w": 0.665881666
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "site": {
+   "location": {
+    "x": -1500.0,
+    "y": -22800.0,
+    "z": 522.599854
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -90.0,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.707106781,
+    "w": 0.707106781
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "plates": [
+   {
+    "name": "Plate",
+    "mesh": "/Engine/BasicShapes/Cube.Cube",
+    "materials": [
+     "/Game/LFF/Materials/MI_LFF_SignPlate.MI_LFF_SignPlate"
+    ],
+    "relative": {
+     "location": {
+      "x": -2.0,
+      "y": 0.0,
+      "z": 0.0
+     },
+     "rotation": {
+      "pitch": 0.0,
+      "yaw": 0.0,
+      "roll": 0.0
+     },
+     "quat": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": 0.0,
+      "w": 1.0
+     },
+     "scale": {
+      "x": 0.02,
+      "y": 5.8956,
+      "z": 0.612
+     }
+    },
+    "world": {
+     "location": {
+      "x": -4071.164651,
+      "y": -22481.646345,
+      "z": 522.599854
+     },
+     "rotation": {
+      "pitch": 0.0,
+      "yaw": -96.5,
+      "roll": 0.0
+     },
+     "quat": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": -0.746057375,
+      "w": 0.665881666
+     },
+     "scale": {
+      "x": 0.02,
+      "y": 5.8956,
+      "z": 0.612
+     }
+    },
+    "site": {
+     "location": {
+      "x": -1500.0,
+      "y": -22798.0,
+      "z": 522.599854
+     },
+     "rotation": {
+      "pitch": 0.0,
+      "yaw": -90.0,
+      "roll": 0.0
+     },
+     "quat": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": -0.707106781,
+      "w": 0.707106781
+     },
+     "scale": {
+      "x": 0.02,
+      "y": 5.8956,
+      "z": 0.612
+     }
+    }
+   }
+  ],
+  "cesium": {
+   "longitude": -75.167955106,
+   "latitude": 39.902828562,
+   "height": -25.8099,
+   "ecef": [
+    1254235.3188,
+    -4736362.6238,
+    4069698.052
+   ],
+   "heading": 353.499695,
+   "pitch": 0.002053,
+   "roll": 0.000134
+  }
+ },
+ {
+  "label": "LBL_Restroom",
+  "export": "TextRenderActor_4",
+  "class": "TextRenderActor",
+  "lblTags": [
+   "LBL_Restroom"
+  ],
+  "tags": [
+   "LFF_Label",
+   "LBL_Restroom"
+  ],
+  "text": "Restrooms",
+  "worldSize": 50.0,
+  "textRenderColor": {
+   "r": 255,
+   "g": 255,
+   "b": 255,
+   "a": 255
+  },
+  "horizontalAlignment": "EHTA_Center",
+  "verticalAlignment": "EVRTA_TextCenter",
+  "world": {
+   "location": {
+    "x": -7238.741521,
+    "y": 422.162525,
+    "z": 388.0
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": 173.5,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.998391671,
+    "w": 0.056692788
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "site": {
+   "location": {
+    "x": -7240.0,
+    "y": -400.0,
+    "z": 388.0
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": 180.0,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 1.0,
+    "w": 0.0
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "plates": [
+   {
+    "name": "StaticMesh",
+    "mesh": "/Engine/BasicShapes/Cube.Cube",
+    "materials": [
+     "/Game/LFF/Materials/MI_LFF_SignPlate.MI_LFF_SignPlate"
+    ],
+    "relative": {
+     "location": {
+      "x": -2.0,
+      "y": 0.0,
+      "z": 0.0
+     },
+     "rotation": {
+      "pitch": 0.0,
+      "yaw": 0.0,
+      "roll": 0.0
+     },
+     "quat": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": 0.0,
+      "w": 1.0
+     },
+     "scale": {
+      "x": 0.02,
+      "y": 4.446154,
+      "z": 0.85
+     }
+    },
+    "world": {
+     "location": {
+      "x": -7236.754377,
+      "y": 421.936119,
+      "z": 388.0
+     },
+     "rotation": {
+      "pitch": 0.0,
+      "yaw": 173.5,
+      "roll": 0.0
+     },
+     "quat": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": 0.998391671,
+      "w": 0.056692788
+     },
+     "scale": {
+      "x": 0.02,
+      "y": 4.446154,
+      "z": 0.85
+     }
+    },
+    "site": {
+     "location": {
+      "x": -7238.0,
+      "y": -400.0,
+      "z": 388.0
+     },
+     "rotation": {
+      "pitch": 0.0,
+      "yaw": 180.0,
+      "roll": 0.0
+     },
+     "quat": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": 1.0,
+      "w": 0.0
+     },
+     "scale": {
+      "x": 0.02,
+      "y": 4.446154,
+      "z": 0.85
+     }
+    }
+   }
+  ],
+  "cesium": {
+   "longitude": -75.168325468,
+   "latitude": 39.900765575,
+   "height": -27.1596,
+   "ecef": [
+    1254242.0501,
+    -4736511.7694,
+    4069521.4654
+   ],
+   "heading": 263.499457,
+   "pitch": 0.00065,
+   "roll": -3.6e-05
+  }
+ },
+ {
+  "label": "LBL_Section",
+  "export": "TextRenderActor_6",
+  "class": "TextRenderActor",
+  "lblTags": [
+   "LBL_Section"
+  ],
+  "tags": [
+   "LFF_Label",
+   "LBL_Section"
+  ],
+  "text": "Section 111, Row 10",
+  "worldSize": 12.0,
+  "textRenderColor": {
+   "r": 255,
+   "g": 255,
+   "b": 255,
+   "a": 255
+  },
+  "horizontalAlignment": "EHTA_Center",
+  "verticalAlignment": "EVRTA_TextCenter",
+  "world": {
+   "location": {
+    "x": -4719.466314,
+    "y": 537.715265,
+    "z": 430.0
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": 173.5,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.998391671,
+    "w": 0.056692788
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "site": {
+   "location": {
+    "x": -4750.0,
+    "y": 0.0,
+    "z": 430.0
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": 180.0,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 1.0,
+    "w": 0.0
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "plates": [
+   {
+    "name": "StaticMesh",
+    "mesh": "/Engine/BasicShapes/Cube.Cube",
+    "materials": [
+     "/Game/LFF/Materials/MI_LFF_SignPlate.MI_LFF_SignPlate"
+    ],
+    "relative": {
+     "location": {
+      "x": -2.0,
+      "y": 0.0,
+      "z": 0.0
+     },
+     "rotation": {
+      "pitch": 0.0,
+      "yaw": 0.0,
+      "roll": 0.0
+     },
+     "quat": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": 0.0,
+      "w": 1.0
+     },
+     "scale": {
+      "x": 0.02,
+      "y": 1.814769,
+      "z": 0.204
+     }
+    },
+    "world": {
+     "location": {
+      "x": -4717.479171,
+      "y": 537.488859,
+      "z": 430.0
+     },
+     "rotation": {
+      "pitch": 0.0,
+      "yaw": 173.5,
+      "roll": 0.0
+     },
+     "quat": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": 0.998391671,
+      "w": 0.056692788
+     },
+     "scale": {
+      "x": 0.02,
+      "y": 1.814769,
+      "z": 0.204
+     }
+    },
+    "site": {
+     "location": {
+      "x": -4748.0,
+      "y": 0.0,
+      "z": 430.0
+     },
+     "rotation": {
+      "pitch": 0.0,
+      "yaw": 180.0,
+      "roll": 0.0
+     },
+     "quat": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": 1.0,
+      "w": 0.0
+     },
+     "scale": {
+      "x": 0.02,
+      "y": 1.814769,
+      "z": 0.204
+     }
+    }
+   }
+  ],
+  "cesium": {
+   "longitude": -75.168030875,
+   "latitude": 39.90075517,
+   "height": -26.7398,
+   "ecef": [
+    1254266.6756,
+    -4736506.3482,
+    4069520.8483
+   ],
+   "heading": 263.499646,
+   "pitch": 0.000426,
+   "roll": 0.0
+  }
+ },
+ {
+  "label": "LBL_Security",
+  "export": "TextRenderActor_7",
+  "class": "TextRenderActor",
+  "lblTags": [
+   "LBL_Security"
+  ],
+  "tags": [
+   "LFF_Label",
+   "LBL_Security",
+   "LFF_StandIn"
+  ],
+  "text": "Security",
+  "worldSize": 40.0,
+  "textRenderColor": {
+   "r": 255,
+   "g": 255,
+   "b": 255,
+   "a": 255
+  },
+  "horizontalAlignment": "EHTA_Center",
+  "verticalAlignment": "EVRTA_TextCenter",
+  "world": {
+   "location": {
+    "x": -4144.973146,
+    "y": -23129.455195,
+    "z": 502.599823
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -135.97246,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.927093797,
+    "w": 0.374829416
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "site": {
+   "location": {
+    "x": -1500.0,
+    "y": -23450.0,
+    "z": 502.599823
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -129.47246,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.904352601,
+    "w": 0.426786098
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "plates": [
+   {
+    "name": "Plate",
+    "mesh": "/Engine/BasicShapes/Cube.Cube",
+    "materials": [
+     "/Game/LFF/Materials/MI_LFF_SignPlate.MI_LFF_SignPlate"
+    ],
+    "relative": {
+     "location": {
+      "x": -2.0,
+      "y": 0.0,
+      "z": 0.0
+     },
+     "rotation": {
+      "pitch": 0.0,
+      "yaw": 0.0,
+      "roll": 0.0
+     },
+     "quat": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": 0.0,
+      "w": 1.0
+     },
+     "scale": {
+      "x": 0.02,
+      "y": 5.064,
+      "z": 0.72
+     }
+    },
+    "world": {
+     "location": {
+      "x": -4143.535135,
+      "y": -23128.065187,
+      "z": 502.599823
+     },
+     "rotation": {
+      "pitch": 0.0,
+      "yaw": -135.97246,
+      "roll": 0.0
+     },
+     "quat": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": -0.927093797,
+      "w": 0.374829416
+     },
+     "scale": {
+      "x": 0.02,
+      "y": 5.064,
+      "z": 0.72
+     }
+    },
+    "site": {
+     "location": {
+      "x": -1498.728585,
+      "y": -23448.45614,
+      "z": 502.599823
+     },
+     "rotation": {
+      "pitch": 0.0,
+      "yaw": -129.47246,
+      "roll": 0.0
+     },
+     "quat": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": -0.904352601,
+      "w": 0.426786098
+     },
+     "scale": {
+      "x": 0.02,
+      "y": 5.064,
+      "z": 0.72
+     }
+    }
+   }
+  ],
+  "cesium": {
+   "longitude": -75.167963711,
+   "latitude": 39.902886728,
+   "height": -26.0097,
+   "ecef": [
+    1254233.5078,
+    -4736358.6592,
+    4069702.8782
+   ],
+   "heading": 314.027229,
+   "pitch": 0.001715,
+   "roll": -0.001239
+  }
+ },
+ {
+  "label": "LBL_SensoryRoom",
+  "export": "TextRenderActor_62",
+  "class": "TextRenderActor",
+  "lblTags": [
+   "LBL_SensoryRoom"
+  ],
+  "tags": [
+   "LFF_Label",
+   "LBL_SensoryRoom",
+   "LFF_StandIn"
+  ],
+  "text": "Sensory Room<br>West Lower Suite Level",
+  "worldSize": 28.0,
+  "textRenderColor": {
+   "r": 255,
+   "g": 255,
+   "b": 255,
+   "a": 255
+  },
+  "horizontalAlignment": "EHTA_Center",
+  "verticalAlignment": "EVRTA_TextCenter",
+  "world": {
+   "location": {
+    "x": -7437.585355,
+    "y": 5632.565509,
+    "z": 462.6
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -96.5,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.746057375,
+    "w": 0.665881666
+   },
+   "scale": {
+    "x": 0.6,
+    "y": 0.6,
+    "z": 0.6
+   }
+  },
+  "site": {
+   "location": {
+    "x": -8027.4,
+    "y": 4754.4,
+    "z": 462.6
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -90.0,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.707106781,
+    "w": 0.707106781
+   },
+   "scale": {
+    "x": 0.6,
+    "y": 0.6,
+    "z": 0.6
+   }
+  },
+  "plates": [
+   {
+    "name": "Plate",
+    "mesh": "/Engine/BasicShapes/Cube.Cube",
+    "materials": [
+     "/Game/LFF/Materials/MI_LFF_SignPlate.MI_LFF_SignPlate"
+    ],
+    "relative": {
+     "location": {
+      "x": -2.0,
+      "y": 0.0,
+      "z": 0.0
+     },
+     "rotation": {
+      "pitch": 0.0,
+      "yaw": 0.0,
+      "roll": 0.0
+     },
+     "quat": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": 0.0,
+      "w": 1.0
+     },
+     "scale": {
+      "x": 0.02,
+      "y": 4.1272,
+      "z": 0.812
+     }
+    },
+    "world": {
+     "location": {
+      "x": -7437.449511,
+      "y": 5633.757795,
+      "z": 462.6
+     },
+     "rotation": {
+      "pitch": 0.0,
+      "yaw": -96.5,
+      "roll": 0.0
+     },
+     "quat": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": -0.746057375,
+      "w": 0.665881666
+     },
+     "scale": {
+      "x": 0.012,
+      "y": 2.47632,
+      "z": 0.4872
+     }
+    },
+    "site": {
+     "location": {
+      "x": -8027.4,
+      "y": 4755.6,
+      "z": 462.6
+     },
+     "rotation": {
+      "pitch": 0.0,
+      "yaw": -90.0,
+      "roll": 0.0
+     },
+     "quat": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": -0.707106781,
+      "w": 0.707106781
+     },
+     "scale": {
+      "x": 0.012,
+      "y": 2.47632,
+      "z": 0.4872
+     }
+    }
+   }
+  ],
+  "cesium": {
+   "longitude": -75.168348714,
+   "latitude": 39.900296306,
+   "height": -26.4133,
+   "ecef": [
+    1254248.8304,
+    -4736545.1406,
+    4069481.972
+   ],
+   "heading": 353.499442,
+   "pitch": -0.000428,
+   "roll": 0.00072
+  }
+ },
+ {
+  "label": "LBL_Staff",
+  "export": "TextRenderActor_63",
+  "class": "TextRenderActor",
+  "lblTags": [
+   "LBL_Staff"
+  ],
+  "tags": [
+   "LFF_Label",
+   "LBL_Staff",
+   "LFF_StandIn"
+  ],
+  "text": "Staff",
+  "worldSize": 20.0,
+  "textRenderColor": {
+   "r": 255,
+   "g": 255,
+   "b": 255,
+   "a": 255
+  },
+  "horizontalAlignment": "EHTA_Center",
+  "verticalAlignment": "EVRTA_TextCenter",
+  "world": {
+   "location": {
+    "x": -7426.622568,
+    "y": 1953.273466,
+    "z": 442.60199
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -141.5,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.94408902,
+    "w": 0.329690645
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "site": {
+   "location": {
+    "x": -7600.0,
+    "y": 1100.0,
+    "z": 442.60199
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -135.0,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.923879533,
+    "w": 0.382683432
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "plates": [
+   {
+    "name": "Plate",
+    "mesh": "/Engine/BasicShapes/Cube.Cube",
+    "materials": [
+     "/Game/LFF/Materials/MI_LFF_SignPlate.MI_LFF_SignPlate"
+    ],
+    "relative": {
+     "location": {
+      "x": -2.0,
+      "y": 0.0,
+      "z": 0.0
+     },
+     "rotation": {
+      "pitch": 0.0,
+      "yaw": 0.0,
+      "roll": 0.0
+     },
+     "quat": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": 0.0,
+      "w": 1.0
+     },
+     "scale": {
+      "x": 0.02,
+      "y": 2.22,
+      "z": 0.36
+     }
+    },
+    "world": {
+     "location": {
+      "x": -7425.057352,
+      "y": 1954.518495,
+      "z": 442.60199
+     },
+     "rotation": {
+      "pitch": 0.0,
+      "yaw": -141.5,
+      "roll": 0.0
+     },
+     "quat": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": -0.94408902,
+      "w": 0.329690645
+     },
+     "scale": {
+      "x": 0.02,
+      "y": 2.22,
+      "z": 0.36
+     }
+    },
+    "site": {
+     "location": {
+      "x": -7598.585786,
+      "y": 1101.414214,
+      "z": 442.60199
+     },
+     "rotation": {
+      "pitch": 0.0,
+      "yaw": -135.0,
+      "roll": 0.0
+     },
+     "quat": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": -0.923879533,
+      "w": 0.382683432
+     },
+     "scale": {
+      "x": 0.02,
+      "y": 2.22,
+      "z": 0.36
+     }
+    }
+   }
+  ],
+  "cesium": {
+   "longitude": -75.168347437,
+   "latitude": 39.900627677,
+   "height": -26.6135,
+   "ecef": [
+    1254242.8554,
+    -4736522.1495,
+    4069510.0696
+   ],
+   "heading": 308.499443,
+   "pitch": 0.000412,
+   "roll": 0.000552
+  }
+ }
+]

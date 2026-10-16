@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-10-15 (Web build)
+- Added `web/`: the experience rebuilt for the browser with CesiumJS, iPad Safari first. The journey state machine, journey subsystem, camera rig, HUD, input, scene cues, fireworks, crowd and level highlight are ported from the C++ and widget builders; steps, copy, audio, word timings, UI art and crowd seats are read from the same `SourceData/` and `Content/LFF/Crowd/` files.
+- Level placement (camera targets, paths, cues, labels, places, stand-ins) is extracted from `L_LFF_Stadium.umap` by `web/tools/extract_umap.py`.
+- The stadium, seats and NFL field stream from Cesium ion (assets 6040628, 6040635, 6040637) with the ADR-0004 registration as a fallback.
+- Touch adaptations: an Explore move pad, touch wording, pinch to dolly, iOS audio unlock, home-screen install.
+- Parity tracking: `Docs/WEB_PARITY.md` logs every web difference and its Unreal status; `npm run check-parity` flags Unreal files changed since the web last matched them.
+
 ## 2026-10-07 (Welcome screen)
 - Replaced the centered welcome cards and full-screen veil with a lower-left Eagles-green fade, EAF and Five Below Foundation logos, and **GAMEDAY VISUAL SCHEDULE** over the stadium.
 - Guided Tour, Explore and an explicit Calm Mode switch share the action row; Settings remains bottom right. Calm Mode's explanation appears on hover or keyboard/controller selection, with unchanged sensory behavior.
