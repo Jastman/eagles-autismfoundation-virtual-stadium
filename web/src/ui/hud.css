@@ -1096,3 +1096,23 @@ html, body {
     overflow: hidden;
     clip: rect(0 0 0 0);
 }
+
+/* Deployment problems with the streamed 3D (main.ts): small, top centre, clear of the HUD panels and the move pad. */
+.tiles-notice {
+    position: fixed;
+    left: 50%;
+    top: max(1.6rem, env(safe-area-inset-top));
+    transform: translateX(-50%);
+    max-width: 44rem;
+    padding: 1rem 1.4rem;
+    border-radius: 1rem;
+    background: rgba(0, 20, 24, 0.86);
+    color: #f4f2ec;
+    font: 400 1.6rem/1.35 "Atkinson Hyperlegible", system-ui, sans-serif;
+    z-index: 30;
+    pointer-events: none;
+}
+.tiles-notice strong {
+    display: block;
+    margin-bottom: 0.3rem;
+}

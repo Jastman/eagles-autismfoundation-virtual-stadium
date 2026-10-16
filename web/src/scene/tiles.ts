@@ -18,6 +18,17 @@ export interface TileSet {
     stadium: Cesium3DTileset[];
     /** Every tileset's load progress settled (for the loading cover). */
     progress(): number;
+    /** Why a stadium or city tileset is missing, in plain words (shown on screen: main.ts). */
+    problems: string[];
+}
+
+/** A tileset load failure in plain words: no token, token rejected, no access to the asset, or no connection. */
+function describe(error: unknown, what: string, id: number): string {
+    const status = (error as { statusCode?: number } | null)?.statusCode;
+    if (status === 401) return `${what}: the Cesium ion token in this build was rejected (check the token).`;
+    if (status === 404 || status === 403) return `${what}: the Cesium ion token can't access asset ${id}.`;
+    if (status === undefined) return `${what}: Cesium ion couldn't be reached (network).`;
+    return `${what}: Cesium ion answered ${status}.`;
 }
 
 function configure(tileset: Cesium3DTileset): void {
@@ -67,8 +78,10 @@ export async function loadTiles(scene: Scene, geo: Geo, config: DeploymentConfig
     onTileset: (set: Cesium3DTileset, kind: "stadium" | "city") => void = () => undefined): Promise<TileSet> {
     const stadium: Cesium3DTileset[] = [];
     let context: Cesium3DTileset | null = null;
+    const problems: string[] = [];
 
     const stadiumToken = config.stadiumIonToken || config.ionToken;
+    if (!stadiumToken && config.stadiumAssetIds.length > 0) problems.push("Stadium: this build has no Cesium ion token.");
     if (stadiumToken && config.stadiumAssetIds.length > 0) {
         const loaded = await Promise.allSettled(config.stadiumAssetIds.map(async (id) => {
             const resource = await IonResource.fromAssetId(id, { accessToken: stadiumToken });
@@ -81,7 +94,10 @@ export async function loadTiles(scene: Scene, geo: Geo, config: DeploymentConfig
         }));
         loaded.forEach((result, i) => {
             if (result.status === "fulfilled") stadium.push(result.value);
-            else console.error(`Stadium asset ${config.stadiumAssetIds[i]} could not be loaded.`, result.reason);
+            else {
+                console.error(`Stadium asset ${config.stadiumAssetIds[i]} could not be loaded.`, result.reason);
+                problems.push(describe(result.reason, `Stadium asset ${config.stadiumAssetIds[i]}`, config.stadiumAssetIds[i]));
+            }
         });
     }
 
@@ -101,9 +117,11 @@ export async function loadTiles(scene: Scene, geo: Geo, config: DeploymentConfig
             scene.primitives.add(context);
         } catch (error) {
             console.error("Google Photorealistic 3D Tiles could not be loaded (check the ion token's asset access).", error);
+            problems.push(describe(error, "City (Google 3D Tiles)", config.googleTilesAssetId));
         }
     } else {
         console.error("No Cesium ion token: set VITE_CESIUM_ION_TOKEN (web/.env.local) or open the page once with ?ionToken=.");
+        problems.push("City (Google 3D Tiles): this build has no Cesium ion token.");
     }
     // Google's terrain is part of its tiles and the globe is off, so without them there would be no ground at all: a plain
     // disc at turf level keeps the level's stand-ins standing on something (only when the city tiles failed).
@@ -135,6 +153,7 @@ export async function loadTiles(scene: Scene, geo: Geo, config: DeploymentConfig
     return {
         context,
         stadium,
+        problems,
         progress: () => {
             if (all.length === 0 || all.every((t) => t.tilesLoaded)) return 100;
             if (!seenLoading) return 0;

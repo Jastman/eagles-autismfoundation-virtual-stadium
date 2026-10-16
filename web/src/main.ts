@@ -119,7 +119,15 @@ async function main(): Promise<void> {
     const tiles = loadTiles(scene, geo, config, sceneData.footprintLonLat, (set, kind) => look.addTileset(set, kind));
     if (!params.has("noCrowd")) void world.loadCrowd();
     let progress = () => 0;
-    void tiles.then((t) => (progress = t.progress)).catch((error) => {
+    void tiles.then((t) => {
+        progress = t.progress;
+        // A deployment fault, not part of the experience: say plainly what is missing so it can be fixed.
+        if (t.problems.length > 0) {
+            app.append(h("div", { class: "tiles-notice", role: "status" },
+                h("strong", { text: "3D stadium or city not loaded" }),
+                ...t.problems.map((p) => h("div", { text: p }))));
+        }
+    }).catch((error) => {
         console.error(error);
         progress = () => 100;
     });

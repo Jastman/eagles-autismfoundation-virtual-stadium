@@ -58,8 +58,10 @@ jobs:
           VITE_STADIUM_ASSET_IDS: ${{ vars.VITE_STADIUM_ASSET_IDS || '6040628,6040635,6040637' }}
           VITE_STADIUM_BAKED: ${{ vars.VITE_STADIUM_BAKED }}
         run: |
+          # A site without a token streams no stadium and no city: never publish one.
           if [ -z "$VITE_STADIUM_ION_TOKEN" ] && [ -z "$VITE_CESIUM_ION_TOKEN" ]; then
-            echo "::warning::No Cesium ion token secret set: the site will load without the stadium and city tiles."
+            echo "::error::No Cesium ion token: add the VITE_STADIUM_ION_TOKEN repository secret (Settings > Secrets and variables > Actions), then re-run this workflow."
+            exit 1
           fi
           npm ci
           npm test
