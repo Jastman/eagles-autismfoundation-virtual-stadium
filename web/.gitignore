@@ -10,6 +10,7 @@ assets-src/
 test-results/
 public/manifest.webmanifest
 public/icon-*.png
+public/og-image.jpg
 # Raw level extract (tools/extract_umap.py, ~7 MB): regenerate from the umap. scene.json and the small files are committed.
 data/props.json
 data/level_extract.json

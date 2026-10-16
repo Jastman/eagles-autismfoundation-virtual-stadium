@@ -3,6 +3,32 @@
 // (shortest side / 1080) CSS pixels and the layout is the same at any iPad size.
 import { Box2, Vec2, clamp, lerp } from "../util/ue";
 
+/**
+ * Screen class. Unreal's builds run on iPads, desktops and TVs, where ShortestSide scaling holds; a phone's short side
+ * (about 400 points) would shrink every label below legibility, so phones get their own scale and arrangement
+ * (Docs/WEB_PARITY.md W17).
+ */
+export interface FormFactor {
+    phone: boolean;
+    portrait: boolean;
+}
+
+export const PHONE_SHORT_SIDE = 600;
+
+export function formFactor(width: number, height: number): FormFactor {
+    return { phone: Math.min(width, height) < PHONE_SHORT_SIDE, portrait: height > width };
+}
+
+/**
+ * Logical units per CSS pixel. Tablets and larger: Unreal's ShortestSide rule (1080 = 1.0). Phones: one rem (10 units)
+ * is about a 57th of the short side, kept between 6.4 and 7.6 px, so labels stay as large as on an iPad.
+ */
+export function unitsPerPixelFor(width: number, height: number): number {
+    const short = Math.max(1, Math.min(width, height));
+    if (short >= PHONE_SHORT_SIDE) return 1080 / short;
+    return 10 / clamp(short / 57, 6.4, 7.6);
+}
+
 export interface CornerPanels {
     InformationWidth: number;
     ControlWidth: number;

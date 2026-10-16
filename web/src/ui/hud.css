@@ -67,7 +67,8 @@ html, body {
 
 .hud {
     position: fixed;
-    inset: 0;
+    /* Inside the safe area: clear of the Dynamic Island, rounded corners and the home indicator (iPhone and iPad). */
+    inset: env(safe-area-inset-top, 0) env(safe-area-inset-right, 0) env(safe-area-inset-bottom, 0) env(safe-area-inset-left, 0);
     pointer-events: none;
     font-size: 1.8rem;
     line-height: 1.25;
@@ -562,7 +563,7 @@ html, body {
     inset: 0;
 }
 .welcome-fade {
-    position: absolute;
+    position: fixed;
     inset: 0;
     background: var(--midnight);
     -webkit-mask: url("/media/ui/T_LFF_WelcomeFade.png") 0 0 / 100% 100% no-repeat;
@@ -826,7 +827,7 @@ html, body {
     inset: 0;
 }
 .scrim {
-    position: absolute;
+    position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.4);
     pointer-events: auto;
@@ -1115,4 +1116,116 @@ html, body {
 .tiles-notice strong {
     display: block;
     margin-bottom: 0.3rem;
+}
+
+/* ---- phones (Docs/WEB_PARITY.md W17): html.phone below a 600-point short side, html.portrait when upright ---- */
+html:not(.phone) .places-toggle {
+    display: none !important;
+}
+html.phone .identity {
+    display: none !important;
+}
+html.phone .welcome-partners {
+    margin-bottom: 2rem;
+}
+html.phone .welcome-partners .eaf {
+    width: 17rem;
+    height: 6rem;
+    margin-right: 2.8rem;
+}
+html.phone .welcome-partners .fivebelow {
+    width: 21rem;
+    height: 5.6rem;
+}
+html.phone .welcome-mode {
+    width: 26rem;
+    height: 8.8rem;
+    font-size: 2.8rem;
+}
+html.phone .welcome-settings {
+    bottom: 6.4rem;
+}
+html.phone.portrait .welcome-stack {
+    left: 2.4rem;
+}
+html.phone.portrait .welcome-actions {
+    gap: 1.6rem;
+}
+html.phone.portrait .welcome-mode {
+    width: calc(50% - 0.8rem);
+}
+html.phone.portrait .welcome-settings {
+    top: 2.4rem;
+    bottom: auto;
+    right: 2.4rem;
+}
+/* Upright phone: the bottom stack (caption, Places, navigation) grows upward from the credits. */
+html.phone.portrait .info-group {
+    justify-content: flex-end;
+    gap: 0.8rem;
+}
+html.phone.portrait .control-group {
+    gap: 0.8rem;
+}
+html.phone.portrait .stage-chrome {
+    padding: 1.2rem;
+}
+html.phone.portrait .chapters {
+    padding: 0.8rem;
+}
+html.phone.portrait .chapter {
+    min-height: 5.6rem;
+    padding: 0.4rem 0.6rem;
+}
+html.phone.portrait .chapter .name, html.phone.portrait .chapter .progress {
+    font-size: 1.6rem;
+}
+html.phone.portrait .narrative {
+    padding: 1.6rem;
+}
+html.phone .places {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    pointer-events: auto;
+}
+html.phone.portrait .places {
+    max-height: 42vh;
+}
+html.phone .fly-help {
+    display: none;
+}
+html.phone .nav-row .btn {
+    min-height: 6.4rem;
+}
+/* Settings: a full-width sheet when upright; narrower rows sideways. */
+html.phone.portrait .settings-sheet {
+    left: 0;
+}
+html.phone.portrait .settings-sheet .edge {
+    display: none;
+}
+html.phone.portrait .settings-body {
+    flex: 1;
+    padding: 2.4rem 2.4rem 3.2rem;
+}
+html.phone .setting-row {
+    min-width: 0;
+}
+html.phone .settings-hint {
+    max-width: none;
+}
+html.phone.portrait .settings-header h2 {
+    font-size: 3.6rem;
+}
+html.phone .center-card {
+    max-width: calc(100% - 4.8rem);
+    box-sizing: border-box;
+}
+html.phone .center-card {
+    padding: 6.4rem 4.8rem;
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 4.8rem, #000 calc(100% - 4.8rem), transparent),
+        linear-gradient(to bottom, transparent, #000 6.4rem, #000 calc(100% - 6.4rem), transparent);
+    mask-image: linear-gradient(to right, transparent, #000 4.8rem, #000 calc(100% - 4.8rem), transparent),
+        linear-gradient(to bottom, transparent, #000 6.4rem, #000 calc(100% - 6.4rem), transparent);
 }

@@ -1,7 +1,7 @@
 // Port of LFF.UI.DisplayLayout.SafeBounds (Source/VirtualStadium/Private/Tests/LFFUILayoutTest.cpp), plus the iPad
 // viewports this build targets, in logical units (shortest side = 1080).
 import { describe, expect, it } from "vitest";
-import { cornerPanels, ticketBounds, timelineColumns } from "../src/ui/layout";
+import { cornerPanels, formFactor, ticketBounds, timelineColumns, unitsPerPixelFor } from "../src/ui/layout";
 import { Box2, Vec2 } from "../src/util/ue";
 
 const logical = (w: number, h: number) => new Vec2((w * 1080) / Math.min(w, h), (h * 1080) / Math.min(w, h));
@@ -48,5 +48,31 @@ describe("LFF.UI.DisplayLayout.SafeBounds", () => {
             new Box2(new Vec2(546, 24), new Vec2(976, 350)), new Vec2(240, 480));
         expect(narrow.valid && narrow.min.y >= 374).toBe(true);
         expect(ticketBounds(new Vec2(), Box2.invalid(), Box2.invalid(), new Vec2(240, 480)).valid).toBe(false);
+    });
+});
+
+describe("Phones and tablets", () => {
+    it("keeps Unreal's ShortestSide scale on tablets", () => {
+        expect(unitsPerPixelFor(1180, 820)).toBeCloseTo(1080 / 820);
+        expect(unitsPerPixelFor(1366, 1024)).toBeCloseTo(1080 / 1024);
+        expect(formFactor(1180, 820)).toEqual({ phone: false, portrait: false });
+        expect(formFactor(820, 1180)).toEqual({ phone: false, portrait: true });
+    });
+
+    it("keeps phone labels as large as on an iPad", () => {
+        const ipadLabelPx = 18 / unitsPerPixelFor(1180, 820);
+        for (const [w, h] of [[402, 874], [874, 402], [375, 667], [440, 956]]) {
+            expect(formFactor(w, h).phone).toBe(true);
+            const labelPx = 18 / unitsPerPixelFor(w, h);
+            expect(labelPx).toBeGreaterThanOrEqual(11.5);
+            expect(labelPx).toBeGreaterThan(ipadLabelPx * 0.85);
+        }
+    });
+
+    it("fits the corner panels side by side on a phone held sideways", () => {
+        const upp = unitsPerPixelFor(874, 402);
+        const size = new Vec2(874 * upp, 402 * upp);
+        const panels = cornerPanels(size, false);
+        expect(panels.InformationWidth + panels.ControlWidth + panels.EdgeInset * 3).toBeLessThanOrEqual(size.x);
     });
 });

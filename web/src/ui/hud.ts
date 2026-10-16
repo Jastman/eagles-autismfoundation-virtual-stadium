@@ -9,7 +9,7 @@ import { AMENITIES, MAP_LEVELS, amenityBit, isCrowdShown, isReducedMotionEffecti
 import { Box2, Vec2 } from "../util/ue";
 import { CalloutLayer } from "./callouts";
 import { button, enable, h, isShown, setText, show, tapOnly } from "./dom";
-import { cornerPanels, ticketBounds, welcomeBottomInset } from "./layout";
+import { cornerPanels, formFactor, ticketBounds, welcomeBottomInset } from "./layout";
 import { unobstructedViewport } from "../journey/rules";
 
 const CHAPTERS = ["Arrival", "Gates", "Plaza", "To my seat", "Game"];
@@ -65,6 +65,11 @@ export class Hud {
     private readonly focusRing = h("div", { class: "focus-ring collapsed" });
     private timelineOpen = false;
     private levelsOpen = false;
+    /** Phones: Places is a sheet opened from the Explore row, so the scene stays visible (Docs/WEB_PARITY.md W17). */
+    private placesOpen = false;
+    private placesToggle!: HTMLButtonElement;
+    /** Where the navigation and Places live: the right-hand dock, or the bottom stack on a phone held upright. */
+    private arranged: "corners" | "portrait" = "corners";
     private karaokeWord = -1;
     private karaokeTitle = "";
     private karaokeBody = "";
@@ -215,7 +220,11 @@ export class Hud {
         this.tourNav.append(this.backButton, this.nextButton);
         this.mySeat = button("primary", "My seat", click(() => j.goToMySeat()));
         this.resumeTour = button("small-label", "Resume tour", click(() => j.resumeTour()));
-        this.exploreNav.append(h("div", { class: "nav-row" }, this.mySeat, this.resumeTour),
+        this.placesToggle = button("small-label places-toggle", "Places", click(() => {
+            this.placesOpen = !this.placesOpen;
+            this.applySnapshot(this.snapshot);
+        }));
+        this.exploreNav.append(h("div", { class: "nav-row" }, this.mySeat, this.resumeTour, this.placesToggle),
             h("div", { class: "fly-help", text: options.touch ? "Drag look  ·  Pinch closer  ·  Pad move  ·  Up / Down" : "WASD move  ·  E/Q up/down  ·  Drag look  ·  Shift faster" }));
 
         // ---- Places (WBP_LFF_ExploreMap) ----
@@ -347,11 +356,14 @@ export class Hud {
         showPanel(this.stageChrome, !welcome, instant);
         this.setChaptersShown(!welcome && !explore, instant);
         const narrativeAppeared = showPanel(this.narrative, !welcome && !explore, instant);
-        showPanel(this.places, !welcome && explore, instant);
+        const phone = document.documentElement.classList.contains("phone");
+        showPanel(this.places, !welcome && explore && (!phone || this.placesOpen), instant);
+        setText(this.placesToggle, this.placesOpen ? "Hide places" : "Places");
+        this.placesToggle.classList.toggle("selected", this.placesOpen);
         showPanel(this.tourNav, !welcome && !explore, instant);
         showPanel(this.exploreNav, !welcome && explore, instant);
         showPanel(this.modal, modal, instant);
-        show(this.flyPad, this.options.touch && explore && !modal);
+        show(this.flyPad, this.options.touch && explore && !modal && !(phone && this.placesOpen));
         if (!explore && s.bStarted && !narrativeAppeared && s.StepIndex !== this.lastStepIndex) fadeIn(this.narrative, instant);
         this.lastStepIndex = s.bStarted ? s.StepIndex : -1;
 
@@ -615,28 +627,68 @@ export class Hud {
         if (!s) return;
         const upp = this.options.unitsPerPixel();
         const size = new Vec2(window.innerWidth * upp, window.innerHeight * upp);
-        const key = `${size.x.toFixed(1)}x${size.y.toFixed(1)}:${s.Settings.bLargeText}`;
+        // The HUD box sits inside the safe area (notch, home indicator), so the panels are sized to it.
+        const hudBox = this.root.getBoundingClientRect();
+        const hudSize = new Vec2(Math.max(1, hudBox.width) * upp, Math.max(1, hudBox.height) * upp);
+        const ff = formFactor(window.innerWidth, window.innerHeight);
+        const portraitPhone = ff.phone && ff.portrait;
+        const key = `${hudSize.x.toFixed(1)}x${hudSize.y.toFixed(1)}:${s.Settings.bLargeText}:${ff.phone}:${ff.portrait}`;
         if (force || key !== this.lastLayoutKey) {
             this.lastLayoutKey = key;
-            const layout = cornerPanels(size, s.Settings.bLargeText);
+            this.arrange(portraitPhone ? "portrait" : "corners");
+            const layout = cornerPanels(hudSize, s.Settings.bLargeText);
             const rem = (units: number) => `${units / 10}rem`;
-            this.infoGroup.style.width = rem(layout.InformationWidth + layout.EdgeInset);
-            this.infoGroup.style.padding = `${rem(layout.EdgeInset)} 0 0 ${rem(layout.EdgeInset)}`;
-            this.infoGroup.style.maxHeight = rem(layout.MaximumHeight + layout.EdgeInset);
-            this.narrative.style.maxHeight = rem(layout.NarrativeHeight);
-            this.controlGroup.style.width = rem(layout.ControlWidth + layout.EdgeInset);
-            this.controlGroup.style.padding = `${rem(layout.EdgeInset)} ${rem(layout.EdgeInset)} 0 0`;
-            this.controlGroup.style.maxHeight = rem(layout.MaximumHeight + layout.EdgeInset);
+            const inset = layout.EdgeInset;
+            let dockWidth = layout.ControlWidth;
+            if (portraitPhone) {
+                // Upright phone: the dock and chapters across the top; the caption, navigation and Places at the bottom,
+                // in reach of a thumb, with the scene between them.
+                dockWidth = hudSize.x - inset * 2;
+                Object.assign(this.controlGroup.style, { width: "100%", padding: `${rem(inset)} ${rem(inset)} 0 ${rem(inset)}`,
+                    maxHeight: rem(hudSize.y * 0.42) });
+                Object.assign(this.infoGroup.style, { width: "100%", top: "auto", padding: `0 ${rem(inset)} ${rem(inset * 0.5)} ${rem(inset)}`,
+                    maxHeight: rem(hudSize.y * 0.6) });
+                this.narrative.style.maxHeight = rem(hudSize.y * 0.36);
+            } else {
+                Object.assign(this.infoGroup.style, { width: rem(layout.InformationWidth + inset), top: "", bottom: "",
+                    padding: `${rem(inset)} 0 0 ${rem(inset)}`, maxHeight: rem(layout.MaximumHeight + inset) });
+                this.narrative.style.maxHeight = rem(layout.NarrativeHeight);
+                Object.assign(this.controlGroup.style, { width: rem(layout.ControlWidth + inset), padding: `${rem(inset)} ${rem(inset)} 0 0`,
+                    maxHeight: rem(layout.MaximumHeight + inset) });
+            }
             // Chapter chips: 5, 3, 2 or 1 columns for the dock's width (LayoutChapters).
             const cell = s.Settings.bLargeText ? 128 : 100;
-            const capacity = Math.max(1, Math.floor(Math.max(0, layout.ControlWidth - 24) / cell));
+            const capacity = Math.max(1, Math.floor(Math.max(0, dockWidth - 24) / cell));
             this.chapterColumns = capacity >= 5 ? 5 : capacity >= 3 ? 3 : capacity >= 2 ? 2 : 1;
             this.chapters.style.gridTemplateColumns = `repeat(${this.chapterColumns}, minmax(0, 1fr))`;
             // Welcome: width, headline size and the bottom inset that keeps Settings on its own row when narrow.
-            const width = Math.min(Math.max(size.x - 96, 320), 1060);
-            this.welcomeStack.style.width = rem(width);
-            this.welcomeStack.style.bottom = rem(welcomeBottomInset(size.x));
-            this.headline.style.fontSize = rem(Math.min(Math.max(Math.floor(width / 14), 36), 72));
+            if (ff.phone) {
+                const width = portraitPhone ? hudSize.x - 48 : Math.min(hudSize.x - 96, 1060);
+                this.welcomeStack.style.width = rem(width);
+                this.welcomeStack.style.bottom = rem(portraitPhone ? 120 : 64);
+                this.headline.style.fontSize = rem(portraitPhone ? 44 : 52);
+            } else {
+                const width = Math.min(Math.max(hudSize.x - 96, 320), 1060);
+                this.welcomeStack.style.width = rem(width);
+                this.welcomeStack.style.bottom = rem(welcomeBottomInset(hudSize.x));
+                this.headline.style.fontSize = rem(Math.min(Math.max(Math.floor(width / 14), 36), 72));
+            }
+        }
+        if (portraitPhone) {
+            // Clear of the Cesium and Google credits at the bottom; the move pad rides just above the bottom stack.
+            // The credit logos sit above their container's box, so measure from the highest credit element.
+            let creditsTop = window.innerHeight;
+            for (const el of document.querySelectorAll(".cesium-viewer-bottom, .cesium-viewer-bottom *")) {
+                const r = el.getBoundingClientRect();
+                if (r.height > 0 && r.width > 0) creditsTop = Math.min(creditsTop, r.top);
+            }
+            const creditsPx = Math.max(0, hudBox.bottom - creditsTop + 6);
+            const bottom = `${Math.round(creditsPx)}px`;
+            if (this.infoGroup.style.bottom !== bottom) this.infoGroup.style.bottom = bottom;
+            const above = `${Math.round(creditsPx + this.infoGroup.offsetHeight + 8)}px`;
+            if (this.flyPad.style.bottom !== above) this.flyPad.style.bottom = above;
+        } else if (this.flyPad.style.bottom) {
+            this.flyPad.style.bottom = "";
         }
         // The unobstructed rectangle for framing places (SetMapViewportFrame).
         const panels = this.blockers().map((el) => {
@@ -646,16 +698,25 @@ export class Hud {
         const safe = unobstructedViewport(size, panels, Math.max(48, 64 * 0.5), 112);
         const normalized = safe.valid ? new Box2(new Vec2(safe.min.x / size.x, safe.min.y / size.y), new Vec2(safe.max.x / size.x, safe.max.y / size.y)) : Box2.invalid();
         this.journey.setMapViewportFrame(size, normalized, 2500);
-        if (this.ticketShown) this.layoutTicket(size, upp);
+        if (this.ticketShown) this.layoutTicket(size, upp, portraitPhone);
     }
 
-    private layoutTicket(size: Vec2, upp: number): void {
+    /** Moves the navigation and Places between the dock (corners) and the bottom stack (upright phone). */
+    private arrange(mode: "corners" | "portrait"): void {
+        if (this.arranged === mode) return;
+        this.arranged = mode;
+        if (mode === "portrait") this.infoGroup.append(this.places, this.tourNav, this.exploreNav);
+        else this.controlGroup.append(this.tourNav, this.exploreNav, this.places);
+    }
+
+    private layoutTicket(size: Vec2, upp: number, portraitPhone: boolean): void {
         const box = (el: HTMLElement) => {
             if (el.classList.contains("collapsed")) return Box2.invalid();
             const r = el.getBoundingClientRect();
             return r.width > 1 ? new Box2(new Vec2(r.left * upp, r.top * upp), new Vec2(r.right * upp, r.bottom * upp)) : Box2.invalid();
         };
-        const bounds = ticketBounds(size, box(this.infoGroup), box(this.controlGroup), new Vec2(180, 360));
+        const bounds = portraitPhone ? betweenBounds(size, box(this.controlGroup), box(this.infoGroup), new Vec2(180, 360))
+            : ticketBounds(size, box(this.infoGroup), box(this.controlGroup), new Vec2(180, 360));
         show(this.ticket, bounds.valid);
         if (!bounds.valid) return;
         Object.assign(this.ticket.style, {
@@ -733,6 +794,17 @@ export class Hud {
         });
         show(this.focusRing, true);
     }
+}
+
+/** Upright phone: the ticket fits, centred, in the scene between the top dock and the bottom stack. */
+function betweenBounds(size: Vec2, top: Box2, bottom: Box2, natural: Vec2): Box2 {
+    const gap = 16;
+    const y0 = (top.valid ? top.max.y : 0) + gap, y1 = (bottom.valid ? bottom.min.y : size.y) - gap;
+    const scale = Math.min(1, (y1 - y0) / natural.y, (size.x - gap * 2) / natural.x);
+    if (scale <= 0.2) return Box2.invalid();
+    const w = natural.x * scale, h = natural.y * scale;
+    const min = new Vec2((size.x - w) / 2, y0 + (y1 - y0 - h) / 2);
+    return new Box2(min, min.add(new Vec2(w, h)));
 }
 
 function previewNote(s: JourneySnapshot): string {

@@ -18,16 +18,21 @@ import { StadiumWorld } from "./scene/world";
 import { CalloutLayer } from "./ui/callouts";
 import { h } from "./ui/dom";
 import { Hud } from "./ui/hud";
+import { formFactor, unitsPerPixelFor } from "./ui/layout";
 import { LoadingScreen } from "./ui/loading";
 import { Vec2 } from "./util/ue";
 import { Timers } from "./util/timers";
 
-/** Logical UMG units per CSS pixel: Unreal's ShortestSide rule, 1080 = 1.0. */
-const unitsPerPixel = () => 1080 / Math.max(1, Math.min(window.innerWidth, window.innerHeight));
+/** Logical UMG units per CSS pixel: Unreal's ShortestSide rule (1080 = 1.0) on tablets, a legible scale on phones. */
+const unitsPerPixel = () => unitsPerPixelFor(window.innerWidth, window.innerHeight);
 
 function applyUiScale(): void {
-    // 1rem = 10 logical units (hud.css).
-    document.documentElement.style.fontSize = `${10 / unitsPerPixel()}px`;
+    // 1rem = 10 logical units (hud.css); the form factor classes pick the phone arrangements in hud.css and hud.ts.
+    const root = document.documentElement;
+    root.style.fontSize = `${10 / unitsPerPixel()}px`;
+    const ff = formFactor(window.innerWidth, window.innerHeight);
+    root.classList.toggle("phone", ff.phone);
+    root.classList.toggle("portrait", ff.portrait);
 }
 
 async function fetchJson<T>(url: string, fallback: T): Promise<T> {
