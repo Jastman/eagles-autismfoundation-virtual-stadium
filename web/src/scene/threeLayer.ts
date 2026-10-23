@@ -37,7 +37,8 @@ export interface LayerPart {
     active(): boolean;
 }
 
-const BLOOM = { strength: 1.05, radius: 0.55, threshold: 0.0 };
+// The threshold keeps the faint beam haze out of the bloom; the light banks, sparks and phones glow.
+const BLOOM = { strength: 1.0, radius: 0.5, threshold: 0.32 };
 /** Above the turf, the top of the stands and canopy (the upper deck's back rows are 47 m up): beams show above it from outside. */
 const RIM_HEIGHT_M = 46;
 
@@ -190,6 +191,7 @@ varying float vAlong;
 varying vec3 vNormal;
 varying vec3 vView;
 varying float vHeight;
+varying float vDistance;
 uniform float u_length;
 void main() {
     // The cylinder runs along +Y from -L/2 (the far end) to +L/2 (the light).
@@ -198,6 +200,7 @@ void main() {
     vHeight = world.z;
     vNormal = normalize(mat3(modelMatrix) * normal);
     vView = normalize(cameraPosition - world.xyz);
+    vDistance = length(cameraPosition - world.xyz);
     gl_Position = projectionMatrix * viewMatrix * world;
 }`;
 
@@ -206,6 +209,7 @@ varying float vAlong;
 varying vec3 vNormal;
 varying vec3 vView;
 varying float vHeight;
+varying float vDistance;
 uniform float u_level;
 uniform float u_clipHeight;
 void main() {
@@ -213,7 +217,9 @@ void main() {
     // Thin haze lit by the beam: brightest at the light, fading with distance, soft at the cone's edges.
     float along = pow(1.0 - clamp(vAlong, 0.0, 1.0), 1.6) * smoothstep(0.0, 0.06, vAlong);
     float edge = pow(abs(dot(normalize(vNormal), normalize(vView))), 1.8);
-    float a = along * edge * u_level * 0.16;
+    // Faint: seen down the field many beams overlap. Gone close to the camera, so none crosses the view as a wall.
+    float near = smoothstep(25.0, 70.0, vDistance);
+    float a = along * edge * near * u_level * 0.03;
     gl_FragColor = vec4(vec3(0.85, 0.92, 1.0) * a, 1.0);
     #include <colorspace_fragment>
 }`;

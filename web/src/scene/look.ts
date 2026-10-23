@@ -172,7 +172,7 @@ export class SceneLook {
     setNight(night: number, golden: number): void {
         this.night = night;
         this.golden = golden;
-        const level = Math.round((1 - 0.88 * night) * 100) / 100;
+        const level = Math.round((1 - 0.94 * night) * 100) / 100;
         const key = level + golden;
         if (!this.clouds || key === this.cloudLevel) return;
         this.cloudLevel = key;
