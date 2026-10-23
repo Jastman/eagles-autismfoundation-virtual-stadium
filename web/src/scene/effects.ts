@@ -72,12 +72,54 @@ uniform float u_floods;        // the stadium's lights: 0 off .. 1 on
 in vec2 v_textureCoordinates;
 ${EYE_POSITION}
 
+float hash(vec3 p) {
+    p = fract(p * vec3(0.1031, 0.1030, 0.0973));
+    p += dot(p, p.yxz + 33.33);
+    return fract((p.x + p.y) * p.z);
+}
+
+// Smooth value noise (no visible cells): patchy street light across the city.
+float noise2(vec2 p) {
+    vec2 i = floor(p), f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    float a = hash(vec3(i, 0.0)), b = hash(vec3(i + vec2(1.0, 0.0), 0.0));
+    float c = hash(vec3(i + vec2(0.0, 1.0), 0.0)), d = hash(vec3(i + vec2(1.0, 1.0), 0.0));
+    return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+}
+
+// Lit windows on the city's building walls: a floor-by-bay grid along each wall, some windows lit in warm or cool light.
+// Where a window is smaller than a couple of pixels the grid becomes its average glow, so distant blocks shimmer neither.
+vec3 cityWindows(vec3 L, vec3 N) {
+    vec3 T = normalize(vec3(-N.y, N.x, 0.0));
+    float along = dot(L.xy, T.xy);
+    vec2 size = vec2(260.0, 340.0);
+    vec2 g = vec2(along, L.z) / size;
+    vec2 cell = floor(g), f = fract(g);
+    // One random pattern per wall: its direction and its offset across the street.
+    float wall = floor(atan(T.y, T.x) * 6.0) + floor(dot(L.xy, N.xy) / 1200.0) * 3.7;
+    float pick = hash(vec3(cell, wall));
+    float lit = step(0.6, pick);
+    float pane = smoothstep(0.1, 0.18, f.x) * (1.0 - smoothstep(0.82, 0.9, f.x)) * smoothstep(0.22, 0.3, f.y) * (1.0 - smoothstep(0.8, 0.88, f.y));
+    float footprint = max(fwidth(along), fwidth(L.z));
+    float detail = 1.0 - smoothstep(size.x * 0.3, size.x * 0.9, footprint);
+    float glow = mix(0.4 * 0.38, lit * pane, detail);
+    vec3 tint = mix(vec3(1.0, 0.7, 0.4), vec3(0.78, 0.86, 1.0), step(0.85, fract(pick * 7.13)));
+    return tint * glow * (0.65 + 0.7 * fract(pick * 3.71));
+}
+
 void main() {
     vec4 colour = texture(colorTexture, v_textureCoordinates);
     float depth = czm_readDepth(depthTexture, v_textureCoordinates);
-    // The sky is Cesium's atmosphere at the real time of day.
-    if (depth >= 1.0) { out_FragColor = colour; return; }
+    // The sky is Cesium's atmosphere at the real time of day, with the city's warm glow low over the horizon at night.
+    if (depth >= 1.0) {
+        vec3 dir = normalize(mat3(u_eyeToSite) * eyePosition(1.0));
+        float horizon = exp(-max(dir.z, 0.0) * 12.0);
+        out_FragColor = vec4(colour.rgb + vec3(0.11, 0.07, 0.035) * horizon * u_night, colour.a);
+        return;
+    }
     vec3 L = (u_eyeToSite * vec4(eyePosition(depth), 1.0)).xyz;
+    // The surface's normal, from neighbouring pixels (site frame): walls are near horizontal normals.
+    vec3 N = normalize(cross(dFdx(L), dFdy(L)));
     float E = length(vec2(L.x / u_footprint.x, L.y / u_footprint.y));
     float belowRoof = 1.0 - smoothstep(6200.0, 8500.0, L.z);
     // The bowl, stands and field under the floodlights; the field a little brighter.
@@ -91,13 +133,19 @@ void main() {
     float site = 1.0 - smoothstep(320.0, 700.0, metres);
     float ground = 1.0 - smoothstep(900.0, 3200.0, L.z);
     float lamps = site * ground * 0.5 * (1.0 - bowl);
-    // The rest of the city: moonlight, sky glow and street lights low down.
-    vec3 moon = vec3(0.07, 0.085, 0.12);
-    vec3 street = vec3(0.13, 0.09, 0.05) * (1.0 - smoothstep(1500.0, 6000.0, L.z));
+    // The rest of the city: moonlight and sky glow, street lights in uneven patches on the ground, and lit windows.
+    float city = smoothstep(300.0, 420.0, metres);
+    float horizontal = smoothstep(0.65, 0.9, abs(N.z));
+    float wallness = 1.0 - smoothstep(0.25, 0.5, abs(N.z));
+    float low = 1.0 - smoothstep(1500.0, 6000.0, L.z);
+    vec3 moon = vec3(0.085, 0.1, 0.14);
+    vec3 street = vec3(1.0, 0.68, 0.38) * (0.09 + 0.2 * noise2(L.xy / 5000.0)) * low * mix(0.6, 1.0, horizontal);
     vec3 flood = vec3(0.98, 1.0, 1.04) * u_floods;
     vec3 lamp = vec3(1.0, 0.76, 0.5);
     vec3 light = moon + street + lamp * lamps + flood * (bowl * (0.92 + 0.14 * field) + facade * 0.42);
     vec3 C = mix(colour.rgb, colour.rgb * light, u_night);
+    // Windows give off their own light: added, not multiplied, so they glow on dark walls. Walls only, from 6 m up.
+    C += cityWindows(L, N) * wallness * city * smoothstep(500.0, 900.0, L.z) * u_night * 0.6;
     C *= mix(vec3(1.0), vec3(1.07, 0.94, 0.8), u_golden);
     out_FragColor = vec4(C, colour.a);
 }`;
