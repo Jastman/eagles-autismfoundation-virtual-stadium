@@ -2,13 +2,20 @@
 // (Unreal's order: input and flight, journey timers and camera rig, scene cues, then the HUD).
 import "cesium/Build/Cesium/Widgets/widgets.css";
 import "./ui/hud.css";
-import { Cartesian3, Color, Ion, JulianDate, SceneTransforms, SkyAtmosphere, Viewer } from "cesium";
+import { Cartesian3, Color, Ion, SceneTransforms, SkyAtmosphere, Viewer } from "cesium";
 import { AudioEngine } from "./audio/audio";
 import { GameMode, readDeploymentConfig } from "./config";
 import { Input } from "./input/input";
-import { amenities, goldenPath } from "./journey/data";
+import { amenities } from "./journey/data";
+import { GameDayController, easternToUtcMs } from "./journey/gameday";
+import type { GameDay } from "./journey/gameday";
 import { Journey } from "./journey/journey";
+import type { JourneySnapshot } from "./journey/types";
+import { isCrowdShown, isReducedMotionEffective } from "./journey/types";
 import { Geo } from "./scene/geo";
+import { PhoneLightShow } from "./scene/lightShow";
+import { StadiumDisplays } from "./scene/screens";
+import { TimeOfDay } from "./scene/timeOfDay";
 import { sceneData } from "./scene/sceneData";
 import { SceneLook } from "./scene/look";
 import type { UnrealBounds } from "./scene/models";
@@ -94,8 +101,7 @@ async function main(): Promise<void> {
     const controller = scene.screenSpaceCameraController;
     controller.enableInputs = false;
     scene.backgroundColor = Color.fromCssColorString("#9fb6c8");
-    // CesiumSunSky: 1:00 PM EDT on Sunday, October 18, 2026 (ADR-0004, amended).
-    viewer.clock.currentTime = JulianDate.fromIso8601("2026-10-18T17:00:00Z");
+    // CesiumSunSky's clock: each step's time on the chosen game's date (scene/timeOfDay.ts), not a running clock.
     viewer.clock.shouldAnimate = false;
 
     const geo = new Geo(sceneData.georeference);
@@ -136,7 +142,34 @@ async function main(): Promise<void> {
     const byAsset = Object.fromEntries(Object.entries(models).map(([k, v]) => [k.split("/").pop()!, v]));
     const world = new StadiumWorld(scene, geo, sceneData, { ...byAsset, ...models }, modelBounds);
     const timers = new Timers();
-    const journey = new Journey(world, timers, audio, goldenPath(), amenities());
+    // Which home game the tour is for (Settings > Game day): its kickoff template's steps, times and lighting.
+    const gameDay = new GameDayController();
+    const journey = new Journey(world, timers, audio, gameDay.current.steps, amenities(), undefined, gameDay.current.tourFirstSteps);
+    const timeOfDay = new TimeOfDay(viewer, geo, world.effects);
+    const displays = new StadiumDisplays(scene, geo);
+    const lightShow = new PhoneLightShow(scene, geo);
+    void lightShow.load();
+    const showGame = (day: GameDay) => displays.setGame({
+        opponentShort: day.game.OpponentShort, opponentCode: day.game.OpponentCode, kickoffLabel: day.template.Label,
+        weekday: day.game.Weekday, broadcast: day.game.Broadcast.split(",")[0],
+    });
+    showGame(gameDay.current);
+    // The scene follows the tour: each step's time of day, the boards' pre-game or game content, the light show.
+    const followTour = (s: JourneySnapshot, fade: boolean) => {
+        const day = gameDay.current;
+        // The welcome screen and Explore show the stadium at kickoff; tour steps at their own times.
+        const minutes = s.bStarted && s.Mode === "GuidedTour" ? day.sceneMinutes[s.StepIndex] ?? day.kickoffMinutes : day.kickoffMinutes;
+        const calm = isReducedMotionEffective(s.Settings);
+        timeOfDay.setTime(easternToUtcMs(day.game.Date, minutes), fade ? (calm ? "reduced" : "fade") : "instant");
+        displays.setGameOn(minutes >= day.kickoffMinutes);
+        displays.setStill(calm);
+        lightShow.set(s.bStarted && s.Mode === "GuidedTour" && s.StepId === "light-show" && isCrowdShown(s.Settings), !calm);
+    };
+    journey.onChanged((s) => followTour(s, true));
+    gameDay.onChanged((day) => {
+        showGame(day);
+        journey.setSteps(day.steps, day.tourFirstSteps);
+    });
 
     // Callouts project through the Cesium camera; behind the camera there is no position.
     CalloutLayer.projector = (p) => {
@@ -148,12 +181,13 @@ async function main(): Promise<void> {
     };
 
     const touch = matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 1;
-    const hud = new Hud(journey, { touch, ticketFrames: ticket.frames, unitsPerPixel });
+    const hud = new Hud(journey, { touch, ticketFrames: ticket.frames, unitsPerPixel, gameDay });
     const fade = h("div", { class: "camera-fade", style: { background: GameMode.FadeColor } });
     app.append(fade, hud.root);
     const input = new Input(journey, hud, container);
 
     journey.initialize();
+    followTour(journey.snapshot, false);
     const tiles = loadTiles(scene, geo, config, sceneData.footprintLonLat, (set, role) => look.addTileset(set, role));
     if (!params.has("noCrowd")) void world.loadCrowd();
     let progress = () => 0;
@@ -183,6 +217,14 @@ async function main(): Promise<void> {
         input.tick(worldDt);
         journey.tick(worldDt);
         world.tick(worldDt);
+        // Scenery only: a fault here must never stop the render loop.
+        for (const scenery of [timeOfDay, displays, lightShow]) {
+            try {
+                scenery.tick(dt);
+            } catch (error) {
+                console.error("Scenery update failed; carrying on.", error);
+            }
+        }
         const rig = journey.rig;
         geo.applyCamera(scene.camera, rig.location, rig.rotation, rig.fieldOfView);
         world.effects.setExposureStops(rig.pulseStops);
@@ -201,7 +243,8 @@ async function main(): Promise<void> {
         }
     });
     // Development hooks for automated checks (Docs/WEB_PARITY.md, verification).
-    (window as unknown as { lff: unknown }).lff = { journey, world, viewer, hud, look, settingsFor, V2: (x: number, y: number) => new Vec2(x, y) };
+    (window as unknown as { lff: unknown }).lff = { journey, world, viewer, hud, look, settingsFor, gameDay, timeOfDay, displays, lightShow,
+        V2: (x: number, y: number) => new Vec2(x, y) };
 }
 
 void main();

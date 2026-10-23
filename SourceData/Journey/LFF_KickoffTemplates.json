@@ -1,0 +1,151 @@
+{
+  "About": "Kickoff time templates for the guided tour. LFF_GoldenPath.json is the 1:00 PM tour; each template changes only the steps whose times, copy or order differ for its kickoff time, and each game fills in its opponent and date. Times are Eastern. Voice lines for changed cards are named <base line>__<template Id> (or __g<game date> for the cards that name the opponent) and are made by Tools/Audio/make_kickoff_vo.py.",
+  "Season": "2026",
+  "GameSteps": {
+    "intro": {
+      "Title": "Today I am going to the Eagles vs. {OpponentShort} game at Lincoln Financial Field.",
+      "Body": "The Eagles are playing the {Opponent} on {Weekday}, {DateText}. Kickoff is at {Kickoff}. {DarkNote}We will go one step at a time. You choose when to move on."
+    },
+    "kickoff": {
+      "Body": "The Eagles are playing the {Opponent}."
+    }
+  },
+  "Games": [
+    { "Date": "2026-09-13", "Weekday": "Sunday", "DateText": "September 13", "Opponent": "Washington Commanders", "OpponentShort": "Commanders", "OpponentCode": "WAS", "Template": "1625", "Broadcast": "FOX", "DarkNote": "It may get dark near the end of the game. " },
+    { "Date": "2026-10-04", "Weekday": "Sunday", "DateText": "October 4", "Opponent": "Los Angeles Rams", "OpponentShort": "Rams", "OpponentCode": "LAR", "Template": "1300", "Broadcast": "FOX", "DarkNote": "" },
+    { "Date": "2026-10-18", "Weekday": "Sunday", "DateText": "October 18", "Opponent": "Carolina Panthers", "OpponentShort": "Panthers", "OpponentCode": "CAR", "Template": "1300", "Broadcast": "CBS", "DarkNote": "" },
+    { "Date": "2026-10-26", "Weekday": "Monday", "DateText": "October 26", "Opponent": "Dallas Cowboys", "OpponentShort": "Cowboys", "OpponentCode": "DAL", "Template": "2015", "Broadcast": "Monday Night Football, ESPN", "DarkNote": "It is a night game, so it will be dark outside. " },
+    { "Date": "2026-11-08", "Weekday": "Sunday", "DateText": "November 8", "Opponent": "New York Giants", "OpponentShort": "Giants", "OpponentCode": "NYG", "Template": "1300", "Broadcast": "FOX", "DarkNote": "" },
+    { "Date": "2026-11-22", "Weekday": "Sunday", "DateText": "November 22", "Opponent": "Pittsburgh Steelers", "OpponentShort": "Steelers", "OpponentCode": "PIT", "Template": "1625", "Broadcast": "CBS", "DarkNote": "It will get dark during the game. " },
+    { "Date": "2026-12-13", "Weekday": "Sunday", "DateText": "December 13", "Opponent": "Indianapolis Colts", "OpponentShort": "Colts", "OpponentCode": "IND", "Template": "1300", "Broadcast": "FOX", "DarkNote": "" },
+    { "Date": "2026-12-19", "Weekday": "Saturday", "DateText": "December 19", "Opponent": "Seattle Seahawks", "OpponentShort": "Seahawks", "OpponentCode": "SEA", "Template": "1700", "Broadcast": "FOX", "DarkNote": "It will be dark outside during the game. " },
+    { "Date": "2026-12-24", "Weekday": "Thursday", "DateText": "December 24", "Opponent": "Houston Texans", "OpponentShort": "Texans", "OpponentCode": "HOU", "Template": "2015", "Broadcast": "Thursday Night Football, Prime Video", "DarkNote": "It is a night game, so it will be dark outside. " }
+  ],
+  "Templates": [
+    {
+      "Id": "1300",
+      "Label": "1:00 PM",
+      "Name": "Afternoon",
+      "Kickoff": "13:00",
+      "Source": "Eagles Autism Foundation gameday visual schedule for a 1:00 PM game (the tour as written).",
+      "Estimated": false,
+      "Steps": {},
+      "RemoveSteps": [],
+      "InsertSteps": []
+    },
+    {
+      "Id": "1625",
+      "Label": "4:25 PM",
+      "Name": "Late afternoon",
+      "Kickoff": "16:25",
+      "Source": "Estimated: the 1:00 PM schedule's gate and show offsets moved to a 4:25 PM kickoff. Check against the Eagles gameday visual schedule for the game.",
+      "Estimated": true,
+      "Steps": {
+        "intro": { "ClockText": "~12:25 PM" },
+        "parking": { "Body": "The parking lots open hours before kickoff. We can take our time.", "ClockText": "~12:25 PM" },
+        "entrance-line": { "ClockText": "~12:55 PM" },
+        "security": { "ClockText": "~1:10 PM" },
+        "plaza-gates": { "Title": "The Pepsi Plaza gates open at 1:25 PM.", "ClockText": "1:25 PM", "TimelineLabel": "1:25 PM\nPlaza gates" },
+        "plaza": { "SceneTime": "13:45" },
+        "popcorn": { "SceneTime": "14:00" },
+        "sensory-vehicle": { "SceneTime": "14:10" },
+        "club-gates": { "Title": "The club suite gates open at 2:25 PM.", "ClockText": "2:25 PM", "TimelineLabel": "2:25 PM\nClub gates" },
+        "inner-gates": { "Title": "The inner stadium gates open at 2:55 PM.", "ClockText": "2:55 PM", "TimelineLabel": "2:55 PM\nInner gates" },
+        "gate-flares": { "Title": "There will be gate flares around 3:15 PM, 3:25 PM, and 3:40 PM.", "ClockText": "3:15 PM", "TimelineLabel": "3:15 PM\n3:25 PM\n3:40 PM\nFlares" },
+        "walk-to-seats": { "SceneTime": "3:45 PM" },
+        "loud-sounds": { "SceneTime": "3:55 PM" },
+        "bright-lights": { "SceneTime": "4:05 PM" },
+        "anthem": { "Title": "Fireworks and the national anthem happen around 4:15 PM.", "ClockText": "4:15 PM", "TimelineLabel": "4:15 PM\nAnthem" },
+        "kickoff": { "Title": "The game begins at about 4:25 PM.", "ClockText": "4:25 PM", "TimelineLabel": "4:25 PM\nKickoff" }
+      },
+      "RemoveSteps": [],
+      "InsertSteps": []
+    },
+    {
+      "Id": "1700",
+      "Label": "5:00 PM",
+      "Name": "Saturday evening",
+      "Kickoff": "17:00",
+      "Source": "Estimated: the 1:00 PM schedule's gate and show offsets moved to a 5:00 PM kickoff. Check against the Eagles gameday visual schedule for the game.",
+      "Estimated": true,
+      "Steps": {
+        "intro": { "ClockText": "~1:00 PM" },
+        "parking": { "Body": "The parking lots open hours before kickoff. We can take our time.", "ClockText": "~1:00 PM" },
+        "entrance-line": { "ClockText": "~1:30 PM" },
+        "security": { "ClockText": "~1:45 PM" },
+        "plaza-gates": { "Title": "The Pepsi Plaza gates open at 2:00 PM.", "ClockText": "2:00 PM", "TimelineLabel": "2:00 PM\nPlaza gates" },
+        "plaza": { "SceneTime": "2:20 PM" },
+        "popcorn": { "SceneTime": "2:35 PM" },
+        "sensory-vehicle": { "SceneTime": "2:45 PM" },
+        "club-gates": { "Title": "The club suite gates open at 3:00 PM.", "ClockText": "3:00 PM", "TimelineLabel": "3:00 PM\nClub gates" },
+        "inner-gates": { "Title": "The inner stadium gates open at 3:30 PM.", "ClockText": "3:30 PM", "TimelineLabel": "3:30 PM\nInner gates" },
+        "gate-flares": { "Title": "There will be gate flares around 3:50 PM, 4:00 PM, and 4:15 PM.", "ClockText": "3:50 PM", "TimelineLabel": "3:50 PM\n4:00 PM\n4:15 PM\nFlares" },
+        "walk-to-seats": { "SceneTime": "4:20 PM" },
+        "loud-sounds": { "SceneTime": "4:30 PM" },
+        "bright-lights": { "SceneTime": "4:40 PM" },
+        "anthem": { "Title": "Fireworks and the national anthem happen around 4:50 PM.", "ClockText": "4:50 PM", "TimelineLabel": "4:50 PM\nAnthem" },
+        "kickoff": { "Title": "The game begins at about 5:00 PM.", "ClockText": "5:00 PM", "TimelineLabel": "5:00 PM\nKickoff" }
+      },
+      "RemoveSteps": [],
+      "InsertSteps": []
+    },
+    {
+      "Id": "2015",
+      "Label": "8:15 PM",
+      "Name": "Night game",
+      "Kickoff": "20:15",
+      "Source": "Eagles Autism Foundation gameday visual schedule, 8:15 PM, October 26, 2026 (Eagles vs. Cowboys).",
+      "Estimated": false,
+      "Steps": {
+        "intro": { "ClockText": "~4:15 PM" },
+        "parking": { "Body": "The parking lots open in the afternoon for an 8:15 PM game. We can take our time.", "ClockText": "~4:15 PM" },
+        "entrance-line": { "ClockText": "~4:30 PM" },
+        "security": { "ClockText": "~4:45 PM" },
+        "plaza-gates": { "Title": "The Pepsi Plaza gates open at 5:00 PM.", "Body": "That is more than three hours before kickoff. The gate can open when it is time.", "ClockText": "5:00 PM", "TimelineLabel": "5:00 PM\nPlaza gates" },
+        "plaza": { "SceneTime": "5:20 PM" },
+        "popcorn": { "SceneTime": "5:30 PM" },
+        "sensory-vehicle": { "SceneTime": "5:40 PM" },
+        "club-gates": {
+          "Title": "The club suites and inner gates open at 6:00 PM.",
+          "Body": "That is about two hours before kickoff. I can walk toward my section when I am ready.",
+          "ClockText": "6:00 PM",
+          "TimelineLabel": "6:00 PM\nClub + inner gates",
+          "LabelsToShow": ["LBL_ClubGate", "LBL_InnerGate"],
+          "SceneCues": ["GateClub", "GateInner"]
+        },
+        "gate-flares": { "Title": "There will be gate flares around 6:45 PM, 7:00 PM, and 7:15 PM.", "ClockText": "6:45 PM", "TimelineLabel": "6:45 PM\n7:00 PM\n7:15 PM\nFlares" },
+        "walk-to-seats": { "SceneTime": "7:20 PM" },
+        "loud-sounds": { "SceneTime": "7:35 PM" },
+        "bright-lights": { "Title": "There will be flashing stadium lights during the game.", "SceneTime": "7:45 PM" },
+        "anthem": { "Title": "Fireworks and the national anthem happen around 8:10 PM.", "ClockText": "8:10 PM", "TimelineLabel": "8:10 PM\nAnthem" },
+        "kickoff": { "Title": "The game begins at about 8:15 PM.", "ClockText": "8:15 PM", "TimelineLabel": "8:15 PM\nKickoff" },
+        "guest-services": { "Body": "Booths are at sections 121, 136, 206, and 226, and at the 50/50 EAF raffle ticket booths." }
+      },
+      "RemoveSteps": ["inner-gates"],
+      "InsertSteps": [
+        {
+          "After": "bright-lights",
+          "Step": {
+            "Name": "light-show",
+            "Title": "There will be a cell phone light show around 8:00 PM.",
+            "Body": "Phones light up all over the stadium. When I open the Eagles app as the team walks out of the tunnel, my phone will flash too.",
+            "DisclaimerLevel": "Approximate",
+            "VerificationSource": "",
+            "ClockText": "8:00 PM",
+            "TimelineLabel": "8:00 PM\nLight show",
+            "CameraTargetId": "CT_SeatFieldView",
+            "TransitionProfile": "Ease",
+            "TransitionSeconds": 0,
+            "LabelsToShow": [],
+            "PlacesToShow": [],
+            "SceneCues": [],
+            "IntensityPreview": "None",
+            "AudioBed": "",
+            "VoiceWave": "/Game/LFF/Audio/VO/VO_25_LightShow.VO_25_LightShow",
+            "bShowTicketPhone": false
+          }
+        }
+      ]
+    }
+  ]
+}

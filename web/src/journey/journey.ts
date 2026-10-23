@@ -88,6 +88,7 @@ export class Journey {
     private exteriorHidden = false;
     private firstCueIndex = new Map<string, number>();
     private timelineMarks: TimelineMark[] = [];
+    private tourFirstSteps: number[] = GameMode.TourStepFirstSteps;
     private roomCrowdGain = 1;
     private appliedBedVolume = -1;
     private fadingBedBaseVolume = 1;
@@ -116,10 +117,12 @@ export class Journey {
         private readonly world: JourneyWorld,
         readonly timers: Timers,
         private readonly audio: AudioEngine,
-        private readonly steps: JourneyStep[],
+        private steps: JourneyStep[],
         amenityRows: AmenityMarker[],
         private readonly openUrl: (url: string) => void = (url) => window.open(url, "_blank", "noopener"),
+        tourFirstSteps: number[] = GameMode.TourStepFirstSteps,
     ) {
+        this.tourFirstSteps = [...tourFirstSteps];
         this.rig = new CameraRig(timers, (id) => this.handleRigTransitionFinished(id));
         this.rig.fadeColor = GameMode.FadeColor;
         this.amenities = amenityRows;
@@ -137,12 +140,30 @@ export class Journey {
 
     initialize(): void {
         this.settings = { ...GameMode.DefaultVisitorSettings };
-        this.journeyMissing = this.steps.length === 0;
-        this.machine.load(this.steps);
-        this.machine.setTourSteps(GameMode.TourStepFirstSteps);
+        this.loadSteps();
         this.resetLookInput();
         this.loadAmenities();
 
+        this.timers.setTimer(this.exteriorTimer, () => {
+            this.updateExteriorVisibility();
+            this.updateRoomAudio();
+        }, EXTERIOR_CHECK_SECONDS, true);
+
+        // The splash starts on the first step's wide shot and slowly orbits from there (still with less movement).
+        this.snapCameraToCurrentStep();
+        this.applyLabels();
+        this.applySensory();
+        this.applyCues("StepChanged");
+        this.enterSplash(false);
+        this.prefetchVoice();
+        this.broadcast();
+    }
+
+    /** Loads this.steps into the state machine with their chapters, timeline marks and scene cue steps. */
+    private loadSteps(): void {
+        this.journeyMissing = this.steps.length === 0;
+        this.machine.load(this.steps);
+        this.machine.setTourSteps(this.tourFirstSteps);
         this.timelineMarks = [];
         this.firstCueIndex.clear();
         this.steps.forEach((step, index) => {
@@ -156,18 +177,30 @@ export class Journey {
             console.info(`Scene cue ${cue}: step ${index + 1}, ${count} actors.`);
             if (count === 0) console.warn(`Scene cue ${cue} has no cue actor in the level; that step shows no movement.`);
         }
+    }
 
-        this.timers.setTimer(this.exteriorTimer, () => {
-            this.updateExteriorVisibility();
-            this.updateRoomAudio();
-        }, EXTERIOR_CHECK_SECONDS, true);
-
-        // The splash starts on the first step's wide shot and slowly orbits from there (still with less movement).
-        this.snapCameraToCurrentStep();
+    /**
+     * Another game day's tour (Settings > Game day, web addition): the new steps replace the old and the tour goes back
+     * to the welcome screen, as Start again does. Visitor settings and Settings itself stay as they are.
+     */
+    setSteps(steps: JourneyStep[], tourFirstSteps: number[]): void {
+        const wasStarted = this.machine.hasStarted() || this.isExploring();
+        this.stopVoice();
+        this.stopActivePreview();
+        this.stopAnthemSequence(false);
+        this.restartConfirmOpen = false;
+        this.steps = steps;
+        this.tourFirstSteps = [...tourFirstSteps];
+        this.loadSteps();
+        this.resetMap();
+        this.rig.setTransitionPaused(false);
+        this.arrived = false;
+        this.resetPreview();
         this.applyLabels();
         this.applySensory();
         this.applyCues("StepChanged");
-        this.enterSplash(false);
+        if (wasStarted) this.enterSplash(true);
+        else this.startSplashOrbit();
         this.prefetchVoice();
         this.broadcast();
     }

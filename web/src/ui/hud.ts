@@ -2,6 +2,8 @@
 // It holds the corner groups, picks which panels are on screen for the snapshot, fades them in, and runs its own focus
 // ring. Widgets hold no journey state of their own: every change arrives as a snapshot.
 import { GameMode } from "../config";
+import { AUTOMATIC, homeGames, kickoffTemplates, shortDate } from "../journey/gameday";
+import type { GameDayController } from "../journey/gameday";
 import type { Journey } from "../journey/journey";
 import { MY_SEAT_AMENITY_ID } from "../journey/journey";
 import type { JourneySnapshot, MapLevel } from "../journey/types";
@@ -33,6 +35,8 @@ export interface HudOptions {
     ticketFrames: string[];
     /** Logical units per CSS pixel (1080 / shortest side). */
     unitsPerPixel: () => number;
+    /** Settings > Game day: the home game and kickoff template the tour is set to. */
+    gameDay?: GameDayController;
 }
 
 /** A panel that fades in over 0.25 s (ease-out cubic) when shown; instant with less movement or Calm Mode. */
@@ -110,6 +114,7 @@ export class Hud {
     private readonly timelinePanel = h("div", { class: "timeline-panel collapsed" });
     private readonly timelineMarks = h("div", { class: "timeline-marks" });
     private markButtons: { step: number; el: HTMLButtonElement }[] = [];
+    private marksKey = "";
     private readonly finaleActions = h("div", { class: "finale-actions collapsed" });
     private readonly finaleStartOver: HTMLButtonElement;
     private readonly finaleLearnMore: HTMLButtonElement;
@@ -159,6 +164,14 @@ export class Hud {
     private readonly restartPanel = h("div", { class: "center-card collapsed", role: "alertdialog", "aria-label": "Start again?" });
     private readonly settingRows: Record<string, HTMLButtonElement> = {};
     private readonly restartButton: HTMLButtonElement;
+    // Game day (web addition, Docs/WEB_PARITY.md W21).
+    private readonly timelineNote = h("div", { class: "note" });
+    private readonly welcomeGame = h("div", { class: "welcome-game" });
+    private readonly identityGame = h("div", { class: "place" });
+    private readonly templateChips = h("div", { class: "grid2 kickoff-templates" });
+    private readonly gameRows = h("div", { class: "game-rows" });
+    private readonly gameNote = h("div", { class: "settings-note" });
+    private automaticRow: HTMLButtonElement | null = null;
 
     constructor(private readonly journey: Journey, private readonly options: HudOptions) {
         const j = journey;
@@ -174,7 +187,7 @@ export class Hud {
             this.timelineOpen = !this.timelineOpen;
             this.applyTimelineDrawer();
         }));
-        this.timelinePanel.append(h("div", { class: "note", text: "Approximate times\nExample 1:00 PM game" }), this.timelineMarks);
+        this.timelinePanel.append(this.timelineNote, this.timelineMarks);
         this.finaleStartOver = button("", "Start Over", click(() => j.next()));
         this.finaleLearnMore = button("primary", "Learn More", click(() => j.openLearnMore()));
         this.finaleActions.append(this.finaleStartOver, this.finaleLearnMore);
@@ -185,7 +198,8 @@ export class Hud {
 
         // ---- Identity (WBP_LFF_SidebarHeader) ----
         this.identity.append(h("div", { class: "logo", role: "img", "aria-label": "Eagles Autism Foundation" }), h("div", { class: "rule" }),
-            h("div", {}, h("div", { class: "title", text: "Game day guide" }), h("div", { class: "place", text: "Lincoln Financial Field" })));
+            h("div", {}, h("div", { class: "title", text: "Game day guide" }), h("div", { class: "place", text: "Lincoln Financial Field" }),
+                this.identityGame));
 
         // ---- Stage chrome (WBP_LFF_StageChrome) ----
         this.tourMode = button("", "Guided tour", click(() => j.switchToMode("GuidedTour")));
@@ -274,7 +288,7 @@ export class Hud {
         tapOnly(this.calmSwitch);
         this.calmToggle.append(this.calmSwitch, h("div", { class: "label", text: "Calm Mode" }), this.calmHint);
         this.welcomeStack.append(h("div", { class: "welcome-partners" }, h("div", { class: "eaf", role: "img", "aria-label": "Eagles Autism Foundation" }),
-            h("div", { class: "fivebelow", role: "img", "aria-label": "Five Below Foundation" })), this.headline,
+            h("div", { class: "fivebelow", role: "img", "aria-label": "Five Below Foundation" })), this.headline, this.welcomeGame,
         h("div", { class: "welcome-actions" }, this.welcomeTour, this.welcomeExplore, this.calmToggle));
         this.welcomeSettings = button("pill welcome-settings", [h("span", { class: "gear" }), "Settings"], click(() => j.toggleSettings()));
         this.welcome.append(h("div", { class: "welcome-fade" }), this.welcomeStack, this.welcomeSettings);
@@ -288,10 +302,40 @@ export class Hud {
         };
         const closeSettings = button("pill", "Close", click(() => j.toggleSettings()));
         this.restartButton = button("pill", "Start again", click(() => j.requestRestart()));
+        // Game day: a kickoff time picks its template; the games below are the home games played at that time.
+        const gameDay = options.gameDay;
+        let gameDaySection: HTMLElement[] = [];
+        if (gameDay) {
+            for (const template of kickoffTemplates()) {
+                const chip = button("toggle-cell", [h("span", { class: "name", text: template.Label }), h("span", { class: "state", text: template.Name })],
+                    click(() => {
+                        gameDay.selectTemplate(template.Id);
+                        this.applyGameDay();
+                    }));
+                chip.dataset.template = template.Id;
+                this.templateChips.append(chip);
+            }
+            this.automaticRow = button("row setting-row game-row",
+                [h("span", { class: "name", text: "Automatic: next home game" }), h("span", { class: "state", text: "Off" })],
+                click(() => {
+                    gameDay.select(AUTOMATIC);
+                    this.applyGameDay();
+                }));
+            gameDaySection = [
+                h("div", { class: "eyebrow settings-group-title first", text: "Game day" }),
+                h("div", { class: "settings-note game-intro", text: "Pick the kickoff time. The tour's times, steps and lighting follow it." }),
+                this.templateChips,
+                this.gameRows,
+                this.automaticRow!,
+                this.gameNote,
+            ];
+            gameDay.onChanged(() => this.applyGameDay());
+        }
         const settingsBody = h("div", { class: "settings-body", role: "dialog", "aria-label": "Settings" },
             h("div", { class: "settings-header" }, h("h2", { text: "Settings" }), closeSettings),
             h("div", { class: "settings-hint", text: "Change these at any time. Calm Mode turns sound and voice off and uses less movement." }),
-            h("div", { class: "eyebrow settings-group-title first", text: "Comfort" }),
+            ...gameDaySection,
+            h("div", { class: `eyebrow settings-group-title${gameDay ? "" : " first"}`, text: "Comfort" }),
             row("calm", "Calm Mode", "3", () => j.toggleCalmMode()),
             row("motion", "Less movement", "1", () => j.toggleReducedMotion()),
             row("large", "Large text", "4", () => j.toggleLargeText()),
@@ -329,11 +373,49 @@ export class Hud {
             this.focusRing);
         for (const el of [this.infoGroup, this.controlGroup, this.welcome, this.modal]) el.classList.add("collapsed");
 
+        this.applyGameDay();
         journey.onChanged((s) => this.applySnapshot(s));
         journey.onVoiceWord((index) => {
             this.karaokeWord = index;
             this.applyKaraoke();
         });
+    }
+
+    /** The game the tour is set to: the welcome line, the timeline's note and Settings > Game day. */
+    private applyGameDay(): void {
+        const gameDay = this.options.gameDay;
+        if (!gameDay) {
+            setText(this.timelineNote, "Approximate times\nExample 1:00 PM game");
+            return;
+        }
+        const { game, template } = gameDay.current;
+        setText(this.welcomeGame, `${game.Weekday}, ${game.DateText}  ·  Eagles vs. ${game.OpponentShort}  ·  Kickoff ${template.Label}`);
+        setText(this.identityGame, `${shortDate(game)} · vs. ${game.OpponentShort} · ${template.Label}`);
+        setText(this.timelineNote, `Approximate times\n${game.Weekday} ${template.Label} game`);
+        for (const chip of this.templateChips.querySelectorAll<HTMLButtonElement>("button")) {
+            const on = chip.dataset.template === template.Id;
+            chip.classList.toggle("selected", on);
+            chip.setAttribute("aria-pressed", String(on));
+        }
+        const j = this.journey;
+        this.gameRows.replaceChildren(...homeGames().filter((g) => g.Template === template.Id).map((g) => {
+            const row = button("row setting-row game-row", [h("span", { class: "name", text: `${shortDate(g)} · vs. ${g.OpponentShort}` }),
+                h("span", { class: "state", text: g.Broadcast.split(",")[0] })], () => {
+                j.playUIClick();
+                gameDay.select(g.Date);
+                this.applyGameDay();
+            });
+            const on = g.Date === game.Date && !gameDay.isAutomatic;
+            row.classList.toggle("selected", on);
+            row.setAttribute("aria-pressed", String(on));
+            return row;
+        }));
+        if (this.automaticRow) {
+            this.automaticRow.classList.toggle("selected", gameDay.isAutomatic);
+            this.automaticRow.setAttribute("aria-pressed", String(gameDay.isAutomatic));
+            setText(this.automaticRow.querySelector(".state"), gameDay.isAutomatic ? "On" : "Off");
+        }
+        setText(this.gameNote, `${template.Source} Changing the game starts the tour again.`);
     }
 
     /** Touch flight controls (Explore on touch screens), placed by main.ts. */
@@ -397,7 +479,12 @@ export class Hud {
         this.captionScale.style.width = s.Settings.bLargeText ? `${100 / LARGE_TEXT_SCALE}%` : "";
 
         // Timeline marks.
-        if (this.markButtons.length !== s.TimelineMarks.length) this.rebuildTimeline(s);
+        // Rebuilt when the marks change (another kickoff template can have as many marks with other times).
+        const marksKey = s.TimelineMarks.map((m) => `${m.StepIndex}:${m.Label}`).join("|");
+        if (marksKey !== this.marksKey) {
+            this.marksKey = marksKey;
+            this.rebuildTimeline(s);
+        }
         for (const mark of this.markButtons) {
             const current = mark.step === s.StepIndex && s.bStarted;
             mark.el.classList.toggle("current", current);

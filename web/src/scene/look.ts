@@ -102,7 +102,8 @@ export class SceneLook {
         if (scene.msaaSamples !== settings.msaaSamples && scene.msaaSupported) scene.msaaSamples = settings.msaaSamples;
         scene.postProcessStages.fxaa.enabled = settings.msaaSamples <= 1;
 
-        // Sun shadows near the camera; the sun is Cesium's, at the clock's 1:00 PM EDT, as CesiumSunSky in Unreal.
+        // Shadows near the camera from the scene light: the sun at the step's time, or the floodlights after dark
+        // (scene/timeOfDay.ts).
         viewer.shadows = settings.shadows;
         const shadowMap = scene.shadowMap;
         shadowMap.size = settings.shadowMapSize;

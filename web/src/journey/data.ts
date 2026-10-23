@@ -5,7 +5,7 @@ import goldenPathJson from "../../../SourceData/Journey/LFF_GoldenPath.json";
 import { GameMode } from "../config";
 import type { AmenityMarker, JourneyStep } from "./types";
 
-type Row = Record<string, unknown>;
+export type Row = Record<string, unknown>;
 
 const str = (row: Row, key: string, fallback = ""): string => (typeof row[key] === "string" ? (row[key] as string) : fallback);
 const list = (row: Row, key: string): string[] => (Array.isArray(row[key]) ? (row[key] as string[]).filter((v) => typeof v === "string") : []);
@@ -73,6 +73,8 @@ export function parseAmenities(rows: Row[], keepUnverified = GameMode.bShowUnver
 }
 
 export const goldenPath = (): JourneyStep[] => parseSteps(goldenPathJson as Row[]);
+/** The 1:00 PM tour's rows as written, for the kickoff templates to change (journey/gameday.ts). */
+export const goldenPathRows = (): Row[] => (goldenPathJson as Row[]).map((row) => ({ ...row }));
 export const amenities = (): AmenityMarker[] => parseAmenities(amenitiesJson as Row[]);
 
 /** "/Game/LFF/Audio/VO/VO_02_Intro.VO_02_Intro" -> "VO_02_Intro" (the SourceData/Audio file name). */

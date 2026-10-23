@@ -2,6 +2,10 @@
 //   - M_LFF_LevelHighlight (SourceData/UI/Materials/LFF_LevelHighlight.hlsl): the picked level's height band shows through
 //     a kelly tint inside the stadium's footprint, the rest of the stadium recedes a little. Works from depth alone.
 //   - The Lights preview's exposure lift (ALFFCameraRig::SetLightPulse): the picture brightens by 2^stops, a slow sine.
+//   - Evening and night (web addition, Docs/WEB_PARITY.md W22): the photographed city and the stadium model carry
+//     daylight in their textures, so after sunset the picture is relit by where each pixel is: the bowl under the
+//     stadium's floodlights, the outside of the stadium in their spill, the plaza and lots under warm lamps, the city dim.
+//     The sky is left to Cesium's atmosphere at the real time, with its stars and moon.
 import { Cartesian3, Matrix4, PostProcessStage } from "cesium";
 import type { Scene } from "cesium";
 import { GameMode } from "../config";
@@ -49,11 +53,55 @@ void main() {
     out_FragColor = vec4(min(colour.rgb * u_gain, vec3(1.0)), colour.a);
 }`;
 
+const NIGHT_SHADER = /* glsl */ `
+uniform sampler2D colorTexture;
+uniform sampler2D depthTexture;
+uniform mat4 u_eyeToSite;      // eye coordinates (m) -> site frame (cm: X across the field, Y along it, Z above the turf)
+uniform vec2 u_footprint;      // the stadium's footprint radii (cm)
+uniform float u_night;         // 0 day .. 1 night
+uniform float u_golden;        // low-sun warmth
+uniform float u_floods;        // the stadium's lights: 0 off .. 1 on
+in vec2 v_textureCoordinates;
+
+void main() {
+    vec4 colour = texture(colorTexture, v_textureCoordinates);
+    float depth = czm_readDepth(depthTexture, v_textureCoordinates);
+    // The sky is Cesium's atmosphere at the real time of day.
+    if (depth >= 1.0) { out_FragColor = colour; return; }
+    vec4 eye = czm_windowToEyeCoordinates(gl_FragCoord.xy, depth);
+    vec3 L = (u_eyeToSite * vec4(eye.xyz / eye.w, 1.0)).xyz;
+    float E = length(vec2(L.x / u_footprint.x, L.y / u_footprint.y));
+    float belowRoof = 1.0 - smoothstep(6200.0, 8500.0, L.z);
+    // The bowl, stands and field under the floodlights; the field a little brighter.
+    float bowl = (1.0 - smoothstep(0.9, 1.0, E)) * belowRoof;
+    float field = 1.0 - smoothstep(0.42, 0.58, E);
+    // The stadium's outside: spill from the bowl, lit concourses and uplights on the facade.
+    float facade = smoothstep(0.9, 1.0, E) * (1.0 - smoothstep(1.02, 1.25, E)) * belowRoof;
+    // The plaza and lots: warm lamps in pools near the ground, out to the edge of the lots.
+    float metres = length(L.xy) / 100.0;
+    float site = 1.0 - smoothstep(320.0, 700.0, metres);
+    float ground = 1.0 - smoothstep(900.0, 3200.0, L.z);
+    vec2 cell = fract(L.xy / 2600.0) - 0.5;
+    float pool = 1.0 - smoothstep(0.12, 0.5, length(cell));
+    float lamps = site * ground * (0.32 + 0.4 * pool) * (1.0 - bowl);
+    // The rest of the city: moonlight, sky glow and street lights low down.
+    vec3 moon = vec3(0.07, 0.085, 0.12);
+    vec3 street = vec3(0.13, 0.09, 0.05) * (1.0 - smoothstep(1500.0, 6000.0, L.z));
+    vec3 flood = vec3(0.98, 1.0, 1.04) * u_floods;
+    vec3 lamp = vec3(1.0, 0.76, 0.5);
+    vec3 light = moon + street + lamp * lamps + flood * (bowl * (0.92 + 0.14 * field) + facade * 0.42);
+    vec3 C = mix(colour.rgb, colour.rgb * light, u_night);
+    C *= mix(vec3(1.0), vec3(1.07, 0.94, 0.8), u_golden);
+    out_FragColor = vec4(C, colour.a);
+}`;
+
 export class CameraEffects {
     private readonly highlight: PostProcessStage;
     private readonly exposure: PostProcessStage;
+    private readonly nightGrade: PostProcessStage;
     private band: { minZ: number; maxZ: number } | null = null;
     private stops = 0;
+    private night = { night: 0, golden: 0, floods: 1 };
     private readonly eyeToSite = new Matrix4();
     /** Earth-fixed -> site frame (cm, Unreal axes): ENU metres -> mirror Y -> centimetres -> inverse site rotation. */
     private readonly fixedToSite: Matrix4;
@@ -89,12 +137,32 @@ export class CameraEffects {
             uniforms: { u_gain: () => Math.pow(2, this.stops) },
         });
         this.exposure.enabled = false;
+        this.nightGrade = new PostProcessStage({
+            name: "lff_night",
+            fragmentShader: NIGHT_SHADER,
+            uniforms: {
+                u_eyeToSite: () => this.eyeToSite,
+                u_footprint: () => ({ x: GameMode.StadiumFootprintRadii.x, y: GameMode.StadiumFootprintRadii.y }),
+                u_night: () => this.night.night,
+                u_golden: () => this.night.golden,
+                u_floods: () => this.night.floods,
+            },
+        });
+        this.nightGrade.enabled = false;
+        // Relit first, so the level highlight and the light pulse work on the evening picture.
+        scene.postProcessStages.add(this.nightGrade);
         scene.postProcessStages.add(this.highlight);
         scene.postProcessStages.add(this.exposure);
         // Double precision on the CPU, so the shader only sees eye-relative coordinates (no float jitter on the band).
         scene.preRender.addEventListener(() => {
-            if (this.highlight.enabled) Matrix4.multiply(this.fixedToSite, scene.camera.inverseViewMatrix, this.eyeToSite);
+            if (this.highlight.enabled || this.nightGrade.enabled) Matrix4.multiply(this.fixedToSite, scene.camera.inverseViewMatrix, this.eyeToSite);
         });
+    }
+
+    /** The time of day's relighting (scene/timeOfDay.ts); off in full daylight. */
+    setNightGrade(night: number, golden: number, floods: number): void {
+        this.night = { night, golden, floods };
+        this.nightGrade.enabled = night > 1e-3 || golden > 1e-3;
     }
 
     setLevelHighlight(band: { minZ: number; maxZ: number } | null): void {

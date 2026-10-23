@@ -916,6 +916,38 @@ html, body {
 .settings-fill {
     flex: 1;
 }
+/* Game day (Docs/WEB_PARITY.md W21): kickoff time chips, that time's home games, Automatic. */
+.settings-note.game-intro {
+    margin: 0 0 1.2rem;
+    max-width: 50rem;
+}
+.kickoff-templates {
+    max-width: 50rem;
+    margin-bottom: 1rem;
+}
+.kickoff-templates .btn .name {
+    font-size: 2.4rem;
+}
+.game-rows {
+    display: flex;
+    flex-direction: column;
+}
+.game-row .state {
+    min-width: 0;
+    font-size: 1.8rem;
+}
+.welcome-game {
+    color: #fff;
+    font-size: 2.6rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-shadow: 0 0.1rem 0 rgba(0, 0, 0, 0.55);
+    margin: -0.8rem 0 2.6rem;
+}
+html.phone .welcome-game {
+    font-size: 2rem;
+    margin-bottom: 1.8rem;
+}
 .settings-foot {
     display: flex;
     align-items: center;
