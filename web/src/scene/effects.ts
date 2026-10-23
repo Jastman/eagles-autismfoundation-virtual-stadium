@@ -12,6 +12,14 @@ import { GameMode } from "../config";
 import { Vec3 } from "../util/ue";
 import type { Geo } from "./geo";
 
+// Eye coordinates (m) of this pixel, as CesiumJS's own ambient occlusion rebuilds them: czm_readDepth has already undone
+// the logarithmic depth, so the window-to-eye helper (which undoes it again) would put everything hundreds of metres off.
+const EYE_POSITION = /* glsl */ `
+vec3 eyePosition(float depth) {
+    vec4 eye = czm_inverseProjection * vec4(2.0 * v_textureCoordinates - 1.0, depth, 1.0);
+    return eye.xyz / eye.w;
+}`;
+
 const HIGHLIGHT_SHADER = /* glsl */ `
 uniform sampler2D colorTexture;
 uniform sampler2D depthTexture;
@@ -22,13 +30,13 @@ uniform vec3 u_tint;           // HighlightColor, linear
 uniform float u_opacity;       // HighlightOpacity
 uniform float u_dim;           // DimOutside
 in vec2 v_textureCoordinates;
+${EYE_POSITION}
 
 void main() {
     vec4 colour = texture(colorTexture, v_textureCoordinates);
     float depth = czm_readDepth(depthTexture, v_textureCoordinates);
     if (depth >= 1.0) { out_FragColor = colour; return; }
-    vec4 eye = czm_windowToEyeCoordinates(gl_FragCoord.xy, depth);
-    vec3 L = (u_eyeToSite * vec4(eye.xyz / eye.w, 1.0)).xyz;
+    vec3 L = (u_eyeToSite * vec4(eyePosition(depth), 1.0)).xyz;
     // Inside the stadium's footprint (an ellipse), feathered over its last 8%.
     float E = length(vec2(L.x / max(u_footprint.x, 1.0), L.y / max(u_footprint.y, 1.0)));
     float inside = 1.0 - smoothstep(0.92, 1.0, E);
@@ -62,14 +70,14 @@ uniform float u_night;         // 0 day .. 1 night
 uniform float u_golden;        // low-sun warmth
 uniform float u_floods;        // the stadium's lights: 0 off .. 1 on
 in vec2 v_textureCoordinates;
+${EYE_POSITION}
 
 void main() {
     vec4 colour = texture(colorTexture, v_textureCoordinates);
     float depth = czm_readDepth(depthTexture, v_textureCoordinates);
     // The sky is Cesium's atmosphere at the real time of day.
     if (depth >= 1.0) { out_FragColor = colour; return; }
-    vec4 eye = czm_windowToEyeCoordinates(gl_FragCoord.xy, depth);
-    vec3 L = (u_eyeToSite * vec4(eye.xyz / eye.w, 1.0)).xyz;
+    vec3 L = (u_eyeToSite * vec4(eyePosition(depth), 1.0)).xyz;
     float E = length(vec2(L.x / u_footprint.x, L.y / u_footprint.y));
     float belowRoof = 1.0 - smoothstep(6200.0, 8500.0, L.z);
     // The bowl, stands and field under the floodlights; the field a little brighter.
@@ -150,6 +158,9 @@ export class CameraEffects {
         });
         this.nightGrade.enabled = false;
         // Relit first, so the level highlight and the light pulse work on the evening picture.
+        // One depth frustum (near 0.1 m to far 1e10 m): the stages rebuild positions with one projection, so a second
+        // frustum's pixels would land in the wrong place. Logarithmic depth keeps the precision.
+        scene.logarithmicDepthFarToNearRatio = Math.max(scene.logarithmicDepthFarToNearRatio, 1e11);
         scene.postProcessStages.add(this.nightGrade);
         scene.postProcessStages.add(this.highlight);
         scene.postProcessStages.add(this.exposure);
