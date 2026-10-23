@@ -50,17 +50,18 @@ jobs:
       # The site's published address, for the link-preview tags (og:url, og:image).
       - id: pages
         uses: actions/configure-pages@v5
-      # A slow or stuck package mirror once held a deploy for 15+ minutes: bounded, retried, never interactive, and not
-      # fatal (without ffmpeg the build serves the WAVs as they are).
+      # The runners' Azure Ubuntu mirror once crawled at ~40 KB/s and held a deploy for 15+ minutes. Use the main Ubuntu
+      # archive, bound every step, never prompt, and never fail on it: without ffmpeg the build serves the WAVs as they are.
       - name: Audio encoder and the crowd's drawing library
-        timeout-minutes: 10
+        timeout-minutes: 12
         env:
           DEBIAN_FRONTEND: noninteractive
         run: |
-          for attempt in 1 2 3; do
-            if timeout 180 sudo -E apt-get update -q && timeout 240 sudo -E apt-get install -y -q --no-install-recommends ffmpeg; then break; fi
-            echo "apt-get attempt $attempt failed; retrying"
-            sleep 10
+          sudo sed -i 's#http://azure.archive.ubuntu.com/ubuntu#http://archive.ubuntu.com/ubuntu#g' /etc/apt/sources.list.d/*.sources /etc/apt/sources.list 2>/dev/null || true
+          for attempt in 1 2; do
+            if timeout 150 sudo -E apt-get update -q -o Acquire::Retries=2 \
+              && timeout 270 sudo -E apt-get install -y -q --no-install-recommends -o Acquire::Retries=2 ffmpeg; then break; fi
+            echo "apt-get attempt $attempt did not finish; trying again"
           done
           command -v ffmpeg || echo "::warning::ffmpeg not installed; audio is served as WAV"
           pip install pillow
