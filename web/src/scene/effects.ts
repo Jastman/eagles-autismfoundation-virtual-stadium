@@ -112,9 +112,10 @@ void main() {
     float depth = czm_readDepth(depthTexture, v_textureCoordinates);
     // The sky is Cesium's atmosphere at the real time of day, with the city's warm glow low over the horizon at night.
     if (depth >= 1.0) {
-        vec3 dir = normalize(mat3(u_eyeToSite) * eyePosition(1.0));
-        float horizon = exp(-max(dir.z, 0.0) * 12.0);
-        out_FragColor = vec4(colour.rgb + vec3(0.11, 0.07, 0.035) * horizon * u_night, colour.a);
+        // Any depth along the pixel's ray gives its direction; the far plane itself loses precision.
+        vec3 dir = normalize(mat3(u_eyeToSite) * eyePosition(0.5));
+        float horizon = exp(-max(dir.z, 0.0) * 18.0);
+        out_FragColor = vec4(colour.rgb + vec3(0.07, 0.045, 0.022) * horizon * u_night, colour.a);
         return;
     }
     vec3 L = (u_eyeToSite * vec4(eyePosition(depth), 1.0)).xyz;
@@ -145,7 +146,7 @@ void main() {
     vec3 light = moon + street + lamp * lamps + flood * (bowl * (0.92 + 0.14 * field) + facade * 0.42);
     vec3 C = mix(colour.rgb, colour.rgb * light, u_night);
     // Windows give off their own light: added, not multiplied, so they glow on dark walls. Walls only, from 6 m up.
-    C += cityWindows(L, N) * wallness * city * smoothstep(500.0, 900.0, L.z) * u_night * 0.6;
+    C += cityWindows(L, N) * wallness * city * smoothstep(500.0, 900.0, L.z) * u_night * 1.5;
     C *= mix(vec3(1.0), vec3(1.07, 0.94, 0.8), u_golden);
     out_FragColor = vec4(C, colour.a);
 }`;
