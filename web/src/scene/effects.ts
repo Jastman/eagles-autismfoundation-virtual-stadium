@@ -85,13 +85,12 @@ void main() {
     float field = 1.0 - smoothstep(0.42, 0.58, E);
     // The stadium's outside: spill from the bowl, lit concourses and uplights on the facade.
     float facade = smoothstep(0.9, 1.0, E) * (1.0 - smoothstep(1.02, 1.25, E)) * belowRoof;
-    // The plaza and lots: warm lamps in pools near the ground, out to the edge of the lots.
+    // The plaza and lots: an even warm wash from the lamps near the ground, out to the edge of the lots. (No pattern of
+    // pools: on a grid it read as circles stamped over the ground.)
     float metres = length(L.xy) / 100.0;
     float site = 1.0 - smoothstep(320.0, 700.0, metres);
     float ground = 1.0 - smoothstep(900.0, 3200.0, L.z);
-    vec2 cell = fract(L.xy / 2600.0) - 0.5;
-    float pool = 1.0 - smoothstep(0.12, 0.5, length(cell));
-    float lamps = site * ground * (0.32 + 0.4 * pool) * (1.0 - bowl);
+    float lamps = site * ground * 0.5 * (1.0 - bowl);
     // The rest of the city: moonlight, sky glow and street lights low down.
     vec3 moon = vec3(0.07, 0.085, 0.12);
     vec3 street = vec3(0.13, 0.09, 0.05) * (1.0 - smoothstep(1500.0, 6000.0, L.z));

@@ -20,14 +20,21 @@ interface DisplaySpec {
     heightCm: number;
 }
 
-const FT = 30.48;
+/**
+ * Measured on the stadium model in the live build (2026-10-23, camera projection and occlusion against the model): each
+ * sits 20 cm in front of the model's own screen surface. The model is turned about 2.2 deg from the site frame (its
+ * end facades run 0.038 m in y per m in x), so every display is turned with it.
+ */
+const MODEL_YAW = -2.18;
 const DISPLAYS: DisplaySpec[] = [
-    // Above the end zones' upper decks (their back rows: north y -124 m at 40 m up, south y 122 m at 42 m up).
-    { id: "north-board", kind: "board", centre: new Vec3(0, -12560, 4620), yaw: 90, widthCm: 192 * FT, heightCm: 27 * FT },
-    { id: "south-board", kind: "board", centre: new Vec3(0, 12380, 4870), yaw: -90, widthCm: 160 * FT, heightCm: 27 * FT },
-    // The club level's fascia, over the lower bowl's back rows (west x -74.6 m, east 70 m; club front 15.9 m up).
-    { id: "west-ribbon", kind: "ribbon", centre: new Vec3(-6640, 0, 1330), yaw: 0, widthCm: 9000, heightCm: 110 },
-    { id: "east-ribbon", kind: "ribbon", centre: new Vec3(6380, 0, 1330), yaw: 180, widthCm: 9000, heightCm: 110 },
+    // The end-zone boards on the facade between the club stands and the upper deck: north 14.0-22.5 m up, about 60 m
+    // wide; south 12.2-21.4 m up, about 50 m wide.
+    { id: "north-board", kind: "board", centre: new Vec3(-130, -9965, 1825), yaw: 90 + MODEL_YAW, widthCm: 6000, heightCm: 850 },
+    { id: "south-board", kind: "board", centre: new Vec3(-930, 9966, 1680), yaw: -90 + MODEL_YAW, widthCm: 5000, heightCm: 900 },
+    // The ribbon boards: the model's teal strip on the club fascia (west 74.5 m out, east 65.5 m: the field is off
+    // the site origin), about 1.2 m tall.
+    { id: "west-ribbon", kind: "ribbon", centre: new Vec3(-7480, 0, 1560), yaw: MODEL_YAW, widthCm: 9000, heightCm: 120 },
+    { id: "east-ribbon", kind: "ribbon", centre: new Vec3(6580, 0, 1520), yaw: 180 + MODEL_YAW, widthCm: 9000, heightCm: 120 },
 ];
 
 /** What the displays say: the game the tour is set to. */
