@@ -9,6 +9,7 @@ import { BillboardCollection, Cartesian3, Color, DirectionalLight, DynamicAtmosp
 import type { Billboard, Viewer } from "cesium";
 import { Vec3 } from "../util/ue";
 import type { CameraEffects } from "./effects";
+import type { FloodlightShading } from "./floodShading";
 import type { Geo } from "./geo";
 import { daylightLevels, sunPosition } from "./solar";
 
@@ -23,7 +24,7 @@ const MAX_FADE_MS = 6 * 3600 * 1000;
  * The floodlight banks (site frame, cm), from the bowl in Content/LFF/Crowd/seats.json: along both sideline canopies
  * above the upper deck's back rows (x about +-111 m, 47 m up), and over each end's upper deck.
  */
-function lightBanks(): Vec3[] {
+export function lightBanks(): Vec3[] {
     const banks: Vec3[] = [];
     for (let y = -8400; y <= 8400; y += 700) {
         banks.push(new Vec3(-11500, y, 5450), new Vec3(11050, y, 5450));
@@ -60,8 +61,13 @@ export class TimeOfDay {
     private readonly halos: Billboard[] = [];
     night = 0;
     golden = 0;
+    /** The light banks' glow, 0..1 (they read once the sky dims). */
+    glow = 0;
+    /** False when the three.js layer draws the banks (scene/threeLayer.ts). */
+    private banksShown = true;
 
-    constructor(private readonly viewer: Viewer, private readonly geo: Geo, private readonly effects: CameraEffects) {
+    constructor(private readonly viewer: Viewer, private readonly geo: Geo, private readonly effects: CameraEffects,
+        private readonly flood: FloodlightShading) {
         viewer.scene.light = this.light;
         // The sky is lit by the real sun at the clock's time (the model light above is the scene light, not the sun).
         viewer.scene.atmosphere.dynamicLighting = DynamicAtmosphereLightingType.SUNLIGHT;
@@ -124,11 +130,19 @@ export class TimeOfDay {
         const floods = 1;
         this.effects.setNightGrade(night, golden, floods);
         const glow = Math.min(Math.max((night - 0.15) / 0.6, 0), 1);
+        this.glow = glow;
+        this.flood.setNight(night);
         for (let i = 0; i < this.cores.length; ++i) {
-            this.cores[i].show = this.halos[i].show = glow > 0.01;
+            this.cores[i].show = this.halos[i].show = this.banksShown && glow > 0.01;
             this.cores[i].color = new Color(1, 1, 1, glow);
             this.halos[i].color = new Color(0.85, 0.92, 1, 0.38 * glow);
         }
         viewer.scene.requestRender();
+    }
+
+    /** The three.js layer draws the banks with bloom instead of these billboards. */
+    setBanksShown(shown: boolean): void {
+        this.banksShown = shown;
+        if (this.now !== 0) this.apply(this.now);
     }
 }

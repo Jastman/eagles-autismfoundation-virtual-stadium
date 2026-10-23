@@ -104,7 +104,7 @@ export class CameraEffects {
     private night = { night: 0, golden: 0, floods: 1 };
     private readonly eyeToSite = new Matrix4();
     /** Earth-fixed -> site frame (cm, Unreal axes): ENU metres -> mirror Y -> centimetres -> inverse site rotation. */
-    private readonly fixedToSite: Matrix4;
+    readonly fixedToSite: Matrix4;
 
     constructor(private readonly scene: Scene, geo: Geo) {
         const site = geo.siteFrame;

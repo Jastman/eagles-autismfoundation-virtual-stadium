@@ -6,7 +6,16 @@ is the right base for the georeferenced, streamed parts. Where it is weakest is 
 effects: many dynamic lights, bloom that doesn't halo dark edges (W15), particles, and animated characters. This note
 lists what would make the experience look closer to the Unreal build, in order of value for effort.
 
-## 1. A three.js layer over Cesium (recommended next step)
+## Status (October 23, 2026)
+
+Done (WEB_PARITY W24): the three.js layer and its camera bridge, bloom, the floodlight glare and beams, the phone light
+show and the fireworks and gate flares as GPU particles, and a CustomShader that floodlights the stadium model by normal.
+Not done: animated people (no skinned, clothed people can be exported from the MetaHumans: their outfits are Chaos cloth;
+it needs a separate set of rigged glTF fans), real shadow-casting lights in three.js (they can't light Cesium's tiles,
+so the CustomShader does that job), video textures for the boards (needs real board loops), and the Cesium-side items
+below.
+
+## 1. A three.js layer over Cesium
 
 Run three.js in the same page, rendering into its own transparent canvas on top of Cesium's (or into Cesium's WebGL2
 context), with its camera copied from Cesium's every frame (`camera.positionWC`, `directionWC`, `upWC`, frustum) and its

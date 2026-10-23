@@ -156,6 +156,33 @@ export class SceneLook {
             } as unknown as CumulusCloud);
         }
         scene.primitives.add(clouds);
+        this.cloudLevel = -1;
+        this.setNight(this.night, this.golden);
         return clouds;
+    }
+
+    private night = 0;
+    private golden = 0;
+    private cloudLevel = -1;
+
+    /**
+     * The clouds at the time of day (scene/timeOfDay.ts): warm before sunset, then only faintly lit by the city's glow.
+     * Without this they would glow white at night, lit by the floodlights' scene light.
+     */
+    setNight(night: number, golden: number): void {
+        this.night = night;
+        this.golden = golden;
+        const level = Math.round((1 - 0.88 * night) * 100) / 100;
+        const key = level + golden;
+        if (!this.clouds || key === this.cloudLevel) return;
+        this.cloudLevel = key;
+        const colour = new Color(1, 1 - 0.1 * golden, 1 - 0.25 * golden, 1);
+        for (let i = 0; i < this.clouds.length; ++i) {
+            const cloud = this.clouds.get(i);
+            const base = (cloud as unknown as { lffBrightness?: number }).lffBrightness ?? cloud.brightness;
+            (cloud as unknown as { lffBrightness?: number }).lffBrightness = base;
+            cloud.brightness = base * level;
+            cloud.color = colour;
+        }
     }
 }

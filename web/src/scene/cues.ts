@@ -158,6 +158,8 @@ function sparkImage(): HTMLCanvasElement {
 
 /** Soft fireworks: slow bursts of glowing sparks that open, drift down and shrink away. Nothing flashes. */
 export class FireworksCue extends LevelCue {
+    /** False when the three.js layer draws the sparks (scene/threeParticles.ts): the cue then only keeps time. */
+    static drawSparks = true;
     override readonly isFireworks = true;
     private readonly collection: BillboardCollection;
     private readonly bursts: Billboard[][] = [];
@@ -192,9 +194,24 @@ export class FireworksCue extends LevelCue {
         for (const burst of this.bursts) for (const b of burst) b.show = false;
     }
 
+    /** The bursts in the air now: world centre (cm), linear colour, and how far through its life each is (0..1). */
+    burstStates(): { centre: Vec3; colour: number[]; t: number; radiusCm: number; dropCm: number; sparkSizeCm: number }[] {
+        if (!this.isPlaying() || this.hidden) return [];
+        const f = this.data.fireworks!;
+        const moving = this.elapsed - this.playDelaySeconds;
+        return f.burstOffsets.map((offset, index) => ({
+            centre: this.rest.transformPositionNoScale(new Vec3(offset[0], offset[1], offset[2])),
+            colour: f.burstColours.length > 0 ? f.burstColours[index % f.burstColours.length] : [1, 0.78, 0.45],
+            t: (moving - index * f.burstInterval) / f.burstSeconds,
+            radiusCm: f.burstRadius,
+            dropCm: SPARK_DROP,
+            sparkSizeCm: f.sparkSize,
+        })).filter((b) => b.t > 0 && b.t < 1);
+    }
+
     protected override applyAlpha(_alpha: number, elapsedSeconds: number): void {
         // The actor itself never moves; each burst is drawn from its own clock.
-        if (!this.isPlaying()) return;
+        if (!this.isPlaying() || !FireworksCue.drawSparks) return;
         const f = this.data.fireworks!;
         f.burstOffsets.forEach((offset, index) => {
             const t = (elapsedSeconds - index * f.burstInterval) / f.burstSeconds;

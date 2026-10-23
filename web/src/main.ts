@@ -13,12 +13,17 @@ import { Journey } from "./journey/journey";
 import type { JourneySnapshot } from "./journey/types";
 import { isCrowdShown, isReducedMotionEffective } from "./journey/types";
 import { Geo } from "./scene/geo";
+import { FireworksCue } from "./scene/cues";
+import { FloodlightShading } from "./scene/floodShading";
 import { PhoneLightShow } from "./scene/lightShow";
 import { StadiumDisplays } from "./scene/screens";
-import { TimeOfDay } from "./scene/timeOfDay";
+import { Floodlights, ThreeLayer, aimBanks } from "./scene/threeLayer";
+import { FireworksLayer, PhoneLightsLayer } from "./scene/threeParticles";
+import { TimeOfDay, lightBanks } from "./scene/timeOfDay";
 import { sceneData } from "./scene/sceneData";
 import { SceneLook } from "./scene/look";
 import type { UnrealBounds } from "./scene/models";
+import type { QualitySettings } from "./scene/quality";
 import { FrameRateGovernor, chooseTier, lowerTier, rememberTier, settingsFor, watchForCrashes } from "./scene/quality";
 import { loadTiles } from "./scene/tiles";
 import { StadiumWorld } from "./scene/world";
@@ -126,7 +131,7 @@ async function main(): Promise<void> {
         const lower = lowerTier(settings.tier);
         if (lower && !quality.fixed) {
             settings = settingsFor(lower);
-            look.apply(settings);
+            applyQuality(settings);
             rememberTier(lower);
         }
         viewer.useDefaultRenderLoop = true;
@@ -145,10 +150,34 @@ async function main(): Promise<void> {
     // Which home game the tour is for (Settings > Game day): its kickoff template's steps, times and lighting.
     const gameDay = new GameDayController();
     const journey = new Journey(world, timers, audio, gameDay.current.steps, amenities(), undefined, gameDay.current.tourFirstSteps);
-    const timeOfDay = new TimeOfDay(viewer, geo, world.effects);
+    const flood = new FloodlightShading(scene, world.effects.fixedToSite);
+    const timeOfDay = new TimeOfDay(viewer, geo, world.effects, flood);
     const displays = new StadiumDisplays(scene, geo);
-    const lightShow = new PhoneLightShow(scene, geo);
-    void lightShow.load();
+    // Light and particles with bloom in a three.js layer over Cesium (scene/threeLayer.ts); Cesium-only versions if it
+    // can't start (or with ?noThree).
+    const three = params.has("noThree") ? null : ThreeLayer.create(app, scene, geo);
+    const floodlights = three ? new Floodlights(geo, aimBanks(lightBanks())) : null;
+    let lightShow: { set(shown: boolean, animate: boolean): void };
+    let cesiumLightShow: PhoneLightShow | null = null;
+    if (three && floodlights) {
+        const phones = new PhoneLightsLayer();
+        void phones.load(geo);
+        three.add(floodlights);
+        three.add(phones);
+        three.add(new FireworksLayer(() => world.cueActors.filter((c): c is FireworksCue => c instanceof FireworksCue)));
+        three.setQuality(settings.tier);
+        timeOfDay.setBanksShown(false);
+        FireworksCue.drawSparks = false;
+        lightShow = phones;
+    } else {
+        cesiumLightShow = new PhoneLightShow(scene, geo);
+        void cesiumLightShow.load();
+        lightShow = cesiumLightShow;
+    }
+    const applyQuality = (next: QualitySettings) => {
+        look.apply(next);
+        three?.setQuality(next.tier);
+    };
     const showGame = (day: GameDay) => displays.setGame({
         opponentShort: day.game.OpponentShort, opponentCode: day.game.OpponentCode, kickoffLabel: day.template.Label,
         weekday: day.game.Weekday, broadcast: day.game.Broadcast.split(",")[0],
@@ -188,7 +217,11 @@ async function main(): Promise<void> {
 
     journey.initialize();
     followTour(journey.snapshot, false);
-    const tiles = loadTiles(scene, geo, config, sceneData.footprintLonLat, (set, role) => look.addTileset(set, role));
+    const tiles = loadTiles(scene, geo, config, sceneData.footprintLonLat, (set, role) => {
+        look.addTileset(set, role);
+        // The stadium model lit by its floodlights at night (the photographed city keeps the post-process relight).
+        if (role !== "city") flood.apply(set);
+    });
     if (!params.has("noCrowd")) void world.loadCrowd();
     let progress = () => 0;
     void tiles.then((t) => {
@@ -218,13 +251,15 @@ async function main(): Promise<void> {
         journey.tick(worldDt);
         world.tick(worldDt);
         // Scenery only: a fault here must never stop the render loop.
-        for (const scenery of [timeOfDay, displays, lightShow]) {
+        for (const scenery of [timeOfDay, displays, cesiumLightShow]) {
             try {
-                scenery.tick(dt);
+                scenery?.tick(dt);
             } catch (error) {
                 console.error("Scenery update failed; carrying on.", error);
             }
         }
+        floodlights?.setLevel(timeOfDay.glow);
+        look.setNight(timeOfDay.night, timeOfDay.golden);
         const rig = journey.rig;
         geo.applyCamera(scene.camera, rig.location, rig.rotation, rig.fieldOfView);
         world.effects.setExposureStops(rig.pulseStops);
@@ -236,14 +271,14 @@ async function main(): Promise<void> {
             const lower = lowerTier(settings.tier);
             if (lower) {
                 settings = settingsFor(lower);
-                look.apply(settings);
+                applyQuality(settings);
                 rememberTier(lower);
                 console.info(`Quality: frame rate low, now ${lower}.`);
             }
         }
     });
     // Development hooks for automated checks (Docs/WEB_PARITY.md, verification).
-    (window as unknown as { lff: unknown }).lff = { journey, world, viewer, hud, look, settingsFor, gameDay, timeOfDay, displays, lightShow,
+    (window as unknown as { lff: unknown }).lff = { journey, world, viewer, hud, look, settingsFor, gameDay, timeOfDay, displays, lightShow, three, floodlights,
         V2: (x: number, y: number) => new Vec2(x, y) };
 }
 

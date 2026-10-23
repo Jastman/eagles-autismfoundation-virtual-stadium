@@ -84,6 +84,17 @@ html, body {
     display: none !important;
 }
 
+/* ---- the three.js light layer (scene/threeLayer.ts): light only, screen-blended over Cesium, under the fade ---- */
+.three-layer {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    mix-blend-mode: screen;
+    z-index: 5;
+}
+
 /* ---- the camera fade (APlayerCameraManager::StartCameraFade): under the HUD, over the scene ---- */
 .camera-fade {
     position: fixed;
