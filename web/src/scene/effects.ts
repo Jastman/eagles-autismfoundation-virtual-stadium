@@ -12,11 +12,13 @@ import { GameMode } from "../config";
 import { Vec3 } from "../util/ue";
 import type { Geo } from "./geo";
 
-// Eye coordinates (m) of this pixel, as CesiumJS's own ambient occlusion rebuilds them: czm_readDepth has already undone
-// the logarithmic depth, so the window-to-eye helper (which undoes it again) would put everything hundreds of metres off.
+// Eye coordinates (m) of this pixel. czm_readDepth has already undone the logarithmic depth (so the window-to-eye helper,
+// which undoes it again, would put everything hundreds of metres off) and returns window depth 0..1, which is NDC z
+// -1..1 for the inverse projection. Without that last step positions slide towards the camera, and anything lit by
+// where it is (the plaza lamps, the bowl) follows the camera around.
 const EYE_POSITION = /* glsl */ `
 vec3 eyePosition(float depth) {
-    vec4 eye = czm_inverseProjection * vec4(2.0 * v_textureCoordinates - 1.0, depth, 1.0);
+    vec4 eye = czm_inverseProjection * vec4(2.0 * v_textureCoordinates - 1.0, depth * 2.0 - 1.0, 1.0);
     return eye.xyz / eye.w;
 }`;
 
@@ -131,11 +133,12 @@ void main() {
     // The plaza and lots: an even warm wash from the lamps near the ground, out to the edge of the lots. (No pattern of
     // pools: on a grid it read as circles stamped over the ground.)
     float metres = length(L.xy) / 100.0;
-    float site = 1.0 - smoothstep(320.0, 700.0, metres);
+    // Uneven, and fading out over half a kilometre, so the lit area has no visible edge.
+    float site = 1.0 - smoothstep(220.0, 800.0, metres);
     float ground = 1.0 - smoothstep(900.0, 3200.0, L.z);
-    float lamps = site * ground * 0.5 * (1.0 - bowl);
+    float lamps = site * ground * (0.16 + 0.16 * noise2(L.xy / 4000.0 + 7.0)) * (1.0 - bowl);
     // The rest of the city: moonlight and sky glow, street lights in uneven patches on the ground, and lit windows.
-    float city = smoothstep(300.0, 420.0, metres);
+    float city = smoothstep(250.0, 600.0, metres);
     float horizontal = smoothstep(0.65, 0.9, abs(N.z));
     float wallness = 1.0 - smoothstep(0.25, 0.5, abs(N.z));
     float low = 1.0 - smoothstep(1500.0, 6000.0, L.z);
