@@ -50,9 +50,19 @@ jobs:
       # The site's published address, for the link-preview tags (og:url, og:image).
       - id: pages
         uses: actions/configure-pages@v5
+      # A slow or stuck package mirror once held a deploy for 15+ minutes: bounded, retried, never interactive, and not
+      # fatal (without ffmpeg the build serves the WAVs as they are).
       - name: Audio encoder and the crowd's drawing library
+        timeout-minutes: 10
+        env:
+          DEBIAN_FRONTEND: noninteractive
         run: |
-          sudo apt-get update -q && sudo apt-get install -y -q ffmpeg
+          for attempt in 1 2 3; do
+            if timeout 180 sudo -E apt-get update -q && timeout 240 sudo -E apt-get install -y -q --no-install-recommends ffmpeg; then break; fi
+            echo "apt-get attempt $attempt failed; retrying"
+            sleep 10
+          done
+          command -v ffmpeg || echo "::warning::ffmpeg not installed; audio is served as WAV"
           pip install pillow
       - name: Build
         working-directory: web
