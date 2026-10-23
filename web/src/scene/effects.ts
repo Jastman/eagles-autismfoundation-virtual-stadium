@@ -89,24 +89,14 @@ float noise2(vec2 p) {
     return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
 }
 
-// Lit windows on the city's building walls: a floor-by-bay grid along each wall, some windows lit in warm or cool light.
-// Where a window is smaller than a couple of pixels the grid becomes its average glow, so distant blocks shimmer neither.
-vec3 cityWindows(vec3 L, vec3 N) {
-    vec3 T = normalize(vec3(-N.y, N.x, 0.0));
-    float along = dot(L.xy, T.xy);
-    vec2 size = vec2(260.0, 340.0);
-    vec2 g = vec2(along, L.z) / size;
-    vec2 cell = floor(g), f = fract(g);
-    // One random pattern per wall: its direction and its offset across the street.
-    float wall = floor(atan(T.y, T.x) * 6.0) + floor(dot(L.xy, N.xy) / 1200.0) * 3.7;
-    float pick = hash(vec3(cell, wall));
-    float lit = step(0.6, pick);
-    float pane = smoothstep(0.1, 0.18, f.x) * (1.0 - smoothstep(0.82, 0.9, f.x)) * smoothstep(0.22, 0.3, f.y) * (1.0 - smoothstep(0.8, 0.88, f.y));
-    float footprint = max(fwidth(along), fwidth(L.z));
-    float detail = 1.0 - smoothstep(size.x * 0.3, size.x * 0.9, footprint);
-    float glow = mix(0.4 * 0.38, lit * pane, detail);
-    vec3 tint = mix(vec3(1.0, 0.7, 0.4), vec3(0.78, 0.86, 1.0), step(0.85, fract(pick * 7.13)));
-    return tint * glow * (0.65 + 0.7 * fract(pick * 3.71));
+// The lit skyline: tall buildings far off glow from their windows. At that distance a window is smaller than a pixel, so
+// each building chunk (a 25 m bay, 12 m of floors) gets one steady brightness from a hash of its cell, fixed to the world
+// and the same from any camera position: nothing swims or flickers as the view moves.
+vec3 skylineGlow(vec3 L) {
+    float pick = hash(floor(vec3(L.xy / 2500.0, L.z / 1200.0)));
+    float lit = 0.25 + 0.75 * smoothstep(0.35, 0.9, pick);
+    vec3 tint = mix(vec3(1.0, 0.72, 0.44), vec3(0.8, 0.88, 1.0), step(0.82, fract(pick * 7.13)));
+    return tint * lit;
 }
 
 void main() {
@@ -121,8 +111,6 @@ void main() {
         return;
     }
     vec3 L = (u_eyeToSite * vec4(eyePosition(depth), 1.0)).xyz;
-    // The surface's normal, from neighbouring pixels (site frame): walls are near horizontal normals.
-    vec3 N = normalize(cross(dFdx(L), dFdy(L)));
     float E = length(vec2(L.x / u_footprint.x, L.y / u_footprint.y));
     float belowRoof = 1.0 - smoothstep(6200.0, 8500.0, L.z);
     // The bowl, stands and field under the floodlights; the field a little brighter.
@@ -137,19 +125,20 @@ void main() {
     float site = 1.0 - smoothstep(220.0, 800.0, metres);
     float ground = 1.0 - smoothstep(900.0, 3200.0, L.z);
     float lamps = site * ground * (0.16 + 0.16 * noise2(L.xy / 4000.0 + 7.0)) * (1.0 - bowl);
-    // The rest of the city: moonlight and sky glow, street lights in uneven patches on the ground, and lit windows.
-    float city = smoothstep(250.0, 600.0, metres);
-    float horizontal = smoothstep(0.65, 0.9, abs(N.z));
-    float wallness = 1.0 - smoothstep(0.25, 0.5, abs(N.z));
+    // The rest of the city: moonlight and sky glow, and street lights in uneven patches low down. Only positions decide
+    // the light (no surface normals rebuilt from neighbouring pixels, which change as the camera moves).
     float low = 1.0 - smoothstep(1500.0, 6000.0, L.z);
     vec3 moon = vec3(0.085, 0.1, 0.14);
-    vec3 street = vec3(1.0, 0.68, 0.38) * (0.09 + 0.2 * noise2(L.xy / 5000.0)) * low * mix(0.6, 1.0, horizontal);
+    vec3 street = vec3(1.0, 0.68, 0.38) * (0.09 + 0.2 * noise2(L.xy / 5000.0)) * low;
     vec3 flood = vec3(0.98, 1.0, 1.04) * u_floods;
     vec3 lamp = vec3(1.0, 0.76, 0.5);
     vec3 light = moon + street + lamp * lamps + flood * (bowl * (0.92 + 0.14 * field) + facade * 0.42);
     vec3 C = mix(colour.rgb, colour.rgb * light, u_night);
-    // Windows give off their own light: added, not multiplied, so they glow on dark walls. Walls only, from 6 m up.
-    C += cityWindows(L, N) * wallness * city * smoothstep(500.0, 900.0, L.z) * u_night * 1.5;
+    // The skyline's windows give off their own light (added, not multiplied): only buildings 2 km and more from the
+    // stadium and taller than about 15 m, so the ballpark, the arena and the nearby blocks keep their own look.
+    float distant = smoothstep(1800.0, 3000.0, metres);
+    float tall = smoothstep(1500.0, 2500.0, L.z);
+    C += skylineGlow(L) * distant * tall * u_night * 0.35;
     C *= mix(vec3(1.0), vec3(1.07, 0.94, 0.8), u_golden);
     out_FragColor = vec4(C, colour.a);
 }`;
