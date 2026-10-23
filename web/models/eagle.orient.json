@@ -1,0 +1,21 @@
+{
+  "note": "Applied after CesiumJS's upAxis: Y correction (tools/prepare_models.mjs): head toward +X, Z up, 2.8 m wingspan, centred.",
+  "matrix": [
+    -0.002129,
+    0.012528,
+    0,
+    0,
+    -0.012528,
+    -0.002129,
+    0,
+    0,
+    0,
+    0,
+    0.0127077,
+    0,
+    -0.1550549,
+    -0.0957593,
+    -0.8473609,
+    1
+  ]
+}

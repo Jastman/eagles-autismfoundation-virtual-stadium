@@ -1,0 +1,37 @@
+{
+  "name": "lff-virtual-stadium-web",
+  "private": true,
+  "version": "0.1.0",
+  "description": "CesiumJS web build of the Eagles Autism Foundation virtual stadium (iPad target). Shares SourceData/ with the Unreal project.",
+  "type": "module",
+  "scripts": {
+    "prepare-assets": "node tools/prepare_assets.mjs",
+    "dev": "npm run prepare-assets && vite",
+    "build": "npm run prepare-assets && tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "check-parity": "node tools/check_parity.mjs",
+    "typecheck": "tsc --noEmit",
+    "prepare-models": "node tools/prepare_models.mjs"
+  },
+  "dependencies": {
+    "cesium": "1.145.0",
+    "three": "0.186.1"
+  },
+  "devDependencies": {
+    "@gltf-transform/core": "4.2.1",
+    "@gltf-transform/extensions": "4.2.1",
+    "@gltf-transform/functions": "4.2.1",
+    "@types/node": "22.20.5",
+    "@types/three": "0.186.0",
+    "ktx2-encoder": "0.6.0",
+    "sharp": "0.34.2",
+    "typescript": "5.9.3",
+    "vite": "7.3.6",
+    "vitest": "3.2.7"
+  },
+  "overrides": {
+    "@cesium/engine": "26.3.0",
+    "@cesium/widgets": "16.2.0"
+  }
+}

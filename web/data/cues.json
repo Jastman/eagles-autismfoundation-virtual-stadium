@@ -1,0 +1,2821 @@
+[
+ {
+  "label": "SI_EagleFlight",
+  "export": "LFFCueActor_31",
+  "class": "LFFCueActor",
+  "cueId": "Anthem",
+  "trigger": "Preview",
+  "tags": [
+   "LFF_StandIn"
+  ],
+  "defaulted": [
+   "StartRotation",
+   "MovingAnimation",
+   "StillAnimation",
+   "bSpectacle"
+  ],
+  "props": {
+   "StartOffset": {
+    "x": -8000.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "PlaySeconds": 9.0,
+   "PlayDelaySeconds": 0.5,
+   "bLinear": true,
+   "bHiddenBefore": true,
+   "bHiddenAfter": true,
+   "StartRotation": {
+    "pitch": 0.0,
+    "yaw": 0.0,
+    "roll": 0.0
+   },
+   "MovingAnimation": null,
+   "StillAnimation": null,
+   "bSpectacle": false
+  },
+  "world": {
+   "location": {
+    "x": -2527.902712,
+    "y": 4313.897064,
+    "z": 1400.0
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": 83.5,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.665881666,
+    "w": 0.746057375
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "site": {
+   "location": {
+    "x": -3000.0,
+    "y": 4000.0,
+    "z": 1400.0
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": 90.0,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.707106781,
+    "w": 0.707106781
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "attachParent": {
+   "actor": "Actor_0",
+   "actorLabel": "LFF_SiteRoot",
+   "component": "DefaultSceneRoot"
+  },
+  "startWorld": {
+   "location": {
+    "x": -3433.528422,
+    "y": -3634.677781,
+    "z": 1400.0
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": 83.5,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.665881666,
+    "w": 0.746057375
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "startSite": {
+   "location": {
+    "x": -3000.0,
+    "y": -3999.999999,
+    "z": 1400.0
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": 90.0,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.707106781,
+    "w": 0.707106781
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  }
+ },
+ {
+  "label": "SI_Fireworks",
+  "export": "LFFFireworksActor_3",
+  "class": "LFFFireworksActor",
+  "cueId": "Anthem",
+  "trigger": "Preview",
+  "tags": [
+   "LFF_StandIn"
+  ],
+  "defaulted": [
+   "Trigger",
+   "StartOffset",
+   "StartRotation",
+   "PlaySeconds",
+   "PlayDelaySeconds",
+   "bLinear",
+   "bHiddenBefore",
+   "bHiddenAfter",
+   "MovingAnimation",
+   "StillAnimation",
+   "bSpectacle",
+   "SparkSize",
+   "SparkGlow"
+  ],
+  "props": {
+   "BurstOffsets": [
+    {
+     "x": 0.0,
+     "y": -1100.0,
+     "z": 0.0
+    },
+    {
+     "x": 0.0,
+     "y": 1100.0,
+     "z": 250.0
+    }
+   ],
+   "BurstColors": [
+    {
+     "r": 1.0,
+     "g": 0.779999971,
+     "b": 0.379999995,
+     "a": 1.0
+    },
+    {
+     "r": 0.959999979,
+     "g": 0.949999988,
+     "b": 0.899999976,
+     "a": 1.0
+    }
+   ],
+   "SparksPerBurst": 48,
+   "BurstRadius": 1200.0,
+   "BurstSeconds": 2.599999905,
+   "BurstInterval": 1.0,
+   "SparkMaterial": "/Game/LFF/Materials/MI_LFF_FireworkGlow.MI_LFF_FireworkGlow",
+   "StartOffset": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "StartRotation": {
+    "pitch": 0.0,
+    "yaw": 0.0,
+    "roll": 0.0
+   },
+   "PlaySeconds": 3.0,
+   "PlayDelaySeconds": 0.0,
+   "bLinear": true,
+   "bHiddenBefore": true,
+   "bHiddenAfter": true,
+   "MovingAnimation": null,
+   "StillAnimation": null,
+   "bSpectacle": false,
+   "SparkSize": 130.0,
+   "SparkGlow": 4000.0
+  },
+  "world": {
+   "location": {
+    "x": 6955.00299,
+    "y": -792.422496,
+    "z": 6200.0
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": 173.5,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.998391671,
+    "w": 0.056692788
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "site": {
+   "location": {
+    "x": 7000.0,
+    "y": 0.0,
+    "z": 6200.0
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": 180.0,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 1.0,
+    "w": 0.0
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "attachParent": {
+   "actor": "Actor_0",
+   "actorLabel": "LFF_SiteRoot",
+   "component": "DefaultSceneRoot"
+  },
+  "effectivePlaySeconds": 3.6,
+  "startWorld": {
+   "location": {
+    "x": 6955.00299,
+    "y": -792.422496,
+    "z": 6200.0
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": 173.5,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.998391671,
+    "w": 0.056692788
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "startSite": {
+   "location": {
+    "x": 7000.0,
+    "y": 0.0,
+    "z": 6200.0
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": 180.0,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 1.0,
+    "w": 0.0
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  }
+ },
+ {
+  "label": "SI_CarArrival",
+  "export": "LFFCueActor_24",
+  "class": "LFFCueActor",
+  "cueId": "CarArrival",
+  "trigger": "Arrival",
+  "tags": [
+   "LFF_StandIn"
+  ],
+  "defaulted": [
+   "Trigger",
+   "StartRotation",
+   "PlayDelaySeconds",
+   "bLinear",
+   "bHiddenBefore",
+   "bHiddenAfter",
+   "MovingAnimation",
+   "StillAnimation",
+   "bSpectacle"
+  ],
+  "props": {
+   "StartOffset": {
+    "x": -660.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "PlaySeconds": 4.0,
+   "StartRotation": {
+    "pitch": 0.0,
+    "yaw": 0.0,
+    "roll": 0.0
+   },
+   "PlayDelaySeconds": 0.0,
+   "bLinear": false,
+   "bHiddenBefore": false,
+   "bHiddenAfter": false,
+   "MovingAnimation": null,
+   "StillAnimation": null,
+   "bSpectacle": false
+  },
+  "world": {
+   "location": {
+    "x": 1695.181121,
+    "y": -23141.20174,
+    "z": 142.599854
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": 10.0,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.087155743,
+    "w": 0.996194698
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "site": {
+   "location": {
+    "x": 4303.94266,
+    "y": -22800.546804,
+    "z": 142.599854
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": 16.5,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.143492622,
+    "w": 0.989651387
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "attachParent": {
+   "actor": "Actor_0",
+   "actorLabel": "LFF_SiteRoot",
+   "component": "DefaultSceneRoot"
+  },
+  "startWorld": {
+   "location": {
+    "x": 1045.208004,
+    "y": -23255.809538,
+    "z": 142.599854
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": 10.0,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.087155743,
+    "w": 0.996194698
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "startSite": {
+   "location": {
+    "x": 3671.121635,
+    "y": -22987.996932,
+    "z": 142.599854
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": 16.5,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.143492622,
+    "w": 0.989651387
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  }
+ },
+ {
+  "label": "SI_ConcourseWalker1",
+  "export": "LFFPersonActor_32",
+  "class": "LFFPersonActor",
+  "cueId": "ConcourseWalk",
+  "trigger": "Arrival",
+  "tags": [
+   "LFF_StandIn",
+   "LFF_Crowd"
+  ],
+  "defaulted": [
+   "Trigger",
+   "StartRotation",
+   "bHiddenBefore",
+   "bHiddenAfter",
+   "bSpectacle"
+  ],
+  "props": {
+   "BodyMesh": "/MetaHumanCrowdContent/Characters/Assembled/AverageMale_Head01/Body/SKM_MHC_AverageMale_Head01_BodyMesh.SKM_MHC_AverageMale_Head01_BodyMesh",
+   "FaceMesh": "/MetaHumanCrowdContent/Characters/Assembled/AverageMale_Head01/Face/SKM_MHC_AverageMale_Head01_FaceMesh.SKM_MHC_AverageMale_Head01_FaceMesh",
+   "HairStyle": {
+    "CardMesh": "/Game/LFF/People/Hair/SKM_LFF_AverageMale_Head01_Hair_S_CurlyFade.SKM_LFF_AverageMale_Head01_Hair_S_CurlyFade",
+    "FittedFaceMesh": "/MetaHumanCrowdContent/Characters/Assembled/AverageMale_Head01/Face/SKM_MHC_AverageMale_Head01_FaceMesh.SKM_MHC_AverageMale_Head01_FaceMesh"
+   },
+   "Outfit": [
+    {
+     "Cloth": "/MetaHumanCrowdContent/Outfits/Tops/OA_TshirtLngSlv/TshirtLngSlv/ClothAssets/CA_TshirtLngSlv_m_med_nrw.CA_TshirtLngSlv_m_med_nrw",
+     "Material": "/Game/LFF/People/MI_LFF_Tee_Green.MI_LFF_Tee_Green",
+     "FittedBodyMesh": "/MetaHumanCrowdContent/Characters/Assembled/AverageMale_Head01/Body/SKM_MHC_AverageMale_Head01_BodyMesh.SKM_MHC_AverageMale_Head01_BodyMesh",
+     "CoveredBodyMaterialSlots": [],
+     "Inflate": 1.059999943
+    },
+    {
+     "Cloth": "/MetaHumanCrowdContent/Outfits/Bottoms/OA_Jeans/Jeans/ClothAssets/CA_jeans_m_med_nrw.CA_jeans_m_med_nrw",
+     "Material": null,
+     "FittedBodyMesh": "/MetaHumanCrowdContent/Characters/Assembled/AverageMale_Head01/Body/SKM_MHC_AverageMale_Head01_BodyMesh.SKM_MHC_AverageMale_Head01_BodyMesh",
+     "CoveredBodyMaterialSlots": [],
+     "Inflate": 1.090000033
+    },
+    {
+     "Cloth": "/MetaHumanCrowdContent/Outfits/Shoes/OA_CasualSneakers/CasualSneakers/ClothAssets/CA_casualsneakers_m_med_nrw.CA_casualsneakers_m_med_nrw",
+     "Material": null,
+     "FittedBodyMesh": "/MetaHumanCrowdContent/Characters/Assembled/AverageMale_Head01/Body/SKM_MHC_AverageMale_Head01_BodyMesh.SKM_MHC_AverageMale_Head01_BodyMesh",
+     "CoveredBodyMaterialSlots": [],
+     "Inflate": 1.039999962
+    }
+   ],
+   "BodyMaterialOverrides": [
+    [
+     "body_shader_shader",
+     "/Game/LFF/People/BodyCoverage/MI_Body_Baked_VT_9f120530e659.MI_Body_Baked_VT_9f120530e659"
+    ]
+   ],
+   "FaceMaterialOverrides": [
+    [
+     "head_shader_shader",
+     "/Game/LFF/People/BodyCoverage/MI_Face_Skin_Baked_LOD0_VT_d2a222e65db1.MI_Face_Skin_Baked_LOD0_VT_d2a222e65db1"
+    ],
+    [
+     "head_LOD1_shader_shader",
+     "/Game/LFF/People/BodyCoverage/MI_Face_Skin_Baked_LOD1_VT_91f704c6885b.MI_Face_Skin_Baked_LOD1_VT_91f704c6885b"
+    ],
+    [
+     "head_LOD2_shader_shader",
+     "/Game/LFF/People/BodyCoverage/MI_Face_Skin_Baked_LOD2_VT_6fdb572c159e.MI_Face_Skin_Baked_LOD2_VT_6fdb572c159e"
+    ],
+    [
+     "head_LOD3_shader_shader",
+     "/Game/LFF/People/BodyCoverage/MI_Face_Skin_Baked_LOD3_VT_68a19b75036c.MI_Face_Skin_Baked_LOD3_VT_68a19b75036c"
+    ],
+    [
+     "head_LOD4_shader_shader",
+     "/Game/LFF/People/BodyCoverage/MI_Face_Skin_Baked_LOD4_VT_4833bd15c1a5.MI_Face_Skin_Baked_LOD4_VT_4833bd15c1a5"
+    ],
+    [
+     "head_LOD57_shader_shader",
+     "/Game/LFF/People/BodyCoverage/MI_Face_Skin_Baked_LOD5to7_VT_bbc26049caf2.MI_Face_Skin_Baked_LOD5to7_VT_bbc26049caf2"
+    ]
+   ],
+   "StartOffset": {
+    "x": -900.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "PlaySeconds": 6.670000076,
+   "PlayDelaySeconds": 0.300000012,
+   "bLinear": true,
+   "MovingAnimation": "/MetaHumanCrowdContent/Animations/AS_MH_Neutral_Walk_Loop_F.AS_MH_Neutral_Walk_Loop_F",
+   "StillAnimation": "/MetaHumanCrowdContent/Animations/AS_MH_Neutral_Stand_Idle_Loop.AS_MH_Neutral_Stand_Idle_Loop",
+   "StartRotation": {
+    "pitch": 0.0,
+    "yaw": 0.0,
+    "roll": 0.0
+   },
+   "bHiddenBefore": false,
+   "bHiddenAfter": false,
+   "bSpectacle": false
+  },
+  "world": {
+   "location": {
+    "x": -7727.600553,
+    "y": 757.753054,
+    "z": 157.6
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -103.0,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.782608157,
+    "w": 0.622514637
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "site": {
+   "location": {
+    "x": -7763.706502,
+    "y": -121.90711,
+    "z": 157.6
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -96.5,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.746057375,
+    "w": 0.665881666
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "attachParent": {
+   "actor": "Actor_0",
+   "actorLabel": "LFF_SiteRoot",
+   "component": "DefaultSceneRoot"
+  },
+  "startWorld": {
+   "location": {
+    "x": -7525.144604,
+    "y": 1634.686113,
+    "z": 157.6
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -103.0,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.782608157,
+    "w": 0.622514637
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "startSite": {
+   "location": {
+    "x": -7661.82361,
+    "y": 772.307562,
+    "z": 157.6
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -96.5,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.746057375,
+    "w": 0.665881666
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  }
+ },
+ {
+  "label": "SI_ConcourseWalker2",
+  "export": "LFFPersonActor_33",
+  "class": "LFFPersonActor",
+  "cueId": "ConcourseWalk",
+  "trigger": "Arrival",
+  "tags": [
+   "LFF_StandIn",
+   "LFF_Crowd"
+  ],
+  "defaulted": [
+   "Trigger",
+   "StartRotation",
+   "bHiddenBefore",
+   "bHiddenAfter",
+   "bSpectacle"
+  ],
+  "props": {
+   "BodyMesh": "/MetaHumanCrowdContent/Characters/Assembled/AverageFemale_Head01/Body/SKM_MHC_AverageFemale_Head01_BodyMesh.SKM_MHC_AverageFemale_Head01_BodyMesh",
+   "FaceMesh": "/MetaHumanCrowdContent/Characters/Assembled/AverageFemale_Head01/Face/SKM_MHC_AverageFemale_Head01_FaceMesh.SKM_MHC_AverageFemale_Head01_FaceMesh",
+   "HairStyle": {
+    "CardMesh": "/Game/LFF/People/Hair/SKM_LFF_AverageFemale_Head01_Hair_S_Pixie.SKM_LFF_AverageFemale_Head01_Hair_S_Pixie",
+    "FittedFaceMesh": "/MetaHumanCrowdContent/Characters/Assembled/AverageFemale_Head01/Face/SKM_MHC_AverageFemale_Head01_FaceMesh.SKM_MHC_AverageFemale_Head01_FaceMesh"
+   },
+   "Outfit": [
+    {
+     "Cloth": "/MetaHumanCrowdContent/Outfits/Tops/OA_TshirtLngSlv/TshirtLngSlv/ClothAssets/CA_TshirtLngSlv_f_med_nrw.CA_TshirtLngSlv_f_med_nrw",
+     "Material": "/Game/LFF/People/MI_LFF_Tee_White.MI_LFF_Tee_White",
+     "FittedBodyMesh": "/MetaHumanCrowdContent/Characters/Assembled/AverageFemale_Head01/Body/SKM_MHC_AverageFemale_Head01_BodyMesh.SKM_MHC_AverageFemale_Head01_BodyMesh",
+     "CoveredBodyMaterialSlots": [],
+     "Inflate": 1.059999943
+    },
+    {
+     "Cloth": "/MetaHumanCrowdContent/Outfits/Bottoms/OA_Jeans/Jeans/ClothAssets/CA_jeans_f_med_nrw.CA_jeans_f_med_nrw",
+     "Material": null,
+     "FittedBodyMesh": "/MetaHumanCrowdContent/Characters/Assembled/AverageFemale_Head01/Body/SKM_MHC_AverageFemale_Head01_BodyMesh.SKM_MHC_AverageFemale_Head01_BodyMesh",
+     "CoveredBodyMaterialSlots": [],
+     "Inflate": 1.090000033
+    },
+    {
+     "Cloth": "/MetaHumanCrowdContent/Outfits/Shoes/OA_CasualSneakers/CasualSneakers/ClothAssets/CA_casualsneakers_f_med_nrw.CA_casualsneakers_f_med_nrw",
+     "Material": null,
+     "FittedBodyMesh": "/MetaHumanCrowdContent/Characters/Assembled/AverageFemale_Head01/Body/SKM_MHC_AverageFemale_Head01_BodyMesh.SKM_MHC_AverageFemale_Head01_BodyMesh",
+     "CoveredBodyMaterialSlots": [],
+     "Inflate": 1.039999962
+    }
+   ],
+   "BodyMaterialOverrides": [
+    [
+     "body_shader_shader",
+     "/Game/LFF/People/BodyCoverage/MI_Body_Baked_VT_8324204550da.MI_Body_Baked_VT_8324204550da"
+    ]
+   ],
+   "FaceMaterialOverrides": [
+    [
+     "head_shader_shader",
+     "/Game/LFF/People/BodyCoverage/MI_Face_Skin_Baked_LOD0_VT_1f6f29d6b42c.MI_Face_Skin_Baked_LOD0_VT_1f6f29d6b42c"
+    ],
+    [
+     "head_LOD1_shader_shader",
+     "/Game/LFF/People/BodyCoverage/MI_Face_Skin_Baked_LOD1_VT_34535d8ce11e.MI_Face_Skin_Baked_LOD1_VT_34535d8ce11e"
+    ],
+    [
+     "head_LOD2_shader_shader",
+     "/Game/LFF/People/BodyCoverage/MI_Face_Skin_Baked_LOD2_VT_d912fc79504f.MI_Face_Skin_Baked_LOD2_VT_d912fc79504f"
+    ],
+    [
+     "head_LOD3_shader_shader",
+     "/Game/LFF/People/BodyCoverage/MI_Face_Skin_Baked_LOD3_VT_ceee38f8107e.MI_Face_Skin_Baked_LOD3_VT_ceee38f8107e"
+    ],
+    [
+     "head_LOD4_shader_shader",
+     "/Game/LFF/People/BodyCoverage/MI_Face_Skin_Baked_LOD4_VT_043c3ad97a00.MI_Face_Skin_Baked_LOD4_VT_043c3ad97a00"
+    ],
+    [
+     "head_LOD57_shader_shader",
+     "/Game/LFF/People/BodyCoverage/MI_Face_Skin_Baked_LOD5to7_VT_d552bd1519a8.MI_Face_Skin_Baked_LOD5to7_VT_d552bd1519a8"
+    ]
+   ],
+   "StartOffset": {
+    "x": -1000.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "PlaySeconds": 7.409999847,
+   "PlayDelaySeconds": 1.200000048,
+   "bLinear": true,
+   "MovingAnimation": "/MetaHumanCrowdContent/Animations/AS_MH_Neutral_Walk_Loop_F.AS_MH_Neutral_Walk_Loop_F",
+   "StillAnimation": "/MetaHumanCrowdContent/Animations/AS_MH_Neutral_Stand_Idle_Loop.AS_MH_Neutral_Stand_Idle_Loop",
+   "StartRotation": {
+    "pitch": 0.0,
+    "yaw": 0.0,
+    "roll": 0.0
+   },
+   "bHiddenBefore": false,
+   "bHiddenAfter": false,
+   "bSpectacle": false
+  },
+  "world": {
+   "location": {
+    "x": -8222.24217,
+    "y": 1282.471712,
+    "z": 157.6
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -103.0,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.782608157,
+    "w": 0.622514637
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "site": {
+   "location": {
+    "x": -8314.56833,
+    "y": 343.443561,
+    "z": 157.6
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -96.5,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.746057375,
+    "w": 0.665881666
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "attachParent": {
+   "actor": "Actor_0",
+   "actorLabel": "LFF_SiteRoot",
+   "component": "DefaultSceneRoot"
+  },
+  "startWorld": {
+   "location": {
+    "x": -7997.291115,
+    "y": 2256.841778,
+    "z": 157.6
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -103.0,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.782608157,
+    "w": 0.622514637
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "startSite": {
+   "location": {
+    "x": -8201.365116,
+    "y": 1337.015417,
+    "z": 157.6
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -96.5,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.746057375,
+    "w": 0.665881666
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  }
+ },
+ {
+  "label": "SI_ConcourseWalker3",
+  "export": "LFFPersonActor_34",
+  "class": "LFFPersonActor",
+  "cueId": "ConcourseWalk",
+  "trigger": "Arrival",
+  "tags": [
+   "LFF_StandIn",
+   "LFF_Crowd"
+  ],
+  "defaulted": [
+   "Trigger",
+   "StartRotation",
+   "PlayDelaySeconds",
+   "bHiddenBefore",
+   "bHiddenAfter",
+   "bSpectacle"
+  ],
+  "props": {
+   "BodyMesh": "/MetaHumanCrowdContent/Characters/Assembled/AverageMale_Head01/Body/SKM_MHC_AverageMale_Head01_BodyMesh.SKM_MHC_AverageMale_Head01_BodyMesh",
+   "FaceMesh": "/MetaHumanCrowdContent/Characters/Assembled/AverageMale_Head01/Face/SKM_MHC_AverageMale_Head01_FaceMesh.SKM_MHC_AverageMale_Head01_FaceMesh",
+   "HairStyle": {
+    "CardMesh": "/Game/LFF/People/Hair/SKM_LFF_AverageMale_Head01_Hair_S_CurlyFade.SKM_LFF_AverageMale_Head01_Hair_S_CurlyFade",
+    "FittedFaceMesh": "/MetaHumanCrowdContent/Characters/Assembled/AverageMale_Head01/Face/SKM_MHC_AverageMale_Head01_FaceMesh.SKM_MHC_AverageMale_Head01_FaceMesh"
+   },
+   "Outfit": [
+    {
+     "Cloth": "/MetaHumanCrowdContent/Outfits/Tops/OA_TshirtLngSlv/TshirtLngSlv/ClothAssets/CA_TshirtLngSlv_m_med_nrw.CA_TshirtLngSlv_m_med_nrw",
+     "Material": "/Game/LFF/People/MI_LFF_Tee_Green.MI_LFF_Tee_Green",
+     "FittedBodyMesh": "/MetaHumanCrowdContent/Characters/Assembled/AverageMale_Head01/Body/SKM_MHC_AverageMale_Head01_BodyMesh.SKM_MHC_AverageMale_Head01_BodyMesh",
+     "CoveredBodyMaterialSlots": [],
+     "Inflate": 1.059999943
+    },
+    {
+     "Cloth": "/MetaHumanCrowdContent/Outfits/Bottoms/OA_Jeans/Jeans/ClothAssets/CA_jeans_m_med_nrw.CA_jeans_m_med_nrw",
+     "Material": null,
+     "FittedBodyMesh": "/MetaHumanCrowdContent/Characters/Assembled/AverageMale_Head01/Body/SKM_MHC_AverageMale_Head01_BodyMesh.SKM_MHC_AverageMale_Head01_BodyMesh",
+     "CoveredBodyMaterialSlots": [],
+     "Inflate": 1.090000033
+    },
+    {
+     "Cloth": "/MetaHumanCrowdContent/Outfits/Shoes/OA_CasualSneakers/CasualSneakers/ClothAssets/CA_casualsneakers_m_med_nrw.CA_casualsneakers_m_med_nrw",
+     "Material": null,
+     "FittedBodyMesh": "/MetaHumanCrowdContent/Characters/Assembled/AverageMale_Head01/Body/SKM_MHC_AverageMale_Head01_BodyMesh.SKM_MHC_AverageMale_Head01_BodyMesh",
+     "CoveredBodyMaterialSlots": [],
+     "Inflate": 1.039999962
+    }
+   ],
+   "BodyMaterialOverrides": [
+    [
+     "body_shader_shader",
+     "/Game/LFF/People/BodyCoverage/MI_Body_Baked_VT_9f120530e659.MI_Body_Baked_VT_9f120530e659"
+    ]
+   ],
+   "FaceMaterialOverrides": [
+    [
+     "head_shader_shader",
+     "/Game/LFF/People/BodyCoverage/MI_Face_Skin_Baked_LOD0_VT_d2a222e65db1.MI_Face_Skin_Baked_LOD0_VT_d2a222e65db1"
+    ],
+    [
+     "head_LOD1_shader_shader",
+     "/Game/LFF/People/BodyCoverage/MI_Face_Skin_Baked_LOD1_VT_91f704c6885b.MI_Face_Skin_Baked_LOD1_VT_91f704c6885b"
+    ],
+    [
+     "head_LOD2_shader_shader",
+     "/Game/LFF/People/BodyCoverage/MI_Face_Skin_Baked_LOD2_VT_6fdb572c159e.MI_Face_Skin_Baked_LOD2_VT_6fdb572c159e"
+    ],
+    [
+     "head_LOD3_shader_shader",
+     "/Game/LFF/People/BodyCoverage/MI_Face_Skin_Baked_LOD3_VT_68a19b75036c.MI_Face_Skin_Baked_LOD3_VT_68a19b75036c"
+    ],
+    [
+     "head_LOD4_shader_shader",
+     "/Game/LFF/People/BodyCoverage/MI_Face_Skin_Baked_LOD4_VT_4833bd15c1a5.MI_Face_Skin_Baked_LOD4_VT_4833bd15c1a5"
+    ],
+    [
+     "head_LOD57_shader_shader",
+     "/Game/LFF/People/BodyCoverage/MI_Face_Skin_Baked_LOD5to7_VT_bbc26049caf2.MI_Face_Skin_Baked_LOD5to7_VT_bbc26049caf2"
+    ]
+   ],
+   "StartOffset": {
+    "x": -1100.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "PlaySeconds": 8.149999619,
+   "bLinear": true,
+   "MovingAnimation": "/MetaHumanCrowdContent/Animations/AS_MH_Neutral_Walk_Loop_F.AS_MH_Neutral_Walk_Loop_F",
+   "StillAnimation": "/MetaHumanCrowdContent/Animations/AS_MH_Neutral_Stand_Idle_Loop.AS_MH_Neutral_Stand_Idle_Loop",
+   "StartRotation": {
+    "pitch": 0.0,
+    "yaw": 0.0,
+    "roll": 0.0
+   },
+   "PlayDelaySeconds": 0.0,
+   "bHiddenBefore": false,
+   "bHiddenAfter": false,
+   "bSpectacle": false
+  },
+  "world": {
+   "location": {
+    "x": -7817.455624,
+    "y": 1702.171428,
+    "z": 157.6
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": 77.0,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.622514637,
+    "w": 0.782608157
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "site": {
+   "location": {
+    "x": -7959.895167,
+    "y": 806.268525,
+    "z": 157.6
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": 83.5,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.665881666,
+    "w": 0.746057375
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "attachParent": {
+   "actor": "Actor_0",
+   "actorLabel": "LFF_SiteRoot",
+   "component": "DefaultSceneRoot"
+  },
+  "startWorld": {
+   "location": {
+    "x": -8064.901783,
+    "y": 630.364356,
+    "z": 157.6
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": 77.0,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.622514637,
+    "w": 0.782608157
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "startSite": {
+   "location": {
+    "x": -8084.418701,
+    "y": -286.660518,
+    "z": 157.6
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": 83.5,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.665881666,
+    "w": 0.746057375
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  }
+ },
+ {
+  "label": "SI_ConcourseWalker4",
+  "export": "LFFPersonActor_35",
+  "class": "LFFPersonActor",
+  "cueId": "ConcourseWalk",
+  "trigger": "Arrival",
+  "tags": [
+   "LFF_StandIn",
+   "LFF_Crowd"
+  ],
+  "defaulted": [
+   "Trigger",
+   "StartRotation",
+   "bHiddenBefore",
+   "bHiddenAfter",
+   "bSpectacle"
+  ],
+  "props": {
+   "BodyMesh": "/MetaHumanCrowdContent/Characters/Assembled/AverageFemale_Head01/Body/SKM_MHC_AverageFemale_Head01_BodyMesh.SKM_MHC_AverageFemale_Head01_BodyMesh",
+   "FaceMesh": "/MetaHumanCrowdContent/Characters/Assembled/AverageFemale_Head01/Face/SKM_MHC_AverageFemale_Head01_FaceMesh.SKM_MHC_AverageFemale_Head01_FaceMesh",
+   "HairStyle": {
+    "CardMesh": "/Game/LFF/People/Hair/SKM_LFF_AverageFemale_Head01_Hair_S_PulledBack.SKM_LFF_AverageFemale_Head01_Hair_S_PulledBack",
+    "FittedFaceMesh": "/MetaHumanCrowdContent/Characters/Assembled/AverageFemale_Head01/Face/SKM_MHC_AverageFemale_Head01_FaceMesh.SKM_MHC_AverageFemale_Head01_FaceMesh"
+   },
+   "Outfit": [
+    {
+     "Cloth": "/MetaHumanCrowdContent/Outfits/Tops/OA_TshirtLngSlv/TshirtLngSlv/ClothAssets/CA_TshirtLngSlv_f_med_nrw.CA_TshirtLngSlv_f_med_nrw",
+     "Material": "/Game/LFF/People/MI_LFF_Tee_Green.MI_LFF_Tee_Green",
+     "FittedBodyMesh": "/MetaHumanCrowdContent/Characters/Assembled/AverageFemale_Head01/Body/SKM_MHC_AverageFemale_Head01_BodyMesh.SKM_MHC_AverageFemale_Head01_BodyMesh",
+     "CoveredBodyMaterialSlots": [],
+     "Inflate": 1.059999943
+    },
+    {
+     "Cloth": "/MetaHumanCrowdContent/Outfits/Bottoms/OA_Jeans/Jeans/ClothAssets/CA_jeans_f_med_nrw.CA_jeans_f_med_nrw",
+     "Material": null,
+     "FittedBodyMesh": "/MetaHumanCrowdContent/Characters/Assembled/AverageFemale_Head01/Body/SKM_MHC_AverageFemale_Head01_BodyMesh.SKM_MHC_AverageFemale_Head01_BodyMesh",
+     "CoveredBodyMaterialSlots": [],
+     "Inflate": 1.090000033
+    },
+    {
+     "Cloth": "/MetaHumanCrowdContent/Outfits/Shoes/OA_CasualSneakers/CasualSneakers/ClothAssets/CA_casualsneakers_f_med_nrw.CA_casualsneakers_f_med_nrw",
+     "Material": null,
+     "FittedBodyMesh": "/MetaHumanCrowdContent/Characters/Assembled/AverageFemale_Head01/Body/SKM_MHC_AverageFemale_Head01_BodyMesh.SKM_MHC_AverageFemale_Head01_BodyMesh",
+     "CoveredBodyMaterialSlots": [],
+     "Inflate": 1.039999962
+    }
+   ],
+   "BodyMaterialOverrides": [
+    [
+     "body_shader_shader",
+     "/Game/LFF/People/BodyCoverage/MI_Body_Baked_VT_8324204550da.MI_Body_Baked_VT_8324204550da"
+    ]
+   ],
+   "FaceMaterialOverrides": [
+    [
+     "head_shader_shader",
+     "/Game/LFF/People/BodyCoverage/MI_Face_Skin_Baked_LOD0_VT_1f6f29d6b42c.MI_Face_Skin_Baked_LOD0_VT_1f6f29d6b42c"
+    ],
+    [
+     "head_LOD1_shader_shader",
+     "/Game/LFF/People/BodyCoverage/MI_Face_Skin_Baked_LOD1_VT_34535d8ce11e.MI_Face_Skin_Baked_LOD1_VT_34535d8ce11e"
+    ],
+    [
+     "head_LOD2_shader_shader",
+     "/Game/LFF/People/BodyCoverage/MI_Face_Skin_Baked_LOD2_VT_d912fc79504f.MI_Face_Skin_Baked_LOD2_VT_d912fc79504f"
+    ],
+    [
+     "head_LOD3_shader_shader",
+     "/Game/LFF/People/BodyCoverage/MI_Face_Skin_Baked_LOD3_VT_ceee38f8107e.MI_Face_Skin_Baked_LOD3_VT_ceee38f8107e"
+    ],
+    [
+     "head_LOD4_shader_shader",
+     "/Game/LFF/People/BodyCoverage/MI_Face_Skin_Baked_LOD4_VT_043c3ad97a00.MI_Face_Skin_Baked_LOD4_VT_043c3ad97a00"
+    ],
+    [
+     "head_LOD57_shader_shader",
+     "/Game/LFF/People/BodyCoverage/MI_Face_Skin_Baked_LOD5to7_VT_d552bd1519a8.MI_Face_Skin_Baked_LOD5to7_VT_d552bd1519a8"
+    ]
+   ],
+   "StartOffset": {
+    "x": -900.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "PlaySeconds": 6.670000076,
+   "PlayDelaySeconds": 2.0,
+   "bLinear": true,
+   "MovingAnimation": "/MetaHumanCrowdContent/Animations/AS_MH_Neutral_Walk_Loop_F.AS_MH_Neutral_Walk_Loop_F",
+   "StillAnimation": "/MetaHumanCrowdContent/Animations/AS_MH_Neutral_Stand_Idle_Loop.AS_MH_Neutral_Stand_Idle_Loop",
+   "StartRotation": {
+    "pitch": 0.0,
+    "yaw": 0.0,
+    "roll": 0.0
+   },
+   "bHiddenBefore": false,
+   "bHiddenAfter": false,
+   "bSpectacle": false
+  },
+  "world": {
+   "location": {
+    "x": -8829.484666,
+    "y": -14.161062,
+    "z": 157.6
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": 77.0,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.622514637,
+    "w": 0.782608157
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "site": {
+   "location": {
+    "x": -8771.124386,
+    "y": -1013.596073,
+    "z": 157.6
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": 83.5,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.665881666,
+    "w": 0.746057375
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "attachParent": {
+   "actor": "Actor_0",
+   "actorLabel": "LFF_SiteRoot",
+   "component": "DefaultSceneRoot"
+  },
+  "startWorld": {
+   "location": {
+    "x": -9031.940614,
+    "y": -891.094121,
+    "z": 157.6
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": 77.0,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.622514637,
+    "w": 0.782608157
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "startSite": {
+   "location": {
+    "x": -8873.007278,
+    "y": -1907.810743,
+    "z": 157.6
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": 83.5,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.665881666,
+    "w": 0.746057375
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  }
+ },
+ {
+  "label": "SI_ClubGate_LeafL",
+  "export": "LFFCueActor_27",
+  "class": "LFFCueActor",
+  "cueId": "GateClub",
+  "trigger": "Arrival",
+  "tags": [
+   "LFF_StandIn"
+  ],
+  "defaulted": [
+   "Trigger",
+   "StartRotation",
+   "PlayDelaySeconds",
+   "bLinear",
+   "bHiddenBefore",
+   "bHiddenAfter",
+   "MovingAnimation",
+   "StillAnimation",
+   "bSpectacle"
+  ],
+  "props": {
+   "StartOffset": {
+    "x": 0.0,
+    "y": 180.0,
+    "z": 0.0
+   },
+   "PlaySeconds": 3.5,
+   "StartRotation": {
+    "pitch": 0.0,
+    "yaw": 0.0,
+    "roll": 0.0
+   },
+   "PlayDelaySeconds": 0.0,
+   "bLinear": false,
+   "bHiddenBefore": false,
+   "bHiddenAfter": false,
+   "MovingAnimation": null,
+   "StillAnimation": null,
+   "bSpectacle": false
+  },
+  "world": {
+   "location": {
+    "x": -6160.370199,
+    "y": -14582.363835,
+    "z": 157.600525
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -96.5,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.746057375,
+    "w": 0.665881666
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "site": {
+   "location": {
+    "x": -4470.0,
+    "y": -15186.0,
+    "z": 157.600525
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -90.0,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.707106781,
+    "w": 0.707106781
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "attachParent": {
+   "actor": "Actor_0",
+   "actorLabel": "LFF_SiteRoot",
+   "component": "DefaultSceneRoot"
+  },
+  "startWorld": {
+   "location": {
+    "x": -5981.527265,
+    "y": -14602.740413,
+    "z": 157.600525
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -96.5,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.746057375,
+    "w": 0.665881666
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "startSite": {
+   "location": {
+    "x": -4290.0,
+    "y": -15186.0,
+    "z": 157.600525
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -90.0,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.707106781,
+    "w": 0.707106781
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  }
+ },
+ {
+  "label": "SI_ClubGate_LeafR",
+  "export": "LFFCueActor_28",
+  "class": "LFFCueActor",
+  "cueId": "GateClub",
+  "trigger": "Arrival",
+  "tags": [
+   "LFF_StandIn"
+  ],
+  "defaulted": [
+   "Trigger",
+   "StartRotation",
+   "PlayDelaySeconds",
+   "bLinear",
+   "bHiddenBefore",
+   "bHiddenAfter",
+   "MovingAnimation",
+   "StillAnimation",
+   "bSpectacle"
+  ],
+  "props": {
+   "StartOffset": {
+    "x": 0.0,
+    "y": -180.0,
+    "z": 0.0
+   },
+   "PlaySeconds": 3.5,
+   "StartRotation": {
+    "pitch": 0.0,
+    "yaw": 0.0,
+    "roll": 0.0
+   },
+   "PlayDelaySeconds": 0.0,
+   "bLinear": false,
+   "bHiddenBefore": false,
+   "bHiddenAfter": false,
+   "MovingAnimation": null,
+   "StillAnimation": null,
+   "bSpectacle": false
+  },
+  "world": {
+   "location": {
+    "x": -5623.841397,
+    "y": -14643.49357,
+    "z": 157.600525
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -96.5,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.746057375,
+    "w": 0.665881666
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "site": {
+   "location": {
+    "x": -3930.0,
+    "y": -15186.0,
+    "z": 157.600525
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -90.0,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.707106781,
+    "w": 0.707106781
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "attachParent": {
+   "actor": "Actor_0",
+   "actorLabel": "LFF_SiteRoot",
+   "component": "DefaultSceneRoot"
+  },
+  "startWorld": {
+   "location": {
+    "x": -5802.684331,
+    "y": -14623.116992,
+    "z": 157.600525
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -96.5,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.746057375,
+    "w": 0.665881666
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "startSite": {
+   "location": {
+    "x": -4110.0,
+    "y": -15186.0,
+    "z": 157.600525
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -90.0,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.707106781,
+    "w": 0.707106781
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  }
+ },
+ {
+  "label": "SI_GateFlareBursts",
+  "export": "LFFFireworksActor_1",
+  "class": "LFFFireworksActor",
+  "cueId": "GateFlareBursts",
+  "trigger": "Arrival",
+  "tags": [
+   "LFF_StandIn"
+  ],
+  "defaulted": [
+   "StartOffset",
+   "StartRotation",
+   "bLinear",
+   "bHiddenBefore",
+   "bHiddenAfter",
+   "MovingAnimation",
+   "StillAnimation",
+   "SparkSize",
+   "SparkGlow"
+  ],
+  "props": {
+   "BurstOffsets": [
+    {
+     "x": -2500.0,
+     "y": 0.0,
+     "z": 9000.0
+    },
+    {
+     "x": 2200.0,
+     "y": 800.0,
+     "z": 9800.0
+    },
+    {
+     "x": 0.0,
+     "y": -1500.0,
+     "z": 8600.0
+    }
+   ],
+   "BurstColors": [
+    {
+     "r": 0.050000001,
+     "g": 1.0,
+     "b": 0.300000012,
+     "a": 1.0
+    }
+   ],
+   "SparksPerBurst": 50,
+   "BurstRadius": 1300.0,
+   "BurstSeconds": 2.5,
+   "BurstInterval": 1.399999976,
+   "SparkMaterial": "/Game/LFF/Materials/MI_LFF_FireworkGlow.MI_LFF_FireworkGlow",
+   "PlaySeconds": 5.5,
+   "PlayDelaySeconds": 0.800000012,
+   "bSpectacle": true,
+   "StartOffset": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "StartRotation": {
+    "pitch": 0.0,
+    "yaw": 0.0,
+    "roll": 0.0
+   },
+   "bLinear": true,
+   "bHiddenBefore": true,
+   "bHiddenAfter": true,
+   "MovingAnimation": null,
+   "StillAnimation": null,
+   "SparkSize": 130.0,
+   "SparkGlow": 4000.0
+  },
+  "world": {
+   "location": {
+    "x": -679.219283,
+    "y": -5961.431134,
+    "z": 0.0
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -6.5,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.056692788,
+    "w": 0.998391671
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "site": {
+   "location": {
+    "x": 0.0,
+    "y": -6000.0,
+    "z": 0.0
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": 0.0,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.0,
+    "w": 1.0
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "attachParent": {
+   "actor": "Actor_0",
+   "actorLabel": "LFF_SiteRoot",
+   "component": "DefaultSceneRoot"
+  },
+  "effectivePlaySeconds": 5.3,
+  "startWorld": {
+   "location": {
+    "x": -679.219283,
+    "y": -5961.431134,
+    "z": 0.0
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -6.5,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.056692788,
+    "w": 0.998391671
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "startSite": {
+   "location": {
+    "x": 0.0,
+    "y": -6000.0,
+    "z": 0.0
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": 0.0,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.0,
+    "w": 1.0
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  }
+ },
+ {
+  "label": "SI_InnerGate_LeafL",
+  "export": "LFFCueActor_29",
+  "class": "LFFCueActor",
+  "cueId": "GateInner",
+  "trigger": "Arrival",
+  "tags": [
+   "LFF_StandIn"
+  ],
+  "defaulted": [
+   "Trigger",
+   "StartRotation",
+   "PlayDelaySeconds",
+   "bLinear",
+   "bHiddenBefore",
+   "bHiddenAfter",
+   "MovingAnimation",
+   "StillAnimation",
+   "bSpectacle"
+  ],
+  "props": {
+   "StartOffset": {
+    "x": 0.0,
+    "y": 220.0,
+    "z": 0.0
+   },
+   "PlaySeconds": 3.5,
+   "StartRotation": {
+    "pitch": 0.0,
+    "yaw": 0.0,
+    "roll": 0.0
+   },
+   "PlayDelaySeconds": 0.0,
+   "bLinear": false,
+   "bHiddenBefore": false,
+   "bHiddenAfter": false,
+   "MovingAnimation": null,
+   "StillAnimation": null,
+   "bSpectacle": false
+  },
+  "world": {
+   "location": {
+    "x": -1962.080306,
+    "y": -14305.846248,
+    "z": 157.600586
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -96.5,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.746057375,
+    "w": 0.665881666
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "site": {
+   "location": {
+    "x": -330.0,
+    "y": -14436.0,
+    "z": 157.600586
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -90.0,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.707106781,
+    "w": 0.707106781
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "attachParent": {
+   "actor": "Actor_0",
+   "actorLabel": "LFF_SiteRoot",
+   "component": "DefaultSceneRoot"
+  },
+  "startWorld": {
+   "location": {
+    "x": -1743.494498,
+    "y": -14330.750955,
+    "z": 157.600586
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -96.5,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.746057375,
+    "w": 0.665881666
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "startSite": {
+   "location": {
+    "x": -110.0,
+    "y": -14436.0,
+    "z": 157.600586
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -90.0,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.707106781,
+    "w": 0.707106781
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  }
+ },
+ {
+  "label": "SI_InnerGate_LeafR",
+  "export": "LFFCueActor_30",
+  "class": "LFFCueActor",
+  "cueId": "GateInner",
+  "trigger": "Arrival",
+  "tags": [
+   "LFF_StandIn"
+  ],
+  "defaulted": [
+   "Trigger",
+   "StartRotation",
+   "PlayDelaySeconds",
+   "bLinear",
+   "bHiddenBefore",
+   "bHiddenAfter",
+   "MovingAnimation",
+   "StillAnimation",
+   "bSpectacle"
+  ],
+  "props": {
+   "StartOffset": {
+    "x": 0.0,
+    "y": -220.0,
+    "z": 0.0
+   },
+   "PlaySeconds": 3.5,
+   "StartRotation": {
+    "pitch": 0.0,
+    "yaw": 0.0,
+    "roll": 0.0
+   },
+   "PlayDelaySeconds": 0.0,
+   "bLinear": false,
+   "bHiddenBefore": false,
+   "bHiddenAfter": false,
+   "MovingAnimation": null,
+   "StillAnimation": null,
+   "bSpectacle": false
+  },
+  "world": {
+   "location": {
+    "x": -1306.322882,
+    "y": -14380.560369,
+    "z": 157.600586
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -96.5,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.746057375,
+    "w": 0.665881666
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "site": {
+   "location": {
+    "x": 330.0,
+    "y": -14436.0,
+    "z": 157.600586
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -90.0,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.707106781,
+    "w": 0.707106781
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "attachParent": {
+   "actor": "Actor_0",
+   "actorLabel": "LFF_SiteRoot",
+   "component": "DefaultSceneRoot"
+  },
+  "startWorld": {
+   "location": {
+    "x": -1524.90869,
+    "y": -14355.655662,
+    "z": 157.600586
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -96.5,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.746057375,
+    "w": 0.665881666
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "startSite": {
+   "location": {
+    "x": 110.0,
+    "y": -14436.0,
+    "z": 157.600586
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -90.0,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.707106781,
+    "w": 0.707106781
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  }
+ },
+ {
+  "label": "SI_PlazaGate_LeafL",
+  "export": "LFFCueActor_25",
+  "class": "LFFCueActor",
+  "cueId": "GatePlaza",
+  "trigger": "Arrival",
+  "tags": [
+   "LFF_StandIn"
+  ],
+  "defaulted": [
+   "Trigger",
+   "StartRotation",
+   "PlayDelaySeconds",
+   "bLinear",
+   "bHiddenBefore",
+   "bHiddenAfter",
+   "MovingAnimation",
+   "StillAnimation",
+   "bSpectacle"
+  ],
+  "props": {
+   "StartOffset": {
+    "x": 0.0,
+    "y": 220.0,
+    "z": 0.0
+   },
+   "PlaySeconds": 3.5,
+   "StartRotation": {
+    "pitch": 0.0,
+    "yaw": 0.0,
+    "roll": 0.0
+   },
+   "PlayDelaySeconds": 0.0,
+   "bLinear": false,
+   "bHiddenBefore": false,
+   "bHiddenAfter": false,
+   "MovingAnimation": null,
+   "StillAnimation": null,
+   "bSpectacle": false
+  },
+  "world": {
+   "location": {
+    "x": -4397.684925,
+    "y": -22432.366422,
+    "z": 142.599854
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -96.5,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.746057375,
+    "w": 0.665881666
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "site": {
+   "location": {
+    "x": -1830.0,
+    "y": -22786.0,
+    "z": 142.599854
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -90.0,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.707106781,
+    "w": 0.707106781
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "attachParent": {
+   "actor": "Actor_0",
+   "actorLabel": "LFF_SiteRoot",
+   "component": "DefaultSceneRoot"
+  },
+  "startWorld": {
+   "location": {
+    "x": -4179.099117,
+    "y": -22457.271129,
+    "z": 142.599854
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -96.5,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.746057375,
+    "w": 0.665881666
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "startSite": {
+   "location": {
+    "x": -1610.0,
+    "y": -22786.0,
+    "z": 142.599854
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -90.0,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.707106781,
+    "w": 0.707106781
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  }
+ },
+ {
+  "label": "SI_PlazaGate_LeafR",
+  "export": "LFFCueActor_26",
+  "class": "LFFCueActor",
+  "cueId": "GatePlaza",
+  "trigger": "Arrival",
+  "tags": [
+   "LFF_StandIn"
+  ],
+  "defaulted": [
+   "Trigger",
+   "StartRotation",
+   "PlayDelaySeconds",
+   "bLinear",
+   "bHiddenBefore",
+   "bHiddenAfter",
+   "MovingAnimation",
+   "StillAnimation",
+   "bSpectacle"
+  ],
+  "props": {
+   "StartOffset": {
+    "x": 0.0,
+    "y": -220.0,
+    "z": 0.0
+   },
+   "PlaySeconds": 3.5,
+   "StartRotation": {
+    "pitch": 0.0,
+    "yaw": 0.0,
+    "roll": 0.0
+   },
+   "PlayDelaySeconds": 0.0,
+   "bLinear": false,
+   "bHiddenBefore": false,
+   "bHiddenAfter": false,
+   "MovingAnimation": null,
+   "StillAnimation": null,
+   "bSpectacle": false
+  },
+  "world": {
+   "location": {
+    "x": -3741.9275,
+    "y": -22507.080543,
+    "z": 142.599854
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -96.5,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.746057375,
+    "w": 0.665881666
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "site": {
+   "location": {
+    "x": -1170.0,
+    "y": -22786.0,
+    "z": 142.599854
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -90.0,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.707106781,
+    "w": 0.707106781
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "attachParent": {
+   "actor": "Actor_0",
+   "actorLabel": "LFF_SiteRoot",
+   "component": "DefaultSceneRoot"
+  },
+  "startWorld": {
+   "location": {
+    "x": -3960.513308,
+    "y": -22482.175836,
+    "z": 142.599854
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -96.5,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.746057375,
+    "w": 0.665881666
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "startSite": {
+   "location": {
+    "x": -1390.0,
+    "y": -22786.0,
+    "z": 142.599854
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -90.0,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.707106781,
+    "w": 0.707106781
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  }
+ },
+ {
+  "label": "SI_QueuePerson12",
+  "export": "LFFPersonActor_15",
+  "class": "LFFPersonActor",
+  "cueId": "SecurityWalk",
+  "trigger": "Arrival",
+  "tags": [
+   "LFF_StandIn"
+  ],
+  "defaulted": [
+   "Trigger",
+   "StartRotation",
+   "bHiddenBefore",
+   "bHiddenAfter",
+   "bSpectacle"
+  ],
+  "props": {
+   "BodyMesh": "/MetaHumanCrowdContent/Characters/Assembled/AverageFemale_Head01/Body/SKM_MHC_AverageFemale_Head01_BodyMesh.SKM_MHC_AverageFemale_Head01_BodyMesh",
+   "FaceMesh": "/MetaHumanCrowdContent/Characters/Assembled/AverageFemale_Head01/Face/SKM_MHC_AverageFemale_Head01_FaceMesh.SKM_MHC_AverageFemale_Head01_FaceMesh",
+   "HairStyle": {
+    "CardMesh": "/Game/LFF/People/Hair/SKM_LFF_AverageFemale_Head01_Hair_M_BobStraight.SKM_LFF_AverageFemale_Head01_Hair_M_BobStraight",
+    "FittedFaceMesh": "/MetaHumanCrowdContent/Characters/Assembled/AverageFemale_Head01/Face/SKM_MHC_AverageFemale_Head01_FaceMesh.SKM_MHC_AverageFemale_Head01_FaceMesh"
+   },
+   "Outfit": [
+    {
+     "Cloth": "/MetaHumanCrowdContent/Outfits/Tops/OA_TshirtLngSlv/TshirtLngSlv/ClothAssets/CA_TshirtLngSlv_f_med_nrw.CA_TshirtLngSlv_f_med_nrw",
+     "Material": "/Game/LFF/People/MI_LFF_Tee_White.MI_LFF_Tee_White",
+     "FittedBodyMesh": "/MetaHumanCrowdContent/Characters/Assembled/AverageFemale_Head01/Body/SKM_MHC_AverageFemale_Head01_BodyMesh.SKM_MHC_AverageFemale_Head01_BodyMesh",
+     "CoveredBodyMaterialSlots": [],
+     "Inflate": 1.059999943
+    },
+    {
+     "Cloth": "/MetaHumanCrowdContent/Outfits/Bottoms/OA_Jeans/Jeans/ClothAssets/CA_jeans_f_med_nrw.CA_jeans_f_med_nrw",
+     "Material": null,
+     "FittedBodyMesh": "/MetaHumanCrowdContent/Characters/Assembled/AverageFemale_Head01/Body/SKM_MHC_AverageFemale_Head01_BodyMesh.SKM_MHC_AverageFemale_Head01_BodyMesh",
+     "CoveredBodyMaterialSlots": [],
+     "Inflate": 1.090000033
+    },
+    {
+     "Cloth": "/MetaHumanCrowdContent/Outfits/Shoes/OA_CasualSneakers/CasualSneakers/ClothAssets/CA_casualsneakers_f_med_nrw.CA_casualsneakers_f_med_nrw",
+     "Material": null,
+     "FittedBodyMesh": "/MetaHumanCrowdContent/Characters/Assembled/AverageFemale_Head01/Body/SKM_MHC_AverageFemale_Head01_BodyMesh.SKM_MHC_AverageFemale_Head01_BodyMesh",
+     "CoveredBodyMaterialSlots": [],
+     "Inflate": 1.039999962
+    }
+   ],
+   "BodyMaterialOverrides": [
+    [
+     "body_shader_shader",
+     "/Game/LFF/People/BodyCoverage/MI_Body_Baked_VT_8324204550da.MI_Body_Baked_VT_8324204550da"
+    ]
+   ],
+   "FaceMaterialOverrides": [
+    [
+     "head_shader_shader",
+     "/Game/LFF/People/BodyCoverage/MI_Face_Skin_Baked_LOD0_VT_1f6f29d6b42c.MI_Face_Skin_Baked_LOD0_VT_1f6f29d6b42c"
+    ],
+    [
+     "head_LOD1_shader_shader",
+     "/Game/LFF/People/BodyCoverage/MI_Face_Skin_Baked_LOD1_VT_34535d8ce11e.MI_Face_Skin_Baked_LOD1_VT_34535d8ce11e"
+    ],
+    [
+     "head_LOD2_shader_shader",
+     "/Game/LFF/People/BodyCoverage/MI_Face_Skin_Baked_LOD2_VT_d912fc79504f.MI_Face_Skin_Baked_LOD2_VT_d912fc79504f"
+    ],
+    [
+     "head_LOD3_shader_shader",
+     "/Game/LFF/People/BodyCoverage/MI_Face_Skin_Baked_LOD3_VT_ceee38f8107e.MI_Face_Skin_Baked_LOD3_VT_ceee38f8107e"
+    ],
+    [
+     "head_LOD4_shader_shader",
+     "/Game/LFF/People/BodyCoverage/MI_Face_Skin_Baked_LOD4_VT_043c3ad97a00.MI_Face_Skin_Baked_LOD4_VT_043c3ad97a00"
+    ],
+    [
+     "head_LOD57_shader_shader",
+     "/Game/LFF/People/BodyCoverage/MI_Face_Skin_Baked_LOD5to7_VT_d552bd1519a8.MI_Face_Skin_Baked_LOD5to7_VT_d552bd1519a8"
+    ]
+   ],
+   "StartOffset": {
+    "x": -739.4,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "PlaySeconds": 5.281428337,
+   "PlayDelaySeconds": 5.795000076,
+   "bLinear": true,
+   "MovingAnimation": "/MetaHumanCrowdContent/Animations/AS_MH_Neutral_Walk_Loop_F.AS_MH_Neutral_Walk_Loop_F",
+   "StillAnimation": "/MetaHumanCrowdContent/Animations/AS_MH_Neutral_Stand_Idle_Loop.AS_MH_Neutral_Stand_Idle_Loop",
+   "StartRotation": {
+    "pitch": 0.0,
+    "yaw": 0.0,
+    "roll": 0.0
+   },
+   "bHiddenBefore": false,
+   "bHiddenAfter": false,
+   "bSpectacle": false
+  },
+  "world": {
+   "location": {
+    "x": -6702.914663,
+    "y": -22365.395928,
+    "z": 142.6
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": 77.0,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.622514637,
+    "w": 0.782608157
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "site": {
+   "location": {
+    "x": -4127.992664,
+    "y": -22980.419417,
+    "z": 142.6
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": 83.5,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.665881666,
+    "w": 0.746057375
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "attachParent": {
+   "actor": "Actor_0",
+   "actorLabel": "LFF_SiteRoot",
+   "component": "DefaultSceneRoot"
+  },
+  "startWorld": {
+   "location": {
+    "x": -6869.243472,
+    "y": -23085.845154,
+    "z": 142.6
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": 77.0,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.622514637,
+    "w": 0.782608157
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "startSite": {
+   "location": {
+    "x": -4211.695119,
+    "y": -23715.066447,
+    "z": 142.6
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": 83.5,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.665881666,
+    "w": 0.746057375
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  }
+ },
+ {
+  "label": "SI_QueuePerson13",
+  "export": "LFFPersonActor_16",
+  "class": "LFFPersonActor",
+  "cueId": "SecurityWalk",
+  "trigger": "Arrival",
+  "tags": [
+   "LFF_StandIn"
+  ],
+  "defaulted": [
+   "Trigger",
+   "StartRotation",
+   "bHiddenBefore",
+   "bHiddenAfter",
+   "bSpectacle"
+  ],
+  "props": {
+   "BodyMesh": "/MetaHumanCrowdContent/Characters/Assembled/AverageMale_Head01/Body/SKM_MHC_AverageMale_Head01_BodyMesh.SKM_MHC_AverageMale_Head01_BodyMesh",
+   "FaceMesh": "/MetaHumanCrowdContent/Characters/Assembled/AverageMale_Head01/Face/SKM_MHC_AverageMale_Head01_FaceMesh.SKM_MHC_AverageMale_Head01_FaceMesh",
+   "HairStyle": {
+    "CardMesh": "/Game/LFF/People/Hair/SKM_LFF_AverageMale_Head01_Hair_S_Clean.SKM_LFF_AverageMale_Head01_Hair_S_Clean",
+    "FittedFaceMesh": "/MetaHumanCrowdContent/Characters/Assembled/AverageMale_Head01/Face/SKM_MHC_AverageMale_Head01_FaceMesh.SKM_MHC_AverageMale_Head01_FaceMesh"
+   },
+   "Outfit": [
+    {
+     "Cloth": "/MetaHumanCrowdContent/Outfits/Tops/OA_TshirtLngSlv/TshirtLngSlv/ClothAssets/CA_TshirtLngSlv_m_med_nrw.CA_TshirtLngSlv_m_med_nrw",
+     "Material": "/Game/LFF/People/MI_LFF_Tee_Green.MI_LFF_Tee_Green",
+     "FittedBodyMesh": "/MetaHumanCrowdContent/Characters/Assembled/AverageMale_Head01/Body/SKM_MHC_AverageMale_Head01_BodyMesh.SKM_MHC_AverageMale_Head01_BodyMesh",
+     "CoveredBodyMaterialSlots": [],
+     "Inflate": 1.059999943
+    },
+    {
+     "Cloth": "/MetaHumanCrowdContent/Outfits/Bottoms/OA_Jeans/Jeans/ClothAssets/CA_jeans_m_med_nrw.CA_jeans_m_med_nrw",
+     "Material": null,
+     "FittedBodyMesh": "/MetaHumanCrowdContent/Characters/Assembled/AverageMale_Head01/Body/SKM_MHC_AverageMale_Head01_BodyMesh.SKM_MHC_AverageMale_Head01_BodyMesh",
+     "CoveredBodyMaterialSlots": [],
+     "Inflate": 1.090000033
+    },
+    {
+     "Cloth": "/MetaHumanCrowdContent/Outfits/Shoes/OA_CasualSneakers/CasualSneakers/ClothAssets/CA_casualsneakers_m_med_nrw.CA_casualsneakers_m_med_nrw",
+     "Material": null,
+     "FittedBodyMesh": "/MetaHumanCrowdContent/Characters/Assembled/AverageMale_Head01/Body/SKM_MHC_AverageMale_Head01_BodyMesh.SKM_MHC_AverageMale_Head01_BodyMesh",
+     "CoveredBodyMaterialSlots": [],
+     "Inflate": 1.039999962
+    }
+   ],
+   "BodyMaterialOverrides": [
+    [
+     "body_shader_shader",
+     "/Game/LFF/People/BodyCoverage/MI_Body_Baked_VT_9f120530e659.MI_Body_Baked_VT_9f120530e659"
+    ]
+   ],
+   "FaceMaterialOverrides": [
+    [
+     "head_shader_shader",
+     "/Game/LFF/People/BodyCoverage/MI_Face_Skin_Baked_LOD0_VT_d2a222e65db1.MI_Face_Skin_Baked_LOD0_VT_d2a222e65db1"
+    ],
+    [
+     "head_LOD1_shader_shader",
+     "/Game/LFF/People/BodyCoverage/MI_Face_Skin_Baked_LOD1_VT_91f704c6885b.MI_Face_Skin_Baked_LOD1_VT_91f704c6885b"
+    ],
+    [
+     "head_LOD2_shader_shader",
+     "/Game/LFF/People/BodyCoverage/MI_Face_Skin_Baked_LOD2_VT_6fdb572c159e.MI_Face_Skin_Baked_LOD2_VT_6fdb572c159e"
+    ],
+    [
+     "head_LOD3_shader_shader",
+     "/Game/LFF/People/BodyCoverage/MI_Face_Skin_Baked_LOD3_VT_68a19b75036c.MI_Face_Skin_Baked_LOD3_VT_68a19b75036c"
+    ],
+    [
+     "head_LOD4_shader_shader",
+     "/Game/LFF/People/BodyCoverage/MI_Face_Skin_Baked_LOD4_VT_4833bd15c1a5.MI_Face_Skin_Baked_LOD4_VT_4833bd15c1a5"
+    ],
+    [
+     "head_LOD57_shader_shader",
+     "/Game/LFF/People/BodyCoverage/MI_Face_Skin_Baked_LOD5to7_VT_bbc26049caf2.MI_Face_Skin_Baked_LOD5to7_VT_bbc26049caf2"
+    ]
+   ],
+   "StartOffset": {
+    "x": -601.3,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "PlaySeconds": 4.295000076,
+   "PlayDelaySeconds": 0.5,
+   "bLinear": true,
+   "MovingAnimation": "/MetaHumanCrowdContent/Animations/AS_MH_Neutral_Walk_Loop_F.AS_MH_Neutral_Walk_Loop_F",
+   "StillAnimation": "/MetaHumanCrowdContent/Animations/AS_MH_Neutral_Stand_Idle_Loop.AS_MH_Neutral_Stand_Idle_Loop",
+   "StartRotation": {
+    "pitch": 0.0,
+    "yaw": 0.0,
+    "roll": 0.0
+   },
+   "bHiddenBefore": false,
+   "bHiddenAfter": false,
+   "bSpectacle": false
+  },
+  "world": {
+   "location": {
+    "x": -6669.172005,
+    "y": -22219.240418,
+    "z": 142.6
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": 77.0,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.622514637,
+    "w": 0.782608157
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "site": {
+   "location": {
+    "x": -4111.012182,
+    "y": -22831.383638,
+    "z": 142.6
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": 83.5,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.665881666,
+    "w": 0.746057375
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "attachParent": {
+   "actor": "Actor_0",
+   "actorLabel": "LFF_SiteRoot",
+   "component": "DefaultSceneRoot"
+  },
+  "startWorld": {
+   "location": {
+    "x": -6804.435073,
+    "y": -22805.129138,
+    "z": 142.6
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": 77.0,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.622514637,
+    "w": 0.782608157
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "startSite": {
+   "location": {
+    "x": -4179.081274,
+    "y": -23428.818395,
+    "z": 142.6
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": 83.5,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.665881666,
+    "w": 0.746057375
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  }
+ },
+ {
+  "label": "SI_StaffAttendant",
+  "export": "LFFPersonActor_3",
+  "class": "LFFPersonActor",
+  "cueId": "StaffGreeting",
+  "trigger": "Arrival",
+  "tags": [
+   "LFF_StandIn"
+  ],
+  "defaulted": [
+   "Trigger",
+   "StartOffset",
+   "StartRotation",
+   "bLinear",
+   "bHiddenBefore",
+   "bHiddenAfter",
+   "bSpectacle"
+  ],
+  "props": {
+   "BodyMesh": "/MetaHumanCrowdContent/Characters/Assembled/AverageMale_Head02/Body/SKM_MHC_AverageMale_Head02_BodyMesh.SKM_MHC_AverageMale_Head02_BodyMesh",
+   "FaceMesh": "/MetaHumanCrowdContent/Characters/Assembled/AverageMale_Head02/Face/SKM_MHC_AverageMale_Head02_FaceMesh.SKM_MHC_AverageMale_Head02_FaceMesh",
+   "FacialAnimation": "/Game/LFF/People/AS_LFF_StaffSmile.AS_LFF_StaffSmile",
+   "HairStyle": {
+    "CardMesh": "/Game/LFF/People/Hair/SKM_LFF_AverageMale_Head02_Hair_S_Clean.SKM_LFF_AverageMale_Head02_Hair_S_Clean",
+    "FittedFaceMesh": "/MetaHumanCrowdContent/Characters/Assembled/AverageMale_Head02/Face/SKM_MHC_AverageMale_Head02_FaceMesh.SKM_MHC_AverageMale_Head02_FaceMesh"
+   },
+   "Outfit": [
+    {
+     "Cloth": "/MetaHumanCrowdContent/Outfits/Tops/OA_TshirtLngSlv/TshirtLngSlv/ClothAssets/CA_TshirtLngSlv_m_med_nrw.CA_TshirtLngSlv_m_med_nrw",
+     "Material": "/Game/LFF/People/MI_LFF_Tee_Staff.MI_LFF_Tee_Staff",
+     "FittedBodyMesh": "/MetaHumanCrowdContent/Characters/Assembled/AverageMale_Head02/Body/SKM_MHC_AverageMale_Head02_BodyMesh.SKM_MHC_AverageMale_Head02_BodyMesh",
+     "CoveredBodyMaterialSlots": [],
+     "Inflate": 1.059999943
+    },
+    {
+     "Cloth": "/MetaHumanCrowdContent/Outfits/Bottoms/OA_Jeans/Jeans/ClothAssets/CA_jeans_m_med_nrw.CA_jeans_m_med_nrw",
+     "Material": null,
+     "FittedBodyMesh": "/MetaHumanCrowdContent/Characters/Assembled/AverageMale_Head02/Body/SKM_MHC_AverageMale_Head02_BodyMesh.SKM_MHC_AverageMale_Head02_BodyMesh",
+     "CoveredBodyMaterialSlots": [],
+     "Inflate": 1.090000033
+    },
+    {
+     "Cloth": "/MetaHumanCrowdContent/Outfits/Shoes/OA_CasualSneakers/CasualSneakers/ClothAssets/CA_casualsneakers_m_med_nrw.CA_casualsneakers_m_med_nrw",
+     "Material": null,
+     "FittedBodyMesh": "/MetaHumanCrowdContent/Characters/Assembled/AverageMale_Head02/Body/SKM_MHC_AverageMale_Head02_BodyMesh.SKM_MHC_AverageMale_Head02_BodyMesh",
+     "CoveredBodyMaterialSlots": [],
+     "Inflate": 1.039999962
+    }
+   ],
+   "BodyMaterialOverrides": [
+    [
+     "body_shader_shader",
+     "/Game/LFF/People/BodyCoverage/MI_Body_Baked_VT_c461cebf6f1e.MI_Body_Baked_VT_c461cebf6f1e"
+    ]
+   ],
+   "FaceMaterialOverrides": [
+    [
+     "head_shader_shader",
+     "/Game/LFF/People/BodyCoverage/MI_Face_Skin_Baked_LOD0_VT_ab91bf90f447.MI_Face_Skin_Baked_LOD0_VT_ab91bf90f447"
+    ],
+    [
+     "head_LOD1_shader_shader",
+     "/Game/LFF/People/BodyCoverage/MI_Face_Skin_Baked_LOD1_VT_eec211a20a7c.MI_Face_Skin_Baked_LOD1_VT_eec211a20a7c"
+    ],
+    [
+     "head_LOD2_shader_shader",
+     "/Game/LFF/People/BodyCoverage/MI_Face_Skin_Baked_LOD2_VT_4279d9e24304.MI_Face_Skin_Baked_LOD2_VT_4279d9e24304"
+    ],
+    [
+     "head_LOD3_shader_shader",
+     "/Game/LFF/People/BodyCoverage/MI_Face_Skin_Baked_LOD3_VT_2b202002f967.MI_Face_Skin_Baked_LOD3_VT_2b202002f967"
+    ],
+    [
+     "head_LOD4_shader_shader",
+     "/Game/LFF/People/BodyCoverage/MI_Face_Skin_Baked_LOD4_VT_ea718ccc796d.MI_Face_Skin_Baked_LOD4_VT_ea718ccc796d"
+    ],
+    [
+     "head_LOD57_shader_shader",
+     "/Game/LFF/People/BodyCoverage/MI_Face_Skin_Baked_LOD5to7_VT_f5a4f41676b0.MI_Face_Skin_Baked_LOD5to7_VT_f5a4f41676b0"
+    ]
+   ],
+   "PlaySeconds": 4.0,
+   "PlayDelaySeconds": 0.150000006,
+   "MovingAnimation": "/Game/LFF/People/AS_LFF_StaffWave.AS_LFF_StaffWave",
+   "StillAnimation": "/MetaHumanCrowdContent/Animations/AS_MH_Neutral_Stand_Idle_Loop.AS_MH_Neutral_Stand_Idle_Loop",
+   "StartOffset": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "StartRotation": {
+    "pitch": 0.0,
+    "yaw": 0.0,
+    "roll": 0.0
+   },
+   "bLinear": false,
+   "bHiddenBefore": false,
+   "bHiddenAfter": false,
+   "bSpectacle": false
+  },
+  "world": {
+   "location": {
+    "x": -7426.622568,
+    "y": 1953.273466,
+    "z": 157.60199
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -141.5,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.94408902,
+    "w": 0.329690645
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "site": {
+   "location": {
+    "x": -7600.0,
+    "y": 1100.0,
+    "z": 157.60199
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -135.0,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.923879533,
+    "w": 0.382683432
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "attachParent": {
+   "actor": "Actor_0",
+   "actorLabel": "LFF_SiteRoot",
+   "component": "DefaultSceneRoot"
+  },
+  "startWorld": {
+   "location": {
+    "x": -7426.622568,
+    "y": 1953.273466,
+    "z": 157.60199
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -141.5,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.94408902,
+    "w": 0.329690645
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  },
+  "startSite": {
+   "location": {
+    "x": -7600.0,
+    "y": 1100.0,
+    "z": 157.60199
+   },
+   "rotation": {
+    "pitch": 0.0,
+    "yaw": -135.0,
+    "roll": 0.0
+   },
+   "quat": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -0.923879532,
+    "w": 0.382683432
+   },
+   "scale": {
+    "x": 1.0,
+    "y": 1.0,
+    "z": 1.0
+   }
+  }
+ }
+]
