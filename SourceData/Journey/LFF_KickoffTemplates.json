@@ -1,6 +1,7 @@
 {
   "About": "Kickoff time templates for the guided tour. LFF_GoldenPath.json is the 1:00 PM tour; each template changes only the steps whose times, copy or order differ for its kickoff time, and each game fills in its opponent and date. Times are Eastern. Voice lines for changed cards are named <base line>__<template Id> (or __g<game date> for the cards that name the opponent) and are made by Tools/Audio/make_kickoff_vo.py.",
   "Season": "2026",
+  "ScheduleChecked": "2026-11-17T16:12:23.463Z",
   "GameSteps": {
     "intro": {
       "Title": "Today I am going to the Eagles vs. {OpponentShort} game at Lincoln Financial Field.",
@@ -16,7 +17,7 @@
     { "Date": "2026-10-18", "Weekday": "Sunday", "DateText": "October 18", "Opponent": "Carolina Panthers", "OpponentShort": "Panthers", "OpponentCode": "CAR", "Template": "1300", "Broadcast": "CBS", "DarkNote": "" },
     { "Date": "2026-10-26", "Weekday": "Monday", "DateText": "October 26", "Opponent": "Dallas Cowboys", "OpponentShort": "Cowboys", "OpponentCode": "DAL", "Template": "2015", "Broadcast": "Monday Night Football, ESPN", "DarkNote": "It is a night game, so it will be dark outside. " },
     { "Date": "2026-11-08", "Weekday": "Sunday", "DateText": "November 8", "Opponent": "New York Giants", "OpponentShort": "Giants", "OpponentCode": "NYG", "Template": "1300", "Broadcast": "FOX", "DarkNote": "" },
-    { "Date": "2026-11-22", "Weekday": "Sunday", "DateText": "November 22", "Opponent": "Pittsburgh Steelers", "OpponentShort": "Steelers", "OpponentCode": "PIT", "Template": "1625", "Broadcast": "CBS", "DarkNote": "It will get dark during the game. " },
+    { "Date": "2026-11-22", "Weekday": "Sunday", "DateText": "November 22", "Opponent": "Pittsburgh Steelers", "OpponentShort": "Steelers", "OpponentCode": "PIT", "Template": "1300", "Broadcast": "CBS", "DarkNote": "" },
     { "Date": "2026-12-13", "Weekday": "Sunday", "DateText": "December 13", "Opponent": "Indianapolis Colts", "OpponentShort": "Colts", "OpponentCode": "IND", "Template": "1300", "Broadcast": "FOX", "DarkNote": "" },
     { "Date": "2026-12-19", "Weekday": "Saturday", "DateText": "December 19", "Opponent": "Seattle Seahawks", "OpponentShort": "Seahawks", "OpponentCode": "SEA", "Template": "1700", "Broadcast": "FOX", "DarkNote": "It will be dark outside during the game. " },
     { "Date": "2026-12-24", "Weekday": "Thursday", "DateText": "December 24", "Opponent": "Houston Texans", "OpponentShort": "Texans", "OpponentCode": "HOU", "Template": "2015", "Broadcast": "Thursday Night Football, Prime Video", "DarkNote": "It is a night game, so it will be dark outside. " }

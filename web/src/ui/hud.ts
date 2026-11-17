@@ -2,8 +2,9 @@
 // It holds the corner groups, picks which panels are on screen for the snapshot, fades them in, and runs its own focus
 // ring. Widgets hold no journey state of their own: every change arrives as a snapshot.
 import { GameMode } from "../config";
-import { AUTOMATIC, homeGames, kickoffTemplates, shortDate } from "../journey/gameday";
+import { AUTOMATIC, easternToday, homeGames, kickoffTemplates, shortDate, templateFor } from "../journey/gameday";
 import type { GameDayController } from "../journey/gameday";
+import type { ScheduleUpdater } from "../journey/schedule";
 import type { Journey } from "../journey/journey";
 import { MY_SEAT_AMENITY_ID } from "../journey/journey";
 import type { JourneySnapshot, MapLevel } from "../journey/types";
@@ -37,6 +38,8 @@ export interface HudOptions {
     unitsPerPixel: () => number;
     /** Settings > Game day: the home game and kickoff template the tour is set to. */
     gameDay?: GameDayController;
+    /** Settings > Game day > Check for schedule updates. */
+    schedule?: ScheduleUpdater;
 }
 
 /** A panel that fades in over 0.25 s (ease-out cubic) when shown; instant with less movement or Calm Mode. */
@@ -171,7 +174,10 @@ export class Hud {
     private readonly templateChips = h("div", { class: "grid2 kickoff-templates" });
     private readonly gameRows = h("div", { class: "game-rows" });
     private readonly gameNote = h("div", { class: "settings-note" });
+    private readonly kickoffTitle = h("div", { class: "eyebrow settings-group-title sub", text: "Kickoff time" });
+    private readonly scheduleNote = h("div", { class: "settings-note", role: "status", "aria-live": "polite" });
     private automaticRow: HTMLButtonElement | null = null;
+    private checkRow: HTMLButtonElement | null = null;
 
     constructor(private readonly journey: Journey, private readonly options: HudOptions) {
         const j = journey;
@@ -302,34 +308,40 @@ export class Hud {
         };
         const closeSettings = button("pill", "Close", click(() => j.toggleSettings()));
         this.restartButton = button("pill", "Start again", click(() => j.requestRestart()));
-        // Game day: a kickoff time picks its template; the games below are the home games played at that time.
+        // Game day: pick the game; its kickoff time comes from the Eagles' schedule (rechecked here), and another time can be
+        // shown for the same game. Choosing a time never changes the opponent.
         const gameDay = options.gameDay;
         let gameDaySection: HTMLElement[] = [];
         if (gameDay) {
-            for (const template of kickoffTemplates()) {
-                const chip = button("toggle-cell", [h("span", { class: "name", text: template.Label }), h("span", { class: "state", text: template.Name })],
-                    click(() => {
-                        gameDay.selectTemplate(template.Id);
-                        this.applyGameDay();
-                    }));
-                chip.dataset.template = template.Id;
-                this.templateChips.append(chip);
-            }
             this.automaticRow = button("row setting-row game-row",
                 [h("span", { class: "name", text: "Automatic: next home game" }), h("span", { class: "state", text: "Off" })],
                 click(() => {
                     gameDay.select(AUTOMATIC);
                     this.applyGameDay();
                 }));
+            const schedule = options.schedule;
+            const checkRow = schedule
+                ? button("row setting-row game-row", [h("span", { class: "name", text: "Check for schedule updates" }), h("span", { class: "state", text: "" })],
+                    click(() => {
+                        void schedule.refresh(true);
+                    }))
+                : null;
+            this.checkRow = checkRow;
             gameDaySection = [
                 h("div", { class: "eyebrow settings-group-title first", text: "Game day" }),
-                h("div", { class: "settings-note game-intro", text: "Pick the kickoff time. The tour's times, steps and lighting follow it." }),
-                this.templateChips,
+                h("div", { class: "settings-note game-intro", text: "Pick the game. Its kickoff time comes from the Eagles' schedule, and the tour's times, steps and lighting follow it." }),
                 this.gameRows,
-                this.automaticRow!,
+                this.automaticRow,
+                this.kickoffTitle,
+                this.templateChips,
                 this.gameNote,
+                ...(checkRow ? [checkRow, this.scheduleNote] : []),
             ];
             gameDay.onChanged(() => this.applyGameDay());
+            if (schedule) {
+                schedule.onStatus(() => this.applyScheduleStatus());
+                schedule.onChanged(() => this.applyGameDay());
+            }
         }
         const settingsBody = h("div", { class: "settings-body", role: "dialog", "aria-label": "Settings" },
             h("div", { class: "settings-header" }, h("h2", { text: "Settings" }), closeSettings),
@@ -392,15 +404,30 @@ export class Hud {
         setText(this.welcomeGame, `${game.Weekday}, ${game.DateText}  ·  Eagles vs. ${game.OpponentShort}  ·  Kickoff ${template.Label}`);
         setText(this.identityGame, `${shortDate(game)} · vs. ${game.OpponentShort} · ${template.Label}`);
         setText(this.timelineNote, `Approximate times\n${game.Weekday} ${template.Label} game`);
-        for (const chip of this.templateChips.querySelectorAll<HTMLButtonElement>("button")) {
-            const on = chip.dataset.template === template.Id;
+        const j = this.journey;
+        // The kickoff times the tour can be shown for; the highlighted one is the one showing, and the game's own is marked.
+        const scheduled = gameDay.scheduledTemplate;
+        this.templateChips.replaceChildren(...kickoffTemplates().map((t) => {
+            const chip = button("toggle-cell", [h("span", { class: "name", text: t.Label }),
+                h("span", { class: "state", text: t.Id === scheduled.Id ? "Scheduled" : t.Name })], () => {
+                j.playUIClick();
+                gameDay.selectTemplate(t.Id);
+                this.applyGameDay();
+            });
+            chip.dataset.template = t.Id;
+            const on = t.Id === template.Id;
             chip.classList.toggle("selected", on);
             chip.setAttribute("aria-pressed", String(on));
-        }
-        const j = this.journey;
-        this.gameRows.replaceChildren(...homeGames().filter((g) => g.Template === template.Id).map((g) => {
+            return chip;
+        }));
+        // The games not played yet (all of them once the season is over), each with its scheduled kickoff.
+        const today = easternToday(new Date());
+        const all = homeGames();
+        const upcoming = all.filter((g) => g.Date >= today);
+        const listed = (upcoming.length ? upcoming : all).filter((g) => g.Date !== game.Date);
+        const rowFor = (g: typeof game) => {
             const row = button("row setting-row game-row", [h("span", { class: "name", text: `${shortDate(g)} · vs. ${g.OpponentShort}` }),
-                h("span", { class: "state", text: g.Broadcast.split(",")[0] })], () => {
+                h("span", { class: "state", text: templateFor(g).Label })], () => {
                 j.playUIClick();
                 gameDay.select(g.Date);
                 this.applyGameDay();
@@ -409,13 +436,30 @@ export class Hud {
             row.classList.toggle("selected", on);
             row.setAttribute("aria-pressed", String(on));
             return row;
-        }));
+        };
+        const rows = [...listed, game].sort((a, b) => a.Date.localeCompare(b.Date));
+        this.gameRows.replaceChildren(...rows.map(rowFor));
         if (this.automaticRow) {
             this.automaticRow.classList.toggle("selected", gameDay.isAutomatic);
             this.automaticRow.setAttribute("aria-pressed", String(gameDay.isAutomatic));
             setText(this.automaticRow.querySelector(".state"), gameDay.isAutomatic ? "On" : "Off");
         }
-        setText(this.gameNote, `${template.Source} Changing the game starts the tour again.`);
+        const own = gameDay.isTimeOverridden
+            ? `The Eagles' schedule has the ${game.OpponentShort} game at ${scheduled.Label}. You are seeing the tour for a ${template.Label} kickoff. Choose ${scheduled.Label} to go back. `
+            : `${template.Source} `;
+        setText(this.gameNote, `${own}Changing the game or time starts the tour again.`);
+        this.applyScheduleStatus();
+    }
+
+    /** Settings > Game day > Check for schedule updates: when it last ran and what it found. */
+    private applyScheduleStatus(): void {
+        const schedule = this.options.schedule;
+        if (!schedule || !this.checkRow) return;
+        const { checking, checkedAt, message } = schedule.status;
+        setText(this.checkRow.querySelector(".state"), checking ? "Checking…" : "");
+        this.checkRow.disabled = checking;
+        const when = checkedAt ? `Last checked ${new Date(checkedAt).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}. ` : "";
+        setText(this.scheduleNote, `${message ? `${message} ` : ""}${when}The app also checks when it opens.`.trim());
     }
 
     /** Touch flight controls (Explore on touch screens), placed by main.ts. */

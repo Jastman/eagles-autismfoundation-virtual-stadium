@@ -8,6 +8,7 @@ import { GameMode, readDeploymentConfig } from "./config";
 import { Input } from "./input/input";
 import { amenities } from "./journey/data";
 import { GameDayController, easternToUtcMs } from "./journey/gameday";
+import { ScheduleUpdater } from "./journey/schedule";
 import type { GameDay } from "./journey/gameday";
 import { Journey } from "./journey/journey";
 import type { JourneySnapshot } from "./journey/types";
@@ -148,6 +149,9 @@ async function main(): Promise<void> {
     const world = new StadiumWorld(scene, geo, sceneData, { ...byAsset, ...models }, modelBounds);
     const timers = new Timers();
     // Which home game the tour is for (Settings > Game day): its kickoff template's steps, times and lighting.
+    // The schedule on this device's last check replaces the bundled one before the first game is picked (journey/schedule.ts).
+    const schedule = new ScheduleUpdater();
+    schedule.loadSaved();
     const gameDay = new GameDayController();
     const journey = new Journey(world, timers, audio, gameDay.current.steps, amenities(), undefined, gameDay.current.tourFirstSteps);
     const flood = new FloodlightShading(scene, world.effects.fixedToSite);
@@ -199,6 +203,28 @@ async function main(): Promise<void> {
         showGame(day);
         journey.setSteps(day.steps, day.tourFirstSteps);
     });
+    // The schedule is rechecked when the app opens and when it comes back after a while. A new time or game is shown right away
+    // on the welcome screen; during a tour it waits for the next restart, so the visitor's place is never lost (Settings > Game
+    // day > Check for schedule updates applies it at once, because the visitor asked).
+    let waiting = false;
+    schedule.onChanged((_changes, asked) => {
+        if (asked || !journey.snapshot.bStarted) {
+            waiting = false;
+            gameDay.reload();
+        } else {
+            waiting = true;
+        }
+    });
+    journey.onChanged((s) => {
+        if (waiting && !s.bStarted) {
+            waiting = false;
+            setTimeout(() => gameDay.reload(), 0);
+        }
+    });
+    void schedule.refresh();
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") void schedule.refresh();
+    });
 
     // Callouts project through the Cesium camera; behind the camera there is no position.
     CalloutLayer.projector = (p) => {
@@ -210,7 +236,7 @@ async function main(): Promise<void> {
     };
 
     const touch = matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 1;
-    const hud = new Hud(journey, { touch, ticketFrames: ticket.frames, unitsPerPixel, gameDay });
+    const hud = new Hud(journey, { touch, ticketFrames: ticket.frames, unitsPerPixel, gameDay, schedule });
     const fade = h("div", { class: "camera-fade", style: { background: GameMode.FadeColor } });
     app.append(fade, hud.root);
     const input = new Input(journey, hud, container);

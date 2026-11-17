@@ -939,6 +939,9 @@ html, body {
 .kickoff-templates .btn .name {
     font-size: 2.4rem;
 }
+.settings-group-title.sub {
+    margin-top: 1.6rem;
+}
 .game-rows {
     display: flex;
     flex-direction: column;

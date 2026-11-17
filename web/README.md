@@ -43,6 +43,28 @@ URL parameters for testing: `?ionToken=` (remembered on the device), `?stadiumTo
 and set `VITE_STADIUM_ASSET_IDS` (`.env.local`, or the repository variable for the Pages build). Try local copies first
 with `?stadiumUrls=`.
 
+## Schedule updates
+
+The home schedule ships in `SourceData/Journey/LFF_KickoffTemplates.json`, and the app keeps it current on its own
+(`src/journey/schedule.ts`): it checks the league's schedule feed (ESPN's public team schedule, no key) when it opens, when it comes
+back after 30 minutes away, and from Settings > Game day > Check for schedule updates. A moved or flexed game, a new kickoff time
+or a new opponent shows up without a new build, and the result is kept on the device. The season shown is the one the feed calls
+current; it changes only after the league's season is officially over (after the Super Bowl), as soon as the feed lists the next
+season's home games.
+
+To refresh what ships with the app (and the Unreal build's copy), then deploy:
+
+```sh
+cd web
+npx vite-node tools/update_schedule.ts --check   # what would change
+npx vite-node tools/update_schedule.ts           # write LFF_KickoffTemplates.json
+npx vite-node tools/kickoff_vo_lines.ts          # the voice lines the schedule now needs
+```
+
+A card whose words changed (a game moved to another time) stays silent until its voice line is recorded
+(`Tools/Audio/make_kickoff_vo.py`, then `npx vite-node tools/kickoff_vo_lines.ts --recorded`). Kickoff times the file has no template
+for get an estimated tour made from the closest one.
+
 ## Check
 
 ```sh
